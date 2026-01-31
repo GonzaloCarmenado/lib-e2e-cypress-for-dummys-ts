@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.env
+.env.local
+.cache/
+.vite/
+*.log
+coverage/
+.nyc_output/
+cypress/downloads/
+cypress/screenshots/
+cypress/videos/

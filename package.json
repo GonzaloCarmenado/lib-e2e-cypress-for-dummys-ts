@@ -1,0 +1,52 @@
+{
+  "name": "e2e-cypress-for-dummys-ts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "E2E Cypress for Dummys - TypeScript Library",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --emitDeclarationOnly && vite build",
+    "build:lib": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest",
+    "cypress": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "dependencies": {
+    "@lit/context": "^1.1.2",
+    "axios": "^1.11.0",
+    "bootstrap": "^5.3.3",
+    "lit": "^3.1.4",
+    "ngx-indexed-db": "^22.0.0",
+    "rxjs": "~7.8.0",
+    "sweetalert2": "^11.26.17",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "cypress": "^14.5.1",
+    "eslint": "^9.29.0",
+    "sass": "^1.70.0",
+    "terser": "^5.46.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "8.34.1",
+    "vite": "^5.0.0",
+    "vitest": "^1.1.0"
+  }
+}
