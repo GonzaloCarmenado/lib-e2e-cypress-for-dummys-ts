@@ -1,0 +1,100 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import '../../src/components/test-previsualizer';
+import type { TestPrevisualizerElement } from '../../src/components/test-previsualizer';
+
+describe('Phase 8.1 — TestPrevisualizerElement', () => {
+  let el: TestPrevisualizerElement;
+
+  beforeEach(() => {
+    el = document.createElement('test-previsualizer') as TestPrevisualizerElement;
+    document.body.appendChild(el);
+  });
+
+  afterEach(() => {
+    el.remove();
+  });
+
+  it('registers as <test-previsualizer> custom element', () => {
+    expect(customElements.get('test-previsualizer')).toBeDefined();
+  });
+
+  it('has a shadow root after connecting', () => {
+    expect(el.shadowRoot).not.toBeNull();
+  });
+
+  it('initial commands list is empty', () => {
+    expect(el.commands).toEqual([]);
+  });
+
+  it('setting commands renders them in shadow DOM', () => {
+    el.commands = ["cy.visit('/')"];
+    expect(el.shadowRoot!.textContent).toContain("cy.visit('/')");
+  });
+
+  it('setting multiple commands renders all of them', () => {
+    el.commands = ["cy.visit('/')", "cy.get('#btn').click()"];
+    const text = el.shadowRoot!.textContent!;
+    expect(text).toContain("cy.visit('/')");
+    expect(text).toContain("cy.get('#btn').click()");
+  });
+
+  it('showInterceptors is false by default', () => {
+    expect(el.showInterceptors).toBe(false);
+  });
+
+  it('toggleInterceptors flips showInterceptors to true', () => {
+    el.toggleInterceptors();
+    expect(el.showInterceptors).toBe(true);
+  });
+
+  it('toggleInterceptors called twice restores to false', () => {
+    el.toggleInterceptors();
+    el.toggleInterceptors();
+    expect(el.showInterceptors).toBe(false);
+  });
+
+  it('interceptors are NOT rendered when showInterceptors is false', () => {
+    el.interceptors = ['cy.intercept("GET", "**/api")'];
+    const intercSection = el.shadowRoot!.querySelector('[data-section="interceptors"]');
+    expect(intercSection).toBeNull();
+  });
+
+  it('interceptors ARE rendered after toggleInterceptors', () => {
+    el.interceptors = ['cy.intercept("GET", "**/api")'];
+    el.toggleInterceptors();
+    expect(el.shadowRoot!.textContent).toContain('cy.intercept("GET", "**/api")');
+  });
+
+  it('copyToClipboard calls navigator.clipboard.writeText with commands joined by newline', () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeMock },
+      configurable: true,
+    });
+    el.commands = ["cy.visit('/')", "cy.get('#btn').click()"];
+    el.copyToClipboard();
+    expect(writeMock).toHaveBeenCalledWith("cy.visit('/')\ncy.get('#btn').click()");
+  });
+
+  it('copyInterceptorsToClipboard calls clipboard with interceptors joined by newline', () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeMock },
+      configurable: true,
+    });
+    el.interceptors = ["cy.intercept('GET', '**/api').as('api')"];
+    el.copyInterceptorsToClipboard();
+    expect(writeMock).toHaveBeenCalledWith("cy.intercept('GET', '**/api').as('api')");
+  });
+
+  it('copyToClipboard does nothing when commands list is empty', () => {
+    const writeMock = vi.fn();
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeMock },
+      configurable: true,
+    });
+    el.commands = [];
+    el.copyToClipboard();
+    expect(writeMock).not.toHaveBeenCalled();
+  });
+});

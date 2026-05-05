@@ -1,0 +1,126 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+vi.mock('sweetalert2', () => ({
+  default: {
+    fire: vi.fn().mockResolvedValue({ isConfirmed: false }),
+    close: vi.fn(),
+    getPopup: vi.fn().mockReturnValue(null),
+  },
+}));
+
+import '../../src/components/lib-e2e-recorder';
+import type { LibE2eRecorderElement } from '../../src/components/lib-e2e-recorder';
+import { RecordingService } from '../../src/services/recording.service';
+import { PersistenceService } from '../../src/services/persistence.service';
+import { TranslationService } from '../../src/services/translation.service';
+
+let dbCounter = 0;
+
+describe('Phase 8.7 — LibE2eRecorderElement', () => {
+  let el: LibE2eRecorderElement;
+  let recording: RecordingService;
+  let persistence: PersistenceService;
+  let translation: TranslationService;
+
+  beforeEach(() => {
+    recording = new RecordingService();
+    persistence = new PersistenceService(`recorder_db_${++dbCounter}`);
+    translation = new TranslationService();
+
+    el = document.createElement('lib-e2e-recorder') as LibE2eRecorderElement;
+    el.recording = recording;
+    el.persistence = persistence;
+    el.translation = translation;
+    document.body.appendChild(el);
+  });
+
+  afterEach(() => {
+    el.remove();
+    recording.destroy();
+    vi.clearAllMocks();
+  });
+
+  it('registers as <lib-e2e-recorder> custom element', () => {
+    expect(customElements.get('lib-e2e-recorder')).toBeDefined();
+  });
+
+  it('initial isRecording is false', () => {
+    expect(el.isRecording).toBe(false);
+  });
+
+  it('toggle() flips isRecording to true', () => {
+    el.toggle();
+    expect(el.isRecording).toBe(true);
+  });
+
+  it('toggle() called twice returns isRecording to false', () => {
+    el.toggle();
+    el.toggle();
+    expect(el.isRecording).toBe(false);
+  });
+
+  it('toggle() delegates to recording.toggleRecording()', () => {
+    const spy = vi.spyOn(recording, 'toggleRecording');
+    el.toggle();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('Ctrl+R keyboard event calls toggle()', () => {
+    const spy = vi.spyOn(el, 'toggle');
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, key: 'r', bubbles: true });
+    window.dispatchEvent(event);
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('Ctrl+1 opens saved tests panel', () => {
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, key: '1', bubbles: true });
+    window.dispatchEvent(event);
+    expect(el.isSavedTestsDialogOpen).toBe(true);
+  });
+
+  it('Ctrl+2 opens commands panel', () => {
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, key: '2', bubbles: true });
+    window.dispatchEvent(event);
+    expect(el.isCommandsDialogOpen).toBe(true);
+  });
+
+  it('Ctrl+3 opens settings panel', () => {
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, key: '3', bubbles: true });
+    window.dispatchEvent(event);
+    expect(el.isSettingsDialogOpen).toBe(true);
+  });
+
+  it('showSavedTestsDialog() sets isSavedTestsDialogOpen to true', () => {
+    el.showSavedTestsDialog();
+    expect(el.isSavedTestsDialogOpen).toBe(true);
+  });
+
+  it('showCommandsDialog() sets isCommandsDialogOpen to true', () => {
+    el.showCommandsDialog();
+    expect(el.isCommandsDialogOpen).toBe(true);
+  });
+
+  it('showSettingsDialog() sets isSettingsDialogOpen to true', () => {
+    el.showSettingsDialog();
+    expect(el.isSettingsDialogOpen).toBe(true);
+  });
+
+  it('setLanguage("en") calls translation.setLang("en")', () => {
+    const spy = vi.spyOn(translation, 'setLang');
+    el.setLanguage('en');
+    expect(spy).toHaveBeenCalledWith('en');
+  });
+
+  it('setLanguage() with no arg auto-detects via translation.detectLang()', () => {
+    const spy = vi.spyOn(translation, 'setLang');
+    el.setLanguage();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('calling showSavedTestsDialog() twice closes and reopens (toggles)', () => {
+    el.showSavedTestsDialog();
+    expect(el.isSavedTestsDialogOpen).toBe(true);
+    el.showSavedTestsDialog();
+    expect(el.isSavedTestsDialogOpen).toBe(false);
+  });
+});

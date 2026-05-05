@@ -1,24 +1,38 @@
-/**
- * E2E Cypress for Dummys - TypeScript Library
- * Punto de entrada principal de la librería
- */
+// Public API — populated as migration phases are completed
+export const VERSION = '0.1.0';
 
-// Exportar componentes
-export { AppComponent } from '@components/app/app.component';
+// Phase 1 — Models
+export * from './models/lang.model';
+export * from './models/input-types.model';
+export * from './models/db-schema.model';
 
-// Exportar componentes modales
-export { ConfigurationComponent } from '@components/modals/configuration/configuration.component';
+// Phase 2 — TranslationService
+export * from './services/translation.service';
 
-// Exportar servicios
-export { PersistenceService } from '@services/persistence.service';
-export type { Test, Command, Interceptor, Config } from '@services/persistence.service';
+// Phase 3 — Transformation Services
+export * from './services/transformation.service';
+export * from './services/advanced-test.transformation.service';
 
-// Exportar servicio de traducción
-export { AppTranslationService } from '@lib/services/app-translation.service';
+// Phase 4 — RecordingService
+export * from './utils/subject';
+export * from './services/recording.service';
 
-// Exportar modelos de base de datos
-export { databaseTablesModel, databaseConfiguration } from '@lib/models/database';
-export type { StoreMetadata, StoreSchema, DatabaseConfiguration } from '@lib/models/database';
+// Phase 5 — PersistenceService
+export * from './services/persistence.service';
 
-// Versión
-export const VERSION = '1.0.0';
+// Phase 6 — HttpMonitor
+export * from './services/http-monitor';
+
+// Phase 7 — UI Utilities
+export * from './utils/styles.utils';
+export * from './utils/modal.utils';
+export * from './utils/toast.utils';
+
+// Phase 8 — Web Components
+export * from './components/test-previsualizer';
+export * from './components/save-test';
+export * from './components/test-editor';
+export * from './components/configuration';
+export * from './components/advanced-test-editor';
+export * from './components/file-preview';
+export * from './components/lib-e2e-recorder';

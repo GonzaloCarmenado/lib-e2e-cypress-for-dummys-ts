@@ -1,0 +1,315 @@
+import { INPUT_TYPES } from '../models/input-types.model';
+import { Subject } from '../utils/subject';
+
+const FORBIDDEN_ID_PREFIXES = [
+  'cdk-', 'mat-', 'p-', 'ng-', 'mdc-',
+  'primeng-', 'auto-', 'field-', 'input-', 'select-',
+];
+const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
+
+export class RecordingService {
+  private readonly commands$ = new Subject<string[]>([]);
+  private readonly interceptors$ = new Subject<string[]>([]);
+  private readonly isRecording$ = new Subject<boolean>(false);
+  private readonly inputDebounceTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
+  private readonly abort = new AbortController();
+
+  // Stored originals for history patching cleanup
+  private readonly origPushState = history.pushState.bind(history);
+  private readonly origReplaceState = history.replaceState.bind(history);
+
+  constructor() {
+    this.listenToClicks();
+    this.listenToInput();
+    this.listenToSelect();
+    this.listenToRouteChanges();
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  startRecording(): void {
+    this.isRecording$.next(true);
+    this.addCommand(`cy.viewport(1900, 1200)`);
+    this.addCommand(`cy.visit('${window.location.pathname}')`);
+    this.addCommand(`cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');`);
+  }
+
+  stopRecording(): void {
+    this.isRecording$.next(false);
+  }
+
+  toggleRecording(): void {
+    this.isRecording$.getValue() ? this.stopRecording() : this.startRecording();
+  }
+
+  addCommand(cmd: string): void {
+    if (!this.isRecording$.getValue()) return;
+    this.commands$.next([...this.commands$.getValue(), cmd]);
+  }
+
+  registerInterceptor(method: string, url: string, alias: string): void {
+    const command = `cy.intercept('${method}', '${this.urlToWildcard(url, method)}').as('${alias}')`;
+    const current = this.interceptors$.getValue();
+    if (!current.includes(command)) {
+      this.interceptors$.next([...current, command]);
+    }
+  }
+
+  clearCommands(): void {
+    this.commands$.next([]);
+    this.interceptors$.next([]);
+  }
+
+  clearInterceptors(): void {
+    this.interceptors$.next([]);
+  }
+
+  getCommandsSnapshot(): string[] { return this.commands$.getValue(); }
+  getInterceptorsSnapshot(): string[] { return this.interceptors$.getValue(); }
+
+  onCommandsChange(fn: (cmds: string[]) => void): () => void {
+    return this.commands$.subscribe(fn);
+  }
+
+  onInterceptorsChange(fn: (ints: string[]) => void): () => void {
+    return this.interceptors$.subscribe(fn);
+  }
+
+  onRecordingChange(fn: (isRecording: boolean) => void): () => void {
+    return this.isRecording$.subscribe(fn);
+  }
+
+  destroy(): void {
+    this.abort.abort();
+    history.pushState = this.origPushState;
+    history.replaceState = this.origReplaceState;
+    this.inputDebounceTimers.forEach((t) => clearTimeout(t));
+    this.inputDebounceTimers.clear();
+  }
+
+  // ── DOM listeners ─────────────────────────────────────────────────────────
+
+  private listenToClicks(): void {
+    document.addEventListener(
+      'click',
+      (e: Event) => {
+        if (!this.isRecording$.getValue()) return;
+        const target = e.target as HTMLElement;
+        if (target) this.handleClickEvent(target);
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
+  private listenToInput(): void {
+    document.addEventListener(
+      'input',
+      (e: Event) => {
+        if (!this.isRecording$.getValue()) return;
+        const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+        if (target) this.handleInputEvent(target);
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
+  private listenToSelect(): void {
+    document.addEventListener(
+      'change',
+      (e: Event) => {
+        if (!this.isRecording$.getValue()) return;
+        const target = e.target as HTMLSelectElement;
+        if (target?.tagName.toLowerCase() === 'select') {
+          this.handleSelectEvent(target);
+        }
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
+  private listenToRouteChanges(): void {
+    let lastUrl = window.location.pathname + window.location.search + window.location.hash;
+
+    const addUrlCommand = (newUrl: string): void => {
+      if (!this.isRecording$.getValue()) return;
+      if (newUrl === lastUrl) return;
+      this.addCommand(`cy.url().should('include', '${newUrl}')`);
+      lastUrl = newUrl;
+    };
+
+    const wrapMethod = (type: 'pushState' | 'replaceState'): void => {
+      const orig = history[type].bind(history);
+      history[type] = (data: unknown, unused: string, url?: string | URL | null) => {
+        const result = orig(data, unused, url);
+        let newUrl = window.location.pathname + window.location.search + window.location.hash;
+        if (typeof url === 'string' && url.length > 0) {
+          const a = document.createElement('a');
+          a.href = url;
+          newUrl = a.pathname + a.search + a.hash;
+        } else if (url instanceof URL) {
+          newUrl = url.pathname + url.search + url.hash;
+        }
+        addUrlCommand(newUrl);
+        return result;
+      };
+    };
+
+    wrapMethod('pushState');
+    wrapMethod('replaceState');
+
+    window.addEventListener(
+      'popstate',
+      () => {
+        const newUrl = window.location.pathname + window.location.search + window.location.hash;
+        addUrlCommand(newUrl);
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
+  // ── Click helpers ─────────────────────────────────────────────────────────
+
+  private handleClickEvent(target: HTMLElement): void {
+    // Bubble up from non-interactive span/div inside button or mat-option
+    if (!this.isInteractiveElement(target)) {
+      const tag = target.tagName.toLowerCase();
+      if (
+        (tag === 'span' || tag === 'div') &&
+        target.parentElement &&
+        (target.parentElement.tagName.toLowerCase() === 'button' ||
+          target.parentElement.tagName.toLowerCase() === 'mat-option') &&
+        (target.parentElement.hasAttribute('data-cy') || target.parentElement.hasAttribute('id'))
+      ) {
+        target = target.parentElement;
+      }
+      const matSelect = target.closest('mat-select');
+      if (matSelect) {
+        const sel = this.getReliableSelector(matSelect as HTMLElement);
+        this.addCommand(sel ? `cy.get('${sel}').click()` : '// No se pudo generar un selector confiable para mat-select');
+        return;
+      }
+    }
+
+    const tag = target.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+    const container = target.closest<HTMLElement>('[data-cy], [id]');
+    if (!container) return;
+
+    const selector = this.getReliableSelector(container);
+    if (selector === OWN_SELECTOR) return;
+
+    if (tag === 'mat-option') {
+      this.handleMatOptionClick(target, selector);
+      return;
+    }
+
+    this.addGenericCommand({
+      selector,
+      action: (s) => `cy.get('${s}').click()`,
+    });
+  }
+
+  private handleMatOptionClick(target: HTMLElement, selector: string | null): void {
+    const matSelect = target.closest('mat-select');
+    let dataCy: string | null = null;
+    if (matSelect) dataCy = matSelect.closest('[data-cy]')?.getAttribute('data-cy') ?? null;
+    if (!dataCy) dataCy = target.closest('[data-cy]')?.getAttribute('data-cy') ?? null;
+    if (dataCy) {
+      this.addCommand(`cy.get('[data-cy="${dataCy}"]').click()`);
+      return;
+    }
+    if (selector) {
+      this.addCommand(`cy.get('${selector}').eq(0).click()`);
+    } else {
+      this.addCommand('// No se pudo generar un selector confiable para mat-option');
+    }
+  }
+
+  // ── Input helpers ─────────────────────────────────────────────────────────
+
+  private handleInputEvent(target: HTMLInputElement | HTMLTextAreaElement): void {
+    const tag = target.tagName.toLowerCase();
+    const isText = tag === 'textarea' || (tag === 'input' && (INPUT_TYPES as readonly string[]).includes(target.type));
+    if (!isText) return;
+
+    const container = target.closest<HTMLElement>('[data-cy], [id]');
+    if (!container) return;
+
+    if (this.inputDebounceTimers.has(target)) {
+      clearTimeout(this.inputDebounceTimers.get(target));
+    }
+    this.inputDebounceTimers.set(
+      target,
+      setTimeout(() => {
+        const selector = this.getReliableSelector(container);
+        const value = target.value.replace(/'/g, "\\'");
+        this.addGenericCommand({
+          selector,
+          action: (s) => `cy.get('${s}').clear().type('${value}')`,
+        });
+        this.inputDebounceTimers.delete(target);
+      }, 1000)
+    );
+  }
+
+  // ── Select helpers ────────────────────────────────────────────────────────
+
+  private handleSelectEvent(target: HTMLSelectElement): void {
+    const container = target.closest<HTMLElement>('[data-cy], [id]');
+    if (!container) return;
+    const selector = this.getReliableSelector(container);
+    const value = target.value.replace(/'/g, "\\'");
+    this.addGenericCommand({
+      selector,
+      action: (s) => `cy.get('${s}').select('${value}')`,
+    });
+  }
+
+  // ── Shared helpers ────────────────────────────────────────────────────────
+
+  private addGenericCommand(opts: {
+    selector: string | null;
+    action: (s: string) => string;
+  }): void {
+    if (!opts.selector || this.isOwnSelector(opts.selector)) return;
+    this.addCommand(opts.action(opts.selector));
+  }
+
+  private getReliableSelector(el: HTMLElement): string | null {
+    const dataCy = el.getAttribute('data-cy');
+    if (dataCy) return `[data-cy="${dataCy}"]`;
+    const dataDotCy = el.getAttribute('data.cy');
+    if (dataDotCy) return `[data.cy="${dataDotCy}"]`;
+
+    const id = el.id;
+    const isCustomId =
+      id &&
+      id.length < 25 &&
+      /^[a-zA-Z][\w-]*$/.test(id) &&
+      !FORBIDDEN_ID_PREFIXES.some((p) => id.startsWith(p)) &&
+      !/^\d+$/.test(id);
+
+    return isCustomId ? `#${id}` : null;
+  }
+
+  private isInteractiveElement(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    const tag = target.tagName.toLowerCase();
+    return ['select', 'option', 'input', 'textarea', 'button'].includes(tag);
+  }
+
+  private isOwnSelector(selector: string | null): boolean {
+    return selector === OWN_SELECTOR;
+  }
+
+  private urlToWildcard(url: string, method: string): string {
+    const u = new URL(url, 'http://localhost');
+    if (method.toUpperCase() === 'GET' && u.search) {
+      return `**${u.pathname}/**`;
+    }
+    return `**${u.pathname}`;
+  }
+}
+
+export const recordingService = new RecordingService();

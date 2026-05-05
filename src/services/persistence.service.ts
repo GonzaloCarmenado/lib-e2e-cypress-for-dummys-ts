@@ -1,384 +1,213 @@
-/**
- * @file persistence.service.ts
- * @description Servicio de persistencia usando IndexedDB nativa
- * 
- * Maneja:
- * - Tests (pruebas)
- * - Comandos asociados a tests
- * - Interceptores asociados a tests
- * - Configuración general
- */
+import { openDB, type IDBPDatabase } from 'idb';
+import { DB_SCHEMA } from '../models/db-schema.model';
 
-export interface Test {
-  id?: number;
-  name: string;
-  createdAt: number;
+interface TestRecord        { id: number; name: string; createdAt: number; }
+interface CommandRecord     { id: number; command: string; testId: number; createdAt: number; }
+interface InterceptorRecord { id: number; interceptor: string; testId: number; createdAt: number; }
+interface ConfigRecord      { id: number; [key: string]: unknown; }
+
+export interface TestWithDetails extends TestRecord {
+  commands: string[];
+  interceptors: string[];
 }
 
-export interface Command {
-  id?: number;
-  command: string;
-  testId: number;
-  createdAt: number;
+export interface TestDetail extends TestWithDetails {
+  cypressCommands: string[];
+  itBlock: string;
+  interceptorsBlock: string;
 }
 
-export interface Interceptor {
-  id?: number;
-  interceptor: string;
-  testId: number;
-  createdAt: number;
-}
-
-export interface Config {
-  id?: number;
-  language?: string;
-  extendedHttpCommands?: string | boolean;
-  [key: string]: any;
-}
-
-/**
- * Servicio de persistencia con IndexedDB nativa
- * Singleton - solo una instancia en toda la aplicación
- */
 export class PersistenceService {
-  private static instance: PersistenceService;
-  private db: IDBDatabase | null = null;
-  private readonly dbName = 'e2e-cypress-db';
-  private readonly version = 1;
+  private _db: Promise<IDBPDatabase> | null = null;
 
-  private constructor() {}
+  // dbName is overridable so tests can use unique names for isolation.
+  constructor(private readonly dbName: string = DB_SCHEMA.name) {}
 
-  /**
-   * Obtiene la instancia singleton del servicio
-   */
-  public static getInstance(): PersistenceService {
-    if (!PersistenceService.instance) {
-      PersistenceService.instance = new PersistenceService();
+  private getDB(): Promise<IDBPDatabase> {
+    if (!this._db) {
+      this._db = openDB(this.dbName, DB_SCHEMA.version, {
+        upgrade(database) {
+          for (const store of DB_SCHEMA.stores) {
+            if (!database.objectStoreNames.contains(store.name)) {
+              const os = database.createObjectStore(store.name, {
+                keyPath: store.keyPath,
+                autoIncrement: store.autoIncrement,
+              });
+              for (const index of store.indexes) {
+                os.createIndex(index.name, index.keyPath, { unique: index.unique });
+              }
+            }
+          }
+        },
+      });
     }
-    return PersistenceService.instance;
+    return this._db;
   }
 
-  /**
-   * Inicializa la base de datos
-   */
-  public async init(): Promise<void> {
-    if (this.db) return;
+  // ── Tests ─────────────────────────────────────────────────────────────────
 
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
-
-      request.onerror = () => {
-        reject(new Error('Error abriendo IndexedDB'));
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        console.log('✅ IndexedDB inicializada');
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-
-        // Crear object stores
-        if (!db.objectStoreNames.contains('tests')) {
-          db.createObjectStore('tests', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!db.objectStoreNames.contains('commands')) {
-          const commandsStore = db.createObjectStore('commands', {
-            keyPath: 'id',
-            autoIncrement: true,
-          });
-          commandsStore.createIndex('testId', 'testId', { unique: false });
-        }
-        if (!db.objectStoreNames.contains('interceptors')) {
-          const interceptorsStore = db.createObjectStore('interceptors', {
-            keyPath: 'id',
-            autoIncrement: true,
-          });
-          interceptorsStore.createIndex('testId', 'testId', { unique: false });
-        }
-        if (!db.objectStoreNames.contains('configuration')) {
-          db.createObjectStore('configuration', { keyPath: 'id', autoIncrement: true });
-        }
-      };
-    });
+  async insertTest(name: string, commands: string[] = [], interceptors: string[] = []): Promise<number> {
+    const db = await this.getDB();
+    const id = await db.add('tests', { name, createdAt: Date.now() }) as number;
+    if (commands.length)     await this.insertCommands(commands, id);
+    if (interceptors.length) await this.insertInterceptors(interceptors, id);
+    return id;
   }
 
-  /**
-   * Ejecuta una transacción de lectura
-   */
-  private readTransaction(stores: string[], callback: (tx: IDBTransaction) => Promise<any>): Promise<any> {
-    if (!this.db) throw new Error('BD no inicializada');
-    const tx = this.db.transaction(stores, 'readonly');
-    return callback(tx);
+  async getAllTests(): Promise<TestWithDetails[]> {
+    const db    = await this.getDB();
+    const tests = await db.getAll('tests') as TestRecord[];
+    return Promise.all(
+      tests.map(async (test) => ({
+        ...test,
+        commands:     await this.getCommandStrings(test.id),
+        interceptors: await this.getInterceptorStrings(test.id),
+      }))
+    );
   }
 
-  /**
-   * Ejecuta una transacción de escritura
-   */
-  private writeTransaction(stores: string[], callback: (tx: IDBTransaction) => Promise<any>): Promise<any> {
-    if (!this.db) throw new Error('BD no inicializada');
-    const tx = this.db.transaction(stores, 'readwrite');
-    return callback(tx);
+  async getTestById(testId: number): Promise<TestDetail | null> {
+    const db     = await this.getDB();
+    const record = await db.get('tests', testId) as TestRecord | undefined;
+    if (!record) return null;
+
+    const commands     = await this.getCommandStrings(testId);
+    const interceptors = await this.getInterceptorStrings(testId);
+    const itBlock = `it('${record.name}', () => {\n  ${commands.join('\n  ')}\n});`;
+    const interceptorsBlock = interceptors.length
+      ? '  // Interceptores Cypress generados automáticamente\n' +
+        interceptors.map((i) => '  ' + i).join('\n') + '\n'
+      : '';
+
+    return { ...record, commands, interceptors, cypressCommands: commands, itBlock, interceptorsBlock };
   }
 
-  // ============ TESTS ============
-
-  /**
-   * Inserta un test con sus comandos e interceptadores
-   */
-  public async insertTest(
-    name: string,
-    commands: string[] = [],
-    interceptors: string[] = []
-  ): Promise<number> {
-    const test: Test = {
-      name,
-      createdAt: Date.now(),
-    };
-
-    return this.writeTransaction(['tests', 'commands', 'interceptors'], async (tx) => {
-      const testId = await this.dbAdd('tests', test, tx);
-
-      if (commands.length > 0) {
-        for (const cmd of commands) {
-          await this.dbAdd('commands', { command: cmd, testId, createdAt: Date.now() }, tx);
-        }
-      }
-      if (interceptors.length > 0) {
-        for (const interceptor of interceptors) {
-          await this.dbAdd('interceptors', { interceptor, testId, createdAt: Date.now() }, tx);
-        }
-      }
-
-      return testId;
-    });
+  async deleteTest(id: number): Promise<void> {
+    const db = await this.getDB();
+    await db.delete('tests', id);
+    await this.deleteCommandsByTestId(id);
+    await this.deleteInterceptorsByTestId(id);
   }
 
-  /**
-   * Obtiene todos los tests con sus comandos e interceptadores
-   */
-  public async getAllTests(): Promise<any[]> {
-    return this.readTransaction(['tests', 'commands', 'interceptors'], async (tx) => {
-      const tests = await this.dbGetAll('tests', tx);
+  // ── Commands ──────────────────────────────────────────────────────────────
 
-      if (!tests.length) return [];
-
-      const testWithDetails = await Promise.all(
-        tests.map(async (test) => {
-          const commands = await this.dbGetByIndex('commands', 'testId', test.id, tx);
-          const interceptors = await this.dbGetByIndex('interceptors', 'testId', test.id, tx);
-
-          return {
-            ...test,
-            commands: commands.map((c: Command) => c.command),
-            interceptors: interceptors.map((i: Interceptor) => i.interceptor),
-          };
-        })
-      );
-
-      return testWithDetails;
-    });
+  async insertCommands(commands: string[], testId: number): Promise<void> {
+    const db = await this.getDB();
+    await Promise.all(
+      commands.map((command) => db.add('commands', { command, testId, createdAt: Date.now() }))
+    );
   }
 
-  /**
-   * Obtiene todos los comandos
-   */
-  public async getAllCommands(): Promise<Command[]> {
-    return this.readTransaction(['commands'], async (tx) => {
-      return this.dbGetAll('commands', tx);
-    });
+  async getCommandsByTestId(testId: number): Promise<CommandRecord[]> {
+    const db = await this.getDB();
+    return db.getAllFromIndex('commands', 'testId', testId) as Promise<CommandRecord[]>;
   }
 
-  /**
-   * Obtiene comandos por test ID
-   */
-  public async getCommandsByTestId(testId: number): Promise<Command[]> {
-    return this.readTransaction(['commands'], async (tx) => {
-      return this.dbGetByIndex('commands', 'testId', testId, tx);
-    });
+  private async getCommandStrings(testId: number): Promise<string[]> {
+    return (await this.getCommandsByTestId(testId)).map((r) => r.command).filter(Boolean);
   }
 
-  /**
-   * Elimina un test y sus datos asociados
-   */
-  public async deleteTest(id: number): Promise<void> {
-    return this.writeTransaction(['tests', 'commands', 'interceptors'], async (tx) => {
-      await this.dbDelete('tests', id, tx);
-
-      // Eliminar comandos asociados
-      const commands = await this.dbGetByIndex('commands', 'testId', id, tx);
-      for (const cmd of commands) {
-        await this.dbDelete('commands', cmd.id, tx);
-      }
-
-      // Eliminar interceptadores asociados
-      const interceptors = await this.dbGetByIndex('interceptors', 'testId', id, tx);
-      for (const inter of interceptors) {
-        await this.dbDelete('interceptors', inter.id, tx);
-      }
-    });
+  private async deleteCommandsByTestId(testId: number): Promise<void> {
+    const db   = await this.getDB();
+    const rows = await this.getCommandsByTestId(testId);
+    const tx   = db.transaction('commands', 'readwrite');
+    await Promise.all(rows.map((r) => tx.store.delete(r.id)));
+    await tx.done;
   }
 
-  // ============ INTERCEPTADORES ============
+  // ── Interceptors ──────────────────────────────────────────────────────────
 
-  /**
-   * Obtiene todos los interceptadores
-   */
-  public async getAllInterceptors(): Promise<Interceptor[]> {
-    return this.readTransaction(['interceptors'], async (tx) => {
-      return this.dbGetAll('interceptors', tx);
-    });
+  async insertInterceptors(interceptors: string[], testId: number): Promise<void> {
+    const db = await this.getDB();
+    await Promise.all(
+      interceptors.map((interceptor) => db.add('interceptors', { interceptor, testId, createdAt: Date.now() }))
+    );
   }
 
-  /**
-   * Obtiene interceptadores por test ID
-   */
-  public async getInterceptorsByTestId(testId: number): Promise<Interceptor[]> {
-    return this.readTransaction(['interceptors'], async (tx) => {
-      return this.dbGetByIndex('interceptors', 'testId', testId, tx);
-    });
+  async getInterceptorsByTestId(testId: number): Promise<InterceptorRecord[]> {
+    const db = await this.getDB();
+    return db.getAllFromIndex('interceptors', 'testId', testId) as Promise<InterceptorRecord[]>;
   }
 
-  /**
-   * Inserta interceptadores asociados a un test
-   */
-  public async insertInterceptors(interceptors: string[], testId: number): Promise<void> {
-    if (!interceptors.length) return;
-
-    return this.writeTransaction(['interceptors'], async (tx) => {
-      for (const interceptor of interceptors) {
-        await this.dbAdd('interceptors', { interceptor, testId, createdAt: Date.now() }, tx);
-      }
-    });
+  private async getInterceptorStrings(testId: number): Promise<string[]> {
+    return (await this.getInterceptorsByTestId(testId)).map((r) => r.interceptor).filter(Boolean);
   }
 
-  // ============ CONFIGURACIÓN ============
-
-  /**
-   * Establece valores de configuración (merge)
-   */
-  public async setConfig(config: Record<string, any>): Promise<void> {
-    return this.writeTransaction(['configuration'], async (tx) => {
-      const records = await this.dbGetAll('configuration', tx);
-      const current = records.length > 0 ? records[0] : {};
-      const merged: Config = { ...current, ...config };
-
-      if (current.id) {
-        await this.dbPut('configuration', { ...merged, id: current.id }, tx);
-      } else {
-        await this.dbAdd('configuration', merged, tx);
-      }
-    });
+  async deleteInterceptorsByTestId(testId: number): Promise<void> {
+    const db   = await this.getDB();
+    const rows = await this.getInterceptorsByTestId(testId);
+    const tx   = db.transaction('interceptors', 'readwrite');
+    await Promise.all(rows.map((r) => tx.store.delete(r.id)));
+    await tx.done;
   }
 
-  /**
-   * Obtiene la configuración general
-   */
-  public async getConfig(): Promise<Config | null> {
-    return this.readTransaction(['configuration'], async (tx) => {
-      const records = await this.dbGetAll('configuration', tx);
-      return records.length > 0 ? records[0] : null;
-    });
-  }
+  // ── Configuration ─────────────────────────────────────────────────────────
 
-  /**
-   * Obtiene un valor específico de configuración
-   */
-  public async getConfigKey(key: string): Promise<any> {
-    const config = await this.getConfig();
-    return config?.[key] ?? null;
-  }
-
-  // ============ UTILIDADES ============
-
-  /**
-   * Limpia todos los datos
-   */
-  public async clearAllData(): Promise<void> {
-    return this.writeTransaction(['tests', 'commands', 'interceptors', 'configuration'], async (tx) => {
-      await this.dbClear('tests', tx);
-      await this.dbClear('commands', tx);
-      await this.dbClear('interceptors', tx);
-      console.log('✅ Todos los datos eliminados');
-    });
-  }
-
-  /**
-   * Exporta todos los datos
-   */
-  public async exportAllData(): Promise<{ tests: any[]; interceptors: any[] }> {
-    const tests = await this.getAllTests();
-    const interceptors = await this.getAllInterceptors();
-    return { tests, interceptors };
-  }
-
-  /**
-   * Importa datos desde un archivo
-   */
-  public async importData(data: { tests?: any[]; interceptors?: any[] }): Promise<void> {
-    if (!data.tests || !Array.isArray(data.tests)) {
-      throw new Error('Formato de datos inválido');
+  async setConfig(config: Record<string, unknown>): Promise<void> {
+    const db      = await this.getDB();
+    const records = await db.getAll('configuration') as ConfigRecord[];
+    const current = records[0] ?? {};
+    const merged  = { ...current, ...config };
+    if ((current as ConfigRecord).id) {
+      await db.put('configuration', merged);
+    } else {
+      await db.add('configuration', merged);
     }
+  }
 
-    await this.clearAllData();
+  async setConfigKey(key: string, value: unknown): Promise<void> {
+    return this.setConfig({ [key]: value });
+  }
 
-    // Importar tests con sus comandos e interceptadores
-    for (const test of data.tests) {
-      await this.insertTest(test.name, test.commands || [], test.interceptors || []);
+  async getConfig(key: string): Promise<Record<string, unknown> | null> {
+    const db      = await this.getDB();
+    const records = await db.getAll('configuration') as ConfigRecord[];
+    if (!records.length) return null;
+    const config = records[0];
+    return Object.prototype.hasOwnProperty.call(config, key) ? { [key]: config[key] } : null;
+  }
+
+  async getGeneralConfig(): Promise<ConfigRecord | null> {
+    const db      = await this.getDB();
+    const records = await db.getAll('configuration') as ConfigRecord[];
+    return records[0] ?? null;
+  }
+
+  // ── Bulk operations ───────────────────────────────────────────────────────
+
+  async clearAllData(): Promise<void> {
+    const db = await this.getDB();
+    await Promise.all([
+      db.clear('tests'),
+      db.clear('commands'),
+      db.clear('interceptors'),
+    ]);
+  }
+
+  async ingestFileData(tests: Record<string, unknown>[], interceptors: Record<string, unknown>[]): Promise<void> {
+    await Promise.all([
+      this.bulkInsertWithoutId('tests', tests),
+      this.bulkInsertWithoutId('interceptors', interceptors),
+    ]);
+  }
+
+  async requestDirectoryPermissions(): Promise<void> {
+    if (!('showDirectoryPicker' in window)) {
+      throw new Error('File System Access API not supported');
     }
-
-    console.log('✅ Datos importados correctamente');
+    const dirHandle = await (window as any).showDirectoryPicker();
+    await this.setConfigKey('cypressDirectoryHandle', dirHandle);
+    await this.setConfigKey('allowReadWriteFiles', 'true');
   }
 
-  // ============ MÉTODOS PRIVADOS - HELPERS ============
-
-  private dbAdd(store: string, data: any, tx: IDBTransaction): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const request = tx.objectStore(store).add(data);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  private dbPut(store: string, data: any, tx: IDBTransaction): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const request = tx.objectStore(store).put(data);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  private dbDelete(store: string, key: any, tx: IDBTransaction): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = tx.objectStore(store).delete(key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  private dbGetAll(store: string, tx: IDBTransaction): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const request = tx.objectStore(store).getAll();
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  private dbGetByIndex(store: string, index: string, value: any, tx: IDBTransaction): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const request = tx.objectStore(store).index(index).getAll(value);
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  private dbClear(store: string, tx: IDBTransaction): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = tx.objectStore(store).clear();
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+  private async bulkInsertWithoutId(store: string, items: Record<string, unknown>[]): Promise<void> {
+    if (!Array.isArray(items)) return;
+    const db = await this.getDB();
+    for (const item of items) {
+      const { id: _id, ...rest } = item;
+      await db.add(store, rest);
+    }
   }
 }
+
+export const persistenceService = new PersistenceService();

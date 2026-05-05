@@ -1,43 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "target": "ES2022",
     "module": "ESNext",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    
-    /* Generate declarations for library */
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "emitDeclarationOnly": false,
-    "outDir": "./dist",
-
-    /* Path aliases */
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@services/*": ["src/services/*"],
-      "@styles/*": ["src/styles/*"],
-      "@lib/*": ["src/lib/*"]
-    }
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "specs"]
 }
