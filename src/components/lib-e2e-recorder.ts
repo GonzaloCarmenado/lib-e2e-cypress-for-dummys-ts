@@ -70,6 +70,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.commandsUnsub?.();
     this.interceptorsUnsub?.();
     this.httpMonitor?.uninstall();
+    this.recording.destroy();
   }
 
   private async initHttpConfig(): Promise<void> {
@@ -272,7 +273,6 @@ export class LibE2eRecorderElement extends HTMLElement {
     if (description) {
       await this.persistence.insertTest(description, this.cypressCommands, this.interceptors);
       this.recording.clearCommands();
-      this.recording.clearInterceptors();
       this.cypressCommands = [];
       this.interceptors = [];
     }
@@ -282,7 +282,6 @@ export class LibE2eRecorderElement extends HTMLElement {
     if (description) {
       const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors);
       this.recording.clearCommands();
-      this.recording.clearInterceptors();
       this.cypressCommands = [];
       this.interceptors = [];
       setTimeout(() => this.showAdvancedEditorDialog(id), 300);

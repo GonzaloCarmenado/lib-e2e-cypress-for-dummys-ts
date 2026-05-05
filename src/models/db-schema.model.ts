@@ -57,7 +57,6 @@ export const DB_SCHEMA: DBSchema = {
       indexes: [
         { name: 'language',             keyPath: 'language',             unique: false },
         { name: 'extendedHttpCommands', keyPath: 'extendedHttpCommands', unique: false },
-        // Bug fix from original: keyPath was incorrectly set to 'extendedHttpCommands'
         { name: 'allowReadWriteFiles',  keyPath: 'allowReadWriteFiles',  unique: false },
       ],
     },

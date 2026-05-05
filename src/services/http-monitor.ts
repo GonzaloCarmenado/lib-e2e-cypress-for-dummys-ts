@@ -210,6 +210,3 @@ export class HttpMonitor {
   }
 }
 
-export const httpMonitor = new HttpMonitor(
-  null as unknown as RecordingService
-);

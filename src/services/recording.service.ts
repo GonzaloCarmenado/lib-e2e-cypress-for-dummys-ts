@@ -312,4 +312,3 @@ export class RecordingService {
   }
 }
 
-export const recordingService = new RecordingService();

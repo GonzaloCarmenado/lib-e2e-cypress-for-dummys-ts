@@ -3,7 +3,9 @@
     "allow": [
       "Bash(Get-ChildItem -Path \"D:\\\\Users\\\\gonzalo.carmenado\\\\GIT\\\\OTROS\\\\lib-e2e-cypress-for-dummys-ts\" -Recurse -Force)",
       "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "Bash(npm test *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
