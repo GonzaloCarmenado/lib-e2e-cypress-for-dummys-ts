@@ -7,12 +7,17 @@ const FORBIDDEN_ID_PREFIXES = [
 ];
 const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
 
+export type SelectorStrategy = 'data-cy' | 'data-testid' | 'aria-label' | 'id';
+
 export class RecordingService {
   private readonly commands$ = new Subject<string[]>([]);
   private readonly interceptors$ = new Subject<string[]>([]);
   private readonly isRecording$ = new Subject<boolean>(false);
+  private readonly isPaused$ = new Subject<boolean>(false);
   private readonly inputDebounceTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
   private readonly abort = new AbortController();
+
+  selectorStrategy: SelectorStrategy = 'data-cy';
 
   // Stored originals for history patching cleanup
   private readonly origPushState = history.pushState.bind(history);
@@ -28,6 +33,7 @@ export class RecordingService {
   // ── Public API ────────────────────────────────────────────────────────────
 
   startRecording(): void {
+    this.isPaused$.next(false);
     this.isRecording$.next(true);
     this.addCommand(`cy.viewport(1900, 1200)`);
     this.addCommand(`cy.visit('${window.location.pathname}')`);
@@ -35,6 +41,7 @@ export class RecordingService {
   }
 
   stopRecording(): void {
+    this.isPaused$.next(false);
     this.isRecording$.next(false);
   }
 
@@ -42,12 +49,51 @@ export class RecordingService {
     this.isRecording$.getValue() ? this.stopRecording() : this.startRecording();
   }
 
-  addCommand(cmd: string): void {
+  pauseRecording(): void {
     if (!this.isRecording$.getValue()) return;
+    this.isPaused$.next(true);
+  }
+
+  resumeRecording(): void {
+    this.isPaused$.next(false);
+  }
+
+  togglePause(): void {
+    this.isPaused$.getValue() ? this.resumeRecording() : this.pauseRecording();
+  }
+
+  addCommand(cmd: string): void {
+    if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
     this.commands$.next([...this.commands$.getValue(), cmd]);
   }
 
+  /** Appends a command regardless of recording/paused state (e.g. assertions added manually). */
+  appendCommand(cmd: string): void {
+    this.commands$.next([...this.commands$.getValue(), cmd]);
+  }
+
+  removeCommand(index: number): void {
+    const cmds = this.commands$.getValue();
+    if (index < 0 || index >= cmds.length) return;
+    this.commands$.next([...cmds.slice(0, index), ...cmds.slice(index + 1)]);
+  }
+
+  moveCommand(from: number, to: number): void {
+    const cmds = [...this.commands$.getValue()];
+    if (from < 0 || to < 0 || from >= cmds.length || to >= cmds.length || from === to) return;
+    const [item] = cmds.splice(from, 1);
+    cmds.splice(to, 0, item);
+    this.commands$.next(cmds);
+  }
+
+  removeInterceptor(index: number): void {
+    const ints = this.interceptors$.getValue();
+    if (index < 0 || index >= ints.length) return;
+    this.interceptors$.next([...ints.slice(0, index), ...ints.slice(index + 1)]);
+  }
+
   registerInterceptor(method: string, url: string, alias: string): void {
+    if (this.isPaused$.getValue()) return;
     const command = `cy.intercept('${method}', '${this.urlToWildcard(url, method)}').as('${alias}')`;
     const current = this.interceptors$.getValue();
     if (!current.includes(command)) {
@@ -64,8 +110,9 @@ export class RecordingService {
     this.interceptors$.next([]);
   }
 
-  getCommandsSnapshot(): string[] { return this.commands$.getValue(); }
+  getCommandsSnapshot(): string[]  { return this.commands$.getValue(); }
   getInterceptorsSnapshot(): string[] { return this.interceptors$.getValue(); }
+  getPausedSnapshot(): boolean     { return this.isPaused$.getValue(); }
 
   onCommandsChange(fn: (cmds: string[]) => void): () => void {
     return this.commands$.subscribe(fn);
@@ -77,6 +124,10 @@ export class RecordingService {
 
   onRecordingChange(fn: (isRecording: boolean) => void): () => void {
     return this.isRecording$.subscribe(fn);
+  }
+
+  onPauseChange(fn: (isPaused: boolean) => void): () => void {
+    return this.isPaused$.subscribe(fn);
   }
 
   destroy(): void {
@@ -193,7 +244,7 @@ export class RecordingService {
     const tag = target.tagName.toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-    const container = target.closest<HTMLElement>('[data-cy], [id]');
+    const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
     if (!container) return;
 
     const selector = this.getReliableSelector(container);
@@ -233,7 +284,7 @@ export class RecordingService {
     const isText = tag === 'textarea' || (tag === 'input' && (INPUT_TYPES as readonly string[]).includes(target.type));
     if (!isText) return;
 
-    const container = target.closest<HTMLElement>('[data-cy], [id]');
+    const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
     if (!container) return;
 
     if (this.inputDebounceTimers.has(target)) {
@@ -256,7 +307,7 @@ export class RecordingService {
   // ── Select helpers ────────────────────────────────────────────────────────
 
   private handleSelectEvent(target: HTMLSelectElement): void {
-    const container = target.closest<HTMLElement>('[data-cy], [id]');
+    const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
     if (!container) return;
     const selector = this.getReliableSelector(container);
     const value = target.value.replace(/'/g, "\\'");
@@ -277,20 +328,37 @@ export class RecordingService {
   }
 
   private getReliableSelector(el: HTMLElement): string | null {
-    const dataCy = el.getAttribute('data-cy');
-    if (dataCy) return `[data-cy="${dataCy}"]`;
-    const dataDotCy = el.getAttribute('data.cy');
-    if (dataDotCy) return `[data.cy="${dataDotCy}"]`;
+    const strategy = this.selectorStrategy;
+    const dataCy     = el.getAttribute('data-cy');
+    const dataTestid = el.getAttribute('data-testid');
+    const ariaLabel  = el.getAttribute('aria-label');
+    const dataDotCy  = el.getAttribute('data.cy');
 
-    const id = el.id;
-    const isCustomId =
-      id &&
-      id.length < 25 &&
-      /^[a-zA-Z][\w-]*$/.test(id) &&
-      !FORBIDDEN_ID_PREFIXES.some((p) => id.startsWith(p)) &&
-      !/^\d+$/.test(id);
+    const rawId = el.id;
+    const validId = rawId &&
+      rawId.length < 25 &&
+      /^[a-zA-Z][\w-]*$/.test(rawId) &&
+      !FORBIDDEN_ID_PREFIXES.some((p) => rawId.startsWith(p)) &&
+      !/^\d+$/.test(rawId) ? rawId : null;
 
-    return isCustomId ? `#${id}` : null;
+    switch (strategy) {
+      case 'data-testid':
+        if (dataTestid) return `[data-testid="${dataTestid}"]`;
+        if (dataCy)     return `[data-cy="${dataCy}"]`;
+        return validId  ? `#${validId}` : null;
+      case 'aria-label':
+        if (ariaLabel)  return `[aria-label="${ariaLabel}"]`;
+        if (dataCy)     return `[data-cy="${dataCy}"]`;
+        return validId  ? `#${validId}` : null;
+      case 'id':
+        if (validId)    return `#${validId}`;
+        if (dataCy)     return `[data-cy="${dataCy}"]`;
+        return dataTestid ? `[data-testid="${dataTestid}"]` : null;
+      default: // 'data-cy'
+        if (dataCy)     return `[data-cy="${dataCy}"]`;
+        if (dataDotCy)  return `[data.cy="${dataDotCy}"]`;
+        return validId  ? `#${validId}` : null;
+    }
   }
 
   private isInteractiveElement(target: EventTarget | null): boolean {
@@ -311,4 +379,3 @@ export class RecordingService {
     return `**${u.pathname}`;
   }
 }
-

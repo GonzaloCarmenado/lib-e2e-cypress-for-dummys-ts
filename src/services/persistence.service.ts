@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { DB_SCHEMA } from '../models/db-schema.model';
 
-interface TestRecord        { id: number; name: string; createdAt: number; }
+interface TestRecord        { id: number; name: string; createdAt: number; tags?: string[]; }
 interface CommandRecord     { id: number; command: string; testId: number; createdAt: number; }
 interface InterceptorRecord { id: number; interceptor: string; testId: number; createdAt: number; }
 interface ConfigRecord      { id: number; [key: string]: unknown; }
@@ -46,9 +46,10 @@ export class PersistenceService {
 
   // ── Tests ─────────────────────────────────────────────────────────────────
 
-  async insertTest(name: string, commands: string[] = [], interceptors: string[] = []): Promise<number> {
+  async insertTest(name: string, commands: string[] = [], interceptors: string[] = [], tags: string[] = []): Promise<number> {
     const db = await this.getDB();
-    const id = await db.add('tests', { name, createdAt: Date.now() }) as number;
+    const record: Omit<TestRecord, 'id'> = { name, createdAt: Date.now(), ...(tags.length ? { tags } : {}) };
+    const id = await db.add('tests', record) as number;
     if (commands.length)     await this.insertCommands(commands, id);
     if (interceptors.length) await this.insertInterceptors(interceptors, id);
     return id;

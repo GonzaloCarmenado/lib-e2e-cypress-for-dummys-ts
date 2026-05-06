@@ -86,13 +86,13 @@ describe('Phase 8.6 — FilePreviewElement', () => {
     fresh.remove();
   });
 
-  it('closeLabel defaults to "✕ Cerrar"', () => {
-    expect(el.closeLabel).toBe('✕ Cerrar');
+  it('closeLabel defaults to the translated close string', () => {
+    expect(el.closeLabel).toBe('✕ Close');
   });
 
   it('default closeLabel renders in the close button', () => {
     const btn = el.shadowRoot!.querySelector('#btn-close');
-    expect(btn?.textContent?.trim()).toBe('✕ Cerrar');
+    expect(btn?.textContent?.trim()).toBe('✕ Close');
   });
 
   it('closeLabel set before mount renders custom text in close button', () => {
@@ -154,5 +154,88 @@ describe('Phase 8.6 — FilePreviewElement', () => {
 
   it('interceptorsBlock defaults to empty string', () => {
     expect(el.interceptorsBlock).toBe('');
+  });
+
+  // ── diff view ────────────────────────────────────────────────────────────
+
+  it('diff button is absent when content has not changed', () => {
+    el.fileContent = 'const x = 1;';
+    expect(el.shadowRoot!.querySelector('#btn-diff')).toBeNull();
+  });
+
+  it('diff button appears after content is modified', () => {
+    el.fileContent = 'line one';
+    el.fileContent = 'line two';
+    // fileContent setter doesn't re-render when textarea exists; force a render via toggleDiff
+    el.toggleDiff();
+    expect(el.shadowRoot!.querySelector('#btn-diff')).not.toBeNull();
+  });
+
+  it('diff panel is not shown by default', () => {
+    el.fileContent = 'original';
+    el.fileContent = 'modified';
+    expect(el.shadowRoot!.querySelector('#diff-panel')).toBeNull();
+    expect(el.shadowRoot!.querySelector('textarea')).not.toBeNull();
+  });
+
+  it('toggleDiff() replaces textarea with diff panel', () => {
+    el.fileContent = 'original';
+    el.fileContent = 'modified';
+    el.toggleDiff();
+    expect(el.shadowRoot!.querySelector('#diff-panel')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('textarea')).toBeNull();
+  });
+
+  it('toggleDiff() called twice restores textarea', () => {
+    el.fileContent = 'original';
+    el.fileContent = 'modified';
+    el.toggleDiff();
+    el.toggleDiff();
+    expect(el.shadowRoot!.querySelector('textarea')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('#diff-panel')).toBeNull();
+  });
+
+  it('diff panel contains added lines with class "added"', () => {
+    el.fileContent = 'line one';
+    el.fileContent = 'line one\nnew line';
+    el.toggleDiff();
+    const added = el.shadowRoot!.querySelectorAll('.diff-line.added');
+    expect(added.length).toBeGreaterThan(0);
+  });
+
+  it('diff panel contains removed lines with class "removed"', () => {
+    el.fileContent = 'line one\nline two';
+    el.fileContent = 'line one';
+    el.toggleDiff();
+    const removed = el.shadowRoot!.querySelectorAll('.diff-line.removed');
+    expect(removed.length).toBeGreaterThan(0);
+  });
+
+  it('originalContent is locked after first fileContent assignment', () => {
+    el.fileContent = 'first';   // _originalContent = 'first'
+    el.fileContent = 'second';  // updates textarea only, no render
+    el.fileContent = 'third';   // updates textarea only, no render
+    el.toggleDiff();            // force render: hasChanges = ('first' !== 'third') → btn-diff present
+    expect(el.shadowRoot!.querySelector('#btn-diff')).not.toBeNull();
+    // In diff mode textarea is null, so next fileContent set calls render()
+    el.fileContent = 'first';   // _fileContent = 'first', render() called, hasChanges = false
+    expect(el.shadowRoot!.querySelector('#btn-diff')).toBeNull();
+  });
+
+  it('diff button has btn-diff-active class when diff is shown', () => {
+    el.fileContent = 'original';
+    el.fileContent = 'modified';
+    el.toggleDiff();
+    const btn = el.shadowRoot!.querySelector('#btn-diff');
+    expect(btn?.classList.contains('btn-diff-active')).toBe(true);
+  });
+
+  it('diff button loses btn-diff-active class after second toggle', () => {
+    el.fileContent = 'original';
+    el.fileContent = 'modified';
+    el.toggleDiff();
+    el.toggleDiff();
+    const btn = el.shadowRoot!.querySelector('#btn-diff');
+    expect(btn?.classList.contains('btn-diff-active')).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 import { PersistenceService } from "../services/persistence.service"
 import { TranslationService } from "../services/translation.service"
 import type { Lang } from "../models/lang.model"
+import type { SelectorStrategy } from "../services/recording.service"
 import { showToast } from "../utils/toast.utils"
 
 const STYLES = `
@@ -111,6 +112,7 @@ export class ConfigurationElement extends HTMLElement {
   translation!: TranslationService
   selectedLanguage = "es"
   advancedHttpConfig = false
+  selectorStrategy: SelectorStrategy = 'data-cy'
   private filesystemGranted = false
   private cypressFolderName: string | null = null
 
@@ -127,6 +129,8 @@ export class ConfigurationElement extends HTMLElement {
     this.render()
   }
 
+  private t(key: string): string { return this.translation.translate(key); }
+
   private async loadConfig(): Promise<void> {
     const config = await this.persistence.getGeneralConfig()
     if (config?.['language']) {
@@ -134,6 +138,7 @@ export class ConfigurationElement extends HTMLElement {
       this.translation.setLang(this.selectedLanguage as Lang)
     }
     this.advancedHttpConfig = localStorage.getItem("extendedHttpCommands") === "true"
+    this.selectorStrategy = (config?.['selectorStrategy'] as SelectorStrategy) ?? 'data-cy'
     this.filesystemGranted = config?.['allowReadWriteFiles'] === 'true'
     const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined
     this.cypressFolderName = handle?.name ?? null
@@ -154,14 +159,21 @@ export class ConfigurationElement extends HTMLElement {
     this.render()
   }
 
+  async onSelectorStrategyChange(strategy: SelectorStrategy): Promise<void> {
+    this.selectorStrategy = strategy
+    await this.persistence.setConfig({ selectorStrategy: strategy })
+    this.dispatchEvent(new CustomEvent('selectorstrategychange', { detail: strategy, bubbles: true, composed: true }))
+    this.render()
+  }
+
   async changeFolder(): Promise<void> {
     try {
       await this.persistence.requestDirectoryPermissions()
       await this.loadConfig()
-      showToast('✓ Carpeta de Cypress actualizada')
+      showToast(this.t('CONFIG.FOLDER_UPDATED_TOAST'))
     } catch (e: unknown) {
       if ((e as DOMException)?.name !== 'AbortError') {
-        showToast('Error al acceder a la carpeta', false)
+        showToast(this.t('CONFIG.FOLDER_ERROR_TOAST'), false)
       }
     }
   }
@@ -190,10 +202,10 @@ export class ConfigurationElement extends HTMLElement {
     try {
       data = JSON.parse(text)
     } catch {
-      throw new Error("El archivo no es un JSON válido.")
+      throw new Error(this.t('CONFIG.JSON_INVALID'))
     }
     if (!data || !Array.isArray(data.tests) || !Array.isArray(data.interceptors)) {
-      throw new Error("El archivo no tiene el formato esperado.")
+      throw new Error(this.t('CONFIG.JSON_BAD_FORMAT'))
     }
     await this.persistence.clearAllData()
     await this.persistence.ingestFileData(data.tests, data.interceptors)
@@ -208,30 +220,45 @@ export class ConfigurationElement extends HTMLElement {
       <style>${STYLES}</style>
       <div class="cfg-grid">
 
-        <!-- Idioma -->
+        <!-- Language -->
         <div class="card">
-          <div class="card-hd"><span class="card-hd-icon">🌐</span> Idioma</div>
+          <div class="card-hd">${this.t('CONFIG.LANG_SECTION')}</div>
           <div class="field-row">
-            <span class="field-label">Interfaz</span>
+            <span class="field-label">${this.t('CONFIG.LANG_FIELD')}</span>
             <select id="lang-select">${langOptions}</select>
           </div>
         </div>
 
-        <!-- HTTP Avanzado -->
+        <!-- HTTP Advanced -->
         <div class="card">
-          <div class="card-hd"><span class="card-hd-icon">⚡</span> HTTP Avanzado</div>
+          <div class="card-hd">${this.t('CONFIG.HTTP_SECTION')}</div>
           <label class="check-row">
             <input type="checkbox" id="http-toggle" ${this.advancedHttpConfig ? "checked" : ""} />
             <div>
-              <div class="check-title">Validaciones de body</div>
-              <div class="check-sub">GET → response · POST/PUT → request</div>
+              <div class="check-title">${this.t('CONFIG.HTTP_TITLE')}</div>
+              <div class="check-sub">${this.t('CONFIG.HTTP_SUB')}</div>
             </div>
           </label>
         </div>
 
-        <!-- Carpeta Cypress -->
+        <!-- Selector Strategy -->
         <div class="card card-wide">
-          <div class="card-hd"><span class="card-hd-icon">📁</span> Carpeta Cypress</div>
+          <div class="card-hd">${this.t('CONFIG.SELECTOR_SECTION')}</div>
+          <div class="field-row">
+            <span class="field-label">${this.t('CONFIG.SELECTOR_LABEL')}</span>
+            <select id="selector-strategy">
+              <option value="data-cy"     ${this.selectorStrategy === 'data-cy'     ? 'selected' : ''}>${this.t('CONFIG.SELECTOR_OPT_DATACY')}</option>
+              <option value="data-testid" ${this.selectorStrategy === 'data-testid' ? 'selected' : ''}>${this.t('CONFIG.SELECTOR_OPT_TESTID')}</option>
+              <option value="aria-label"  ${this.selectorStrategy === 'aria-label'  ? 'selected' : ''}>${this.t('CONFIG.SELECTOR_OPT_ARIA')}</option>
+              <option value="id"          ${this.selectorStrategy === 'id'          ? 'selected' : ''}>${this.t('CONFIG.SELECTOR_OPT_ID')}</option>
+            </select>
+          </div>
+          <div class="check-sub" style="margin-top:8px">${this.t('CONFIG.SELECTOR_HINT')}</div>
+        </div>
+
+        <!-- Cypress Folder -->
+        <div class="card card-wide">
+          <div class="card-hd">${this.t('CONFIG.FOLDER_SECTION')}</div>
           <div class="fs-layout">
             <pre class="fs-tree">cypress/  <span style="color:#484f58">← selecciona</span>
 └── e2e/
@@ -240,29 +267,29 @@ export class ConfigurationElement extends HTMLElement {
               <div class="fs-status">
                 <span class="fs-dot ${this.filesystemGranted ? 'on' : 'off'}"></span>
                 ${this.filesystemGranted && this.cypressFolderName
-                  ? `<span>conectado &mdash;</span>&nbsp;<span class="fs-folder">📁 ${this.cypressFolderName}</span>`
-                  : `<span>sin configurar</span>`}
+                  ? `<span>${this.t('CONFIG.FOLDER_CONNECTED')}</span>&nbsp;<span class="fs-folder">📁 ${this.cypressFolderName}</span>`
+                  : `<span>${this.t('CONFIG.FOLDER_NOT_SET')}</span>`}
               </div>
               <div class="btn-row">
                 <button id="btn-change-folder">
-                  ${this.filesystemGranted ? '📁 Cambiar carpeta' : '📁 Seleccionar carpeta'}
+                  ${this.filesystemGranted ? this.t('CONFIG.FOLDER_CHANGE_BTN') : this.t('CONFIG.FOLDER_SELECT_BTN')}
                 </button>
                 ${this.filesystemGranted
-                  ? '<button id="btn-revoke" class="btn-danger">✕ Quitar acceso</button>'
+                  ? `<button id="btn-revoke" class="btn-danger">${this.t('CONFIG.FOLDER_REVOKE_BTN')}</button>`
                   : ''}
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Datos -->
+        <!-- Data -->
         <div class="card card-wide">
-          <div class="card-hd"><span class="card-hd-icon">💾</span> Datos</div>
-          <p class="data-desc">Exporta todos tus tests a JSON o importa una copia de seguridad.</p>
+          <div class="card-hd">${this.t('CONFIG.DATA_SECTION')}</div>
+          <p class="data-desc">${this.t('CONFIG.DATA_DESC')}</p>
           <div class="btn-row">
-            <button id="btn-export">⬆️ Exportar tests</button>
+            <button id="btn-export">${this.t('CONFIG.EXPORT_BTN')}</button>
             <label style="cursor:pointer;margin:0">
-              <span class="btn-import">⬇️ Importar tests</span>
+              <span class="btn-import">${this.t('CONFIG.IMPORT_BTN')}</span>
               <input type="file" class="file-input" id="file-input" accept=".json" />
             </label>
           </div>
@@ -276,6 +303,9 @@ export class ConfigurationElement extends HTMLElement {
     ;(this.shadow.getElementById("http-toggle") as HTMLInputElement).addEventListener("change", (e) =>
       this.onAdvancedHttpConfigChange((e.target as HTMLInputElement).checked),
     )
+    ;(this.shadow.getElementById("selector-strategy") as HTMLSelectElement).addEventListener("change", (e) =>
+      this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),
+    )
 
     this.shadow.getElementById("btn-change-folder")!.addEventListener("click", () => this.changeFolder())
     this.shadow.getElementById("btn-revoke")?.addEventListener("click", () => this.revokeAccess())
@@ -285,9 +315,9 @@ export class ConfigurationElement extends HTMLElement {
       if (!file) return
       try {
         await this.importAllData(file)
-        alert("Datos importados correctamente.")
+        alert(this.t('CONFIG.IMPORT_SUCCESS'))
       } catch (err: unknown) {
-        alert((err as Error).message ?? "Error al importar.")
+        alert((err as Error).message ?? this.t('CONFIG.IMPORT_ERROR'))
       }
       ;(e.target as HTMLInputElement).value = ""
     })

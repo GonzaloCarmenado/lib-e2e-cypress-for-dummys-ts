@@ -110,4 +110,31 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     const mockFile = { text: vi.fn().mockResolvedValue(JSON.stringify({ foo: 'bar' })) } as unknown as File;
     await expect(el.importAllData(mockFile)).rejects.toThrow();
   });
+
+  // ── selector strategy ────────────────────────────────────────────────────
+
+  it('selectorStrategy defaults to "data-cy"', () => {
+    expect(el.selectorStrategy).toBe('data-cy');
+  });
+
+  it('onSelectorStrategyChange("data-testid") sets selectorStrategy', () => {
+    // check synchronously — the property is set before any await inside the method
+    el.onSelectorStrategyChange('data-testid');
+    expect(el.selectorStrategy).toBe('data-testid');
+  });
+
+  it('onSelectorStrategyChange dispatches selectorstrategychange event with strategy value', async () => {
+    let received: string | null = null;
+    el.addEventListener('selectorstrategychange', (e: Event) => {
+      received = (e as CustomEvent).detail;
+    });
+    await el.onSelectorStrategyChange('aria-label');
+    expect(received).toBe('aria-label');
+  });
+
+  it('onSelectorStrategyChange persists strategy to IndexedDB', async () => {
+    await el.onSelectorStrategyChange('id');
+    const config = await persistence.getConfig('selectorStrategy');
+    expect(config).toMatchObject({ selectorStrategy: 'id' });
+  });
 });

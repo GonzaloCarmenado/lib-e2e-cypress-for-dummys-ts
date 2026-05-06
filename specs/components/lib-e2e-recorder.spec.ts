@@ -154,4 +154,61 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     (el as any).showFileEditorDialog(mockHandle, 'content', 'test.cy.ts', 1);
     expect(Swal.fire).toHaveBeenCalled();
   });
+
+  // ── pause / resume (task 1) ──────────────────────────────────────────────
+
+  it('isPaused is false initially', () => {
+    expect(el.isPaused).toBe(false);
+  });
+
+  it('togglePause() delegates to recording.togglePause()', () => {
+    const spy = vi.spyOn(recording, 'togglePause');
+    el.togglePause();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('Ctrl+P keyboard event calls togglePause()', () => {
+    const spy = vi.spyOn(el, 'togglePause');
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, key: 'p', bubbles: true });
+    window.dispatchEvent(event);
+    expect(spy).toHaveBeenCalled();
+  });
+
+  // ── recording history (task 5) ───────────────────────────────────────────
+
+  it('getRecordingHistory() returns empty array when nothing is saved', () => {
+    localStorage.removeItem('e2e-recording-history');
+    expect(el.getRecordingHistory()).toEqual([]);
+  });
+
+  it('getRecordingHistory() reads saved entries from localStorage', () => {
+    const entry = { commands: ["cy.visit('/')"], interceptors: [], savedAt: Date.now() };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    const history = el.getRecordingHistory();
+    expect(history).toHaveLength(1);
+    expect(history[0].commands[0]).toBe("cy.visit('/')");
+  });
+
+  it('clearRecordingHistory() removes the key from localStorage', () => {
+    localStorage.setItem('e2e-recording-history', JSON.stringify([{ commands: [], interceptors: [], savedAt: 1 }]));
+    el.clearRecordingHistory();
+    expect(localStorage.getItem('e2e-recording-history')).toBeNull();
+  });
+
+  it('recoverLastRecording() calls appendCommand for each command in the latest entry', () => {
+    const spy = vi.spyOn(recording, 'appendCommand');
+    const entry = { commands: ["cy.visit('/')", "cy.get('#btn').click()"], interceptors: [], savedAt: Date.now() };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    el.recoverLastRecording();
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledWith("cy.visit('/')");
+    expect(spy).toHaveBeenCalledWith("cy.get('#btn').click()");
+  });
+
+  it('recoverLastRecording() does nothing when history is empty', () => {
+    const spy = vi.spyOn(recording, 'appendCommand');
+    localStorage.removeItem('e2e-recording-history');
+    el.recoverLastRecording();
+    expect(spy).not.toHaveBeenCalled();
+  });
 });

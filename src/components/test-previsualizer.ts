@@ -1,3 +1,5 @@
+import { translationService, TranslationService } from '../services/translation.service';
+
 const STYLES = `
   :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
@@ -26,6 +28,7 @@ const STYLES = `
   .list::-webkit-scrollbar { width: 4px; }
   .list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
   .item {
+    display: flex; align-items: flex-start; gap: 6px;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 11px;
     color: #c9d1d9; padding: 4px 8px; border-radius: 4px;
     word-break: break-all; line-height: 1.65;
@@ -33,6 +36,21 @@ const STYLES = `
     transition: background 0.1s, border-color 0.1s;
   }
   .item:hover { background: #161b22; border-left-color: #2f81f7; }
+  .cmd-text { flex: 1; }
+  .item-actions {
+    display: flex; gap: 3px; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .item:hover .item-actions { opacity: 1; }
+  .btn-step {
+    width: 20px; height: 20px; border: none; border-radius: 3px; cursor: pointer;
+    font-size: 12px; background: transparent; color: #484f58;
+    transition: background 0.12s, color 0.12s;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 1;
+  }
+  .btn-step:hover { background: #30363d; color: #e6edf3; }
+  .btn-step-del:hover { background: rgba(248,81,73,0.15); color: #f85149; }
   .empty { color: #484f58; font-size: 12px; padding: 20px 8px; text-align: center; }
 `
 
@@ -41,6 +59,8 @@ export class TestPrevisualizerElement extends HTMLElement {
   private _commands: string[] = []
   private _interceptors: string[] = []
   private _showInterceptors = false
+  editable = false
+  translation: TranslationService = translationService
 
   constructor() {
     super()
@@ -88,49 +108,108 @@ export class TestPrevisualizerElement extends HTMLElement {
     navigator.clipboard?.writeText(text)
   }
 
+  private t(key: string): string { return this.translation.translate(key) }
+
+  private dispatchDelete(index: number): void {
+    this.dispatchEvent(new CustomEvent('deletecommand', { detail: index, bubbles: true, composed: true }))
+  }
+
+  private dispatchMove(from: number, to: number): void {
+    this.dispatchEvent(new CustomEvent('movecommand', { detail: { from, to }, bubbles: true, composed: true }))
+  }
+
+  private dispatchDeleteInterceptor(index: number): void {
+    this.dispatchEvent(new CustomEvent('deleteinterceptor', { detail: index, bubbles: true, composed: true }))
+  }
+
   private render(): void {
+    const editControls = (idx: number, total: number) => this.editable ? `
+      <span class="item-actions">
+        <button class="btn-step" data-move-up="${idx}" title="${this.t('TEST_PREVISUALIZER.UP_TITLE')}" ${idx === 0 ? 'disabled style="opacity:.3"' : ''}>↑</button>
+        <button class="btn-step" data-move-dn="${idx}" title="${this.t('TEST_PREVISUALIZER.DOWN_TITLE')}" ${idx === total - 1 ? 'disabled style="opacity:.3"' : ''}>↓</button>
+        <button class="btn-step btn-step-del" data-del="${idx}" title="${this.t('TEST_PREVISUALIZER.DEL_TITLE')}">✕</button>
+      </span>` : ''
+
     const cmdItems = this._commands.length
-      ? this._commands.map((c) => `<div class="item">${escHtml(c)}</div>`).join("")
-      : '<div class="empty">Sin comandos aún</div>'
+      ? this._commands.map((c, i) => `
+          <div class="item">
+            <span class="cmd-text">${escHtml(c)}</span>
+            ${editControls(i, this._commands.length)}
+          </div>`).join("")
+      : `<div class="empty">${this.t('TEST_PREVISUALIZER.NO_CMDS_YET')}</div>`
+
+    const icpEditControls = (idx: number) => this.editable
+      ? `<span class="item-actions"><button class="btn-step btn-step-del" data-del-icp="${idx}" title="${this.t('TEST_PREVISUALIZER.DEL_TITLE')}">✕</button></span>`
+      : ''
 
     const icpSection = this._showInterceptors
       ? `<div class="section" data-section="interceptors">
-          <div class="section-title">Interceptores</div>
+          <div class="section-title">${this.t('TEST_PREVISUALIZER.INTERCEPTORS')}</div>
           <div class="list">
             ${
               this._interceptors.length
-                ? this._interceptors.map((i) => `<div class="item">${escHtml(i)}</div>`).join("")
-                : '<div class="empty">Sin interceptores</div>'
+                ? this._interceptors.map((i, idx) => `
+                    <div class="item">
+                      <span class="cmd-text">${escHtml(i)}</span>
+                      ${icpEditControls(idx)}
+                    </div>`).join("")
+                : `<div class="empty">${this.t('TEST_PREVISUALIZER.NO_ICP_SHORT')}</div>`
             }
           </div>
-          <button style="margin-top:6px" data-action="copy-icp">📋 Copiar interceptores</button>
+          <button style="margin-top:6px" data-action="copy-icp">${this.t('TEST_PREVISUALIZER.COPY_ICP_BTN')}</button>
         </div>`
       : ""
 
     this.shadow.innerHTML = `
       <style>${STYLES}</style>
       <div class="toolbar">
-        <button data-action="copy">📋 Copiar comandos</button>
+        <button data-action="copy">${this.t('TEST_PREVISUALIZER.COPY_CMDS_BTN')}</button>
         <button data-action="toggle-icp" class="${this._showInterceptors ? "active" : ""}">
-          ${this._showInterceptors ? "▲ Ocultar interceptores" : "▼ Ver interceptores"} (${this._interceptors.length})
+          ${this._showInterceptors ? this.t('TEST_PREVISUALIZER.HIDE_INTERCEPTORS') : this.t('TEST_PREVISUALIZER.SHOW_INTERCEPTORS')} (${this._interceptors.length})
         </button>
       </div>
       <div class="section">
-        <div class="section-title">Comandos (${this._commands.length})</div>
+        <div class="section-title">${this.t('TEST_PREVISUALIZER.SECTION_COMMANDS')} (${this._commands.length})</div>
         <div class="list" data-ref="cmds">${cmdItems}</div>
       </div>
       ${icpSection}
     `
 
-    // Scroll to bottom
     const cmdsEl = this.shadow.querySelector<HTMLElement>('[data-ref="cmds"]')
     if (cmdsEl) cmdsEl.scrollTop = cmdsEl.scrollHeight
 
     this.shadow.querySelector('[data-action="copy"]')?.addEventListener("click", () => this.copyToClipboard())
     this.shadow.querySelector('[data-action="toggle-icp"]')?.addEventListener("click", () => this.toggleInterceptors())
-    this.shadow
-      .querySelector('[data-action="copy-icp"]')
-      ?.addEventListener("click", () => this.copyInterceptorsToClipboard())
+    this.shadow.querySelector('[data-action="copy-icp"]')?.addEventListener("click", () => this.copyInterceptorsToClipboard())
+
+    if (this.editable) {
+      this.shadow.querySelectorAll('[data-del]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          this.dispatchDelete(Number((btn as HTMLElement).dataset['del']))
+        })
+      })
+      this.shadow.querySelectorAll('[data-move-up]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          const idx = Number((btn as HTMLElement).dataset['moveUp'])
+          this.dispatchMove(idx, idx - 1)
+        })
+      })
+      this.shadow.querySelectorAll('[data-move-dn]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          const idx = Number((btn as HTMLElement).dataset['moveDn'])
+          this.dispatchMove(idx, idx + 1)
+        })
+      })
+      this.shadow.querySelectorAll('[data-del-icp]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          this.dispatchDeleteInterceptor(Number((btn as HTMLElement).dataset['delIcp']))
+        })
+      })
+    }
   }
 }
 

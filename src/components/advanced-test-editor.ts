@@ -99,6 +99,8 @@ export class AdvancedTestEditorElement extends HTMLElement {
     this.init();
   }
 
+  private t(key: string): string { return this.translation.translate(key); }
+
   private async init(): Promise<void> {
     const config = await this.persistence.getGeneralConfig();
     const allowed = config?.['allowReadWriteFiles'] === 'true';
@@ -223,16 +225,16 @@ export class AdvancedTestEditorElement extends HTMLElement {
         ? `<button id="btn-reauth"
              style="margin-top:14px;padding:7px 16px;border:none;border-radius:6px;cursor:pointer;
                     font-size:12px;font-weight:500;background:#2f81f7;color:#fff">
-             🔓 Reactivar acceso
+             ${this.t('ADVANCED_EDITOR.REAUTH_BTN')}
            </button>`
         : '';
       this.shadow.innerHTML = `
         <style>${STYLES}</style>
         <div class="no-perm">
-          <div>${this.needsReauth ? '🔑 El permiso ha caducado' : '🔒 Sin acceso a archivos locales'}</div>
+          <div>${this.needsReauth ? this.t('ADVANCED_EDITOR.PERMISSION_EXPIRED') : this.t('ADVANCED_EDITOR.NO_ACCESS')}</div>
           <div style="font-size:11px">${this.needsReauth
-            ? 'Haz clic para reactivar el acceso a tu carpeta de Cypress.'
-            : 'Configura el acceso en ⚙️ Config.'}</div>
+            ? this.t('ADVANCED_EDITOR.PERMISSION_EXPIRED_HINT')
+            : this.t('ADVANCED_EDITOR.NO_ACCESS_HINT')}</div>
           ${reauthBtn}
         </div>`;
 
@@ -251,18 +253,18 @@ export class AdvancedTestEditorElement extends HTMLElement {
 
     const treeHtml = this.e2eTree.length
       ? renderTree(this.e2eTree, this.selectedFile)
-      : '<div class="tree-item" style="color:#6c7a99">Sin archivos</div>';
+      : `<div class="tree-item" style="color:#6c7a99">${this.t('ADVANCED_EDITOR.NO_FILES')}</div>`;
 
     const contentHtml = this.selectedFileContent
       ? `<div class="file-name">📄 ${escHtml((this.selectedFile as any)?.name ?? '')}</div>
          <pre>${escHtml(this.selectedFileContent.slice(0, 4000))}${this.selectedFileContent.length > 4000 ? '\n...' : ''}</pre>`
-      : `<div class="placeholder">← Selecciona un archivo del árbol</div>`;
+      : `<div class="placeholder">${this.t('ADVANCED_EDITOR.SELECT_FILE')}</div>`;
 
     const itHtml = this.testItBlock
       ? `<div style="margin-top:10px">
            <div class="file-name block-header">
-             <span>🧪 it() a insertar:</span>
-             <button id="btn-copy-it" class="btn-copy">📋 Copiar it()</button>
+             <span>${this.t('ADVANCED_EDITOR.IT_LABEL')}</span>
+             <button id="btn-copy-it" class="btn-copy">${this.t('ADVANCED_EDITOR.COPY_IT_BTN')}</button>
            </div>
            <pre style="max-height:120px;font-size:10.5px">${escHtml(this.testItBlock.slice(0, 500))}</pre>
          </div>` : '';
@@ -270,8 +272,8 @@ export class AdvancedTestEditorElement extends HTMLElement {
     const interceptorsHtml = this.interceptorsBlock
       ? `<div style="margin-top:10px">
            <div class="file-name block-header">
-             <span>🔀 beforeEach() interceptores:</span>
-             <button id="btn-copy-interceptors" class="btn-copy">📋 Copiar interceptores</button>
+             <span>${this.t('ADVANCED_EDITOR.BEFORE_EACH_LABEL')}</span>
+             <button id="btn-copy-interceptors" class="btn-copy">${this.t('ADVANCED_EDITOR.COPY_ICP_BTN')}</button>
            </div>
            <pre style="max-height:120px;font-size:10.5px;color:#3fb950">${escHtml(this.interceptorsBlock.slice(0, 500))}</pre>
          </div>` : '';
@@ -285,12 +287,12 @@ export class AdvancedTestEditorElement extends HTMLElement {
           <div class="footer">
             <button id="btn-save" class="btn-save"
               ${!this.saveButtonEnabled || !this.testItBlock ? 'disabled' : ''}>
-              💾 Insertar en archivo
+              ${this.t('ADVANCED_EDITOR.INSERT_BTN')}
             </button>
             <button id="btn-edit" ${!this.saveButtonEnabled ? 'disabled' : ''}>
-              ✏️ Editar manualmente
+              ${this.t('ADVANCED_EDITOR.EDIT_MANUAL_BTN')}
             </button>
-            <button id="btn-close">✕ Cerrar</button>
+            <button id="btn-close">${this.t('ADVANCED_EDITOR.CLOSE_BTN')}</button>
           </div>
         </div>
       </div>`;

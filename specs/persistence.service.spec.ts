@@ -196,4 +196,26 @@ describe('Phase 5 — PersistenceService', () => {
       expect(tests[0].id).not.toBe(999);
     });
   });
+
+  // ── tags ─────────────────────────────────────────────────────────────────
+
+  describe('insertTest with tags', () => {
+    it('stores tags and returns them in getAllTests', async () => {
+      await service.insertTest('tagged test', [], [], ['smoke', 'login']);
+      const tests = await service.getAllTests();
+      expect(tests[0].tags).toEqual(['smoke', 'login']);
+    });
+
+    it('test without tags has no tags field or empty tags', async () => {
+      await service.insertTest('no tags test');
+      const tests = await service.getAllTests();
+      expect(tests[0].tags == null || tests[0].tags!.length === 0).toBe(true);
+    });
+
+    it('tags are preserved through getTestById', async () => {
+      const id = await service.insertTest('tagged', [], [], ['regression']);
+      const test = await service.getTestById(id);
+      expect(test!.tags).toEqual(['regression']);
+    });
+  });
 });

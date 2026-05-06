@@ -22,6 +22,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   private recordingUnsub?: () => void;
   private commandsUnsub?: () => void;
   private interceptorsUnsub?: () => void;
+  private pauseUnsub?: () => void;
   private controlFirstTimeData = true;
   private _previsualizerRef: any = null;
   private httpMonitor?: HttpMonitor;
@@ -31,6 +32,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   translation!: TranslationService;
 
   isRecording = false;
+  isPaused = false;
   cypressCommands: string[] = [];
   interceptors: string[] = [];
 
@@ -59,6 +61,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.initHttpConfig();
     this.initLanguage();
     this.initFilesystemAccess();
+    this.initSelectorStrategy();
     this.initSubscriptions();
     this.render();
 
@@ -71,6 +74,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.recordingUnsub?.();
     this.commandsUnsub?.();
     this.interceptorsUnsub?.();
+    this.pauseUnsub?.();
     this.httpMonitor?.uninstall();
     this.recording.destroy();
   }
@@ -95,6 +99,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.recordingUnsub = this.recording.onRecordingChange((val) => {
       this.isRecording = val;
       if (!val && !this.controlFirstTimeData) {
+        this.saveRecordingHistory();
         this.showSaveTestDialog();
       }
       this.controlFirstTimeData = false;
@@ -108,10 +113,24 @@ export class LibE2eRecorderElement extends HTMLElement {
       this.interceptors = icps;
       if (this._previsualizerRef) this._previsualizerRef.interceptors = icps;
     });
+    this.pauseUnsub = this.recording.onPauseChange((paused) => {
+      this.isPaused = paused;
+      this.render();
+    });
+  }
+
+  private async initSelectorStrategy(): Promise<void> {
+    const config = await this.persistence.getGeneralConfig();
+    const strategy = config?.['selectorStrategy'] as string | undefined;
+    if (strategy) this.recording.selectorStrategy = strategy as any;
   }
 
   toggle(): void {
     this.recording.toggleRecording();
+  }
+
+  togglePause(): void {
+    this.recording.togglePause();
   }
 
   setLanguage(lang?: string): void {
@@ -123,9 +142,42 @@ export class LibE2eRecorderElement extends HTMLElement {
     if (!event.ctrlKey) return;
     const key = event.key.toLowerCase();
     if (key === 'r')      { event.preventDefault(); this.toggle(); }
+    else if (key === 'p') { event.preventDefault(); this.togglePause(); }
     else if (key === '1') { event.preventDefault(); this.showSavedTestsDialog(); }
     else if (key === '2') { event.preventDefault(); this.showCommandsDialog(); }
     else if (key === '3') { event.preventDefault(); this.showSettingsDialog(); }
+  }
+
+  // ── recording history (task 5) ────────────────────────────────────────────
+
+  private saveRecordingHistory(): void {
+    if (!this.cypressCommands.length) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem('e2e-recording-history') ?? '[]');
+      existing.unshift({ commands: this.cypressCommands, interceptors: this.interceptors, savedAt: Date.now() });
+      if (existing.length > 5) existing.splice(5);
+      localStorage.setItem('e2e-recording-history', JSON.stringify(existing));
+    } catch { /* ignore storage errors */ }
+  }
+
+  recoverLastRecording(): void {
+    try {
+      const existing = JSON.parse(localStorage.getItem('e2e-recording-history') ?? '[]');
+      if (!existing.length) return;
+      const { commands, interceptors } = existing[0];
+      commands.forEach((cmd: string) => this.recording.appendCommand(cmd));
+      (interceptors as string[]).forEach((_icp: string) => { /* interceptors are not appendable the same way */ });
+    } catch { /* ignore */ }
+  }
+
+  clearRecordingHistory(): void {
+    localStorage.removeItem('e2e-recording-history');
+  }
+
+  getRecordingHistory(): Array<{ commands: string[]; interceptors: string[]; savedAt: number }> {
+    try {
+      return JSON.parse(localStorage.getItem('e2e-recording-history') ?? '[]');
+    } catch { return []; }
   }
 
   // ── filesystem setup ─────────────────────────────────────────────────────
@@ -139,7 +191,7 @@ export class LibE2eRecorderElement extends HTMLElement {
 
   private showFilesystemSetupDialog(): void {
     Swal.fire({
-      title: '📁 Acceso a ficheros',
+      title: this.translation.translate('RECORDER.FS_TITLE'),
       html: '<div id="fs-setup-content"></div>',
       showCloseButton: true,
       showConfirmButton: false,
@@ -171,12 +223,12 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
               <button id="fs-skip"
                 style="padding:7px 16px;border:1px solid #30363d;border-radius:6px;cursor:pointer;
                        font-size:12px;font-weight:500;background:transparent;color:#8b949e">
-                Ahora no
+                ${this.translation.translate('RECORDER.FS_LATER_BTN')}
               </button>
               <button id="fs-select"
                 style="padding:7px 16px;border:none;border-radius:6px;cursor:pointer;
                        font-size:12px;font-weight:500;background:#2f81f7;color:#fff">
-                📁 Seleccionar carpeta
+                ${this.translation.translate('RECORDER.FS_SELECT_BTN')}
               </button>
             </div>
           </div>`;
@@ -190,10 +242,10 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           try {
             await this.persistence.requestDirectoryPermissions();
             Swal.close();
-            showToast('✓ Carpeta de Cypress configurada');
+            showToast(this.translation.translate('RECORDER.FS_SUCCESS_TOAST'));
           } catch (e: unknown) {
             if ((e as DOMException)?.name !== 'AbortError') {
-              showToast('Error al acceder a la carpeta', false);
+              showToast(this.translation.translate('RECORDER.FS_ERROR_TOAST'), false);
             }
             // AbortError = user cancelled the picker, leave dialog open
           }
@@ -218,11 +270,77 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           setSwal2DataCyAttribute();
           const container = document.getElementById('commands-modal-content');
           if (!container) return;
+
           const child = document.createElement('test-previsualizer') as any;
+          child.translation = this.translation;
           child.commands = this.cypressCommands;
           child.interceptors = this.interceptors;
+          child.editable = true;
           container.appendChild(child);
           this._previsualizerRef = child;
+
+          child.addEventListener('deletecommand', (e: CustomEvent) => {
+            this.recording.removeCommand(e.detail);
+          });
+          child.addEventListener('movecommand', (e: CustomEvent) => {
+            this.recording.moveCommand(e.detail.from, e.detail.to);
+          });
+          child.addEventListener('deleteinterceptor', (e: CustomEvent) => {
+            this.recording.removeInterceptor(e.detail);
+          });
+
+          // ── Assertion builder panel ──────────────────────────────────────
+          const assertionHtml = `
+            <div id="assertion-builder"
+              style="padding:10px 12px;border-top:1px solid #21262d;background:#0d1117">
+              <div style="font-size:10px;color:#484f58;text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px">
+                ${this.translation.translate('RECORDER.ASSERTION_SECTION')}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+                <input id="assert-selector" type="text"
+                  placeholder="${this.translation.translate('RECORDER.ASSERT_SELECTOR_PH').replace(/"/g, '&quot;')}"
+                  style="flex:2;min-width:140px;padding:5px 8px;background:#161b22;border:1px solid #30363d;
+                         border-radius:5px;color:#c9d1d9;font-size:11px;outline:none;
+                         font-family:'Cascadia Code','Fira Code',monospace"/>
+                <select id="assert-type"
+                  style="padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;
+                         color:#c9d1d9;font-size:11px;outline:none;cursor:pointer;flex-shrink:0">
+                  <option value="be.visible">be.visible</option>
+                  <option value="not.exist">not.exist</option>
+                  <option value="be.disabled">be.disabled</option>
+                  <option value="be.checked">be.checked</option>
+                  <option value="contain.text">contain.text</option>
+                  <option value="have.value">have.value</option>
+                  <option value="have.length">have.length</option>
+                  <option value="have.class">have.class</option>
+                  <option value="have.attr">have.attr</option>
+                </select>
+                <input id="assert-value" type="text" placeholder="${this.translation.translate('RECORDER.ASSERT_VALUE_PH')}"
+                  style="flex:2;min-width:110px;padding:5px 8px;background:#161b22;border:1px solid #30363d;
+                         border-radius:5px;color:#c9d1d9;font-size:11px;outline:none"/>
+                <button id="btn-add-assertion"
+                  style="padding:5px 12px;border:none;border-radius:5px;cursor:pointer;
+                         font-size:11px;font-weight:500;background:#2f81f7;color:#fff;
+                         white-space:nowrap;flex-shrink:0">
+                  ${this.translation.translate('RECORDER.ASSERT_ADD_BTN')}
+                </button>
+              </div>
+            </div>`;
+          container.insertAdjacentHTML('beforeend', assertionHtml);
+
+          const NO_VALUE_ASSERTIONS = new Set(['be.visible', 'not.exist', 'be.disabled', 'be.checked']);
+          document.getElementById('btn-add-assertion')?.addEventListener('click', () => {
+            const sel  = (document.getElementById('assert-selector') as HTMLInputElement).value.trim();
+            const type = (document.getElementById('assert-type')     as HTMLSelectElement).value;
+            const val  = (document.getElementById('assert-value')    as HTMLInputElement).value.trim();
+            if (!sel) return;
+            const cmd = NO_VALUE_ASSERTIONS.has(type) || !val
+              ? `cy.get('${sel}').should('${type}')`
+              : `cy.get('${sel}').should('${type}', '${val}')`;
+            this.recording.appendCommand(cmd);
+            (document.getElementById('assert-selector') as HTMLInputElement).value = '';
+            (document.getElementById('assert-value')    as HTMLInputElement).value = '';
+          });
         },
         willClose: () => {
           this.isCommandsDialogOpen = false;
@@ -249,6 +367,7 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           if (!container) return;
           const child = document.createElement('test-editor') as any;
           child.persistence = this.persistence;
+          child.translation = this.translation;
           container.appendChild(child);
         },
         willClose: () => { this.isSavedTestsDialogOpen = false; },
@@ -271,13 +390,16 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           const container = document.getElementById('save-test-modal-content');
           if (!container) return;
           const child = document.createElement('save-test') as any;
+          child.translation = this.translation;
           container.appendChild(child);
           child.addEventListener('savetest', (e: CustomEvent) => {
-            this.onSaveTest(e.detail);
+            const { description, tags } = e.detail ?? {};
+            this.onSaveTest(description ?? null, tags ?? []);
             Swal.close();
           });
           child.addEventListener('saveandexport', (e: CustomEvent) => {
-            this.onSaveAndExportTest(e.detail);
+            const { description, tags } = e.detail ?? {};
+            this.onSaveAndExportTest(description ?? null, tags ?? []);
             Swal.close();
           });
         },
@@ -330,6 +452,9 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           child.translation = this.translation;
           if (testId !== undefined) child.testId = testId;
           container.appendChild(child);
+          child.addEventListener('selectorstrategychange', (e: CustomEvent) => {
+            this.recording.selectorStrategy = e.detail;
+          });
           child.addEventListener('closemodal', () => Swal.close());
           child.addEventListener('openfileeditor', (e: CustomEvent) => {
             Swal.close();
@@ -354,7 +479,7 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
     interceptorsBlock = '',
   ): void {
     Swal.fire({
-      title: '✏️ Editor de archivo',
+      title: this.translation.translate('RECORDER.FILE_EDITOR_TITLE'),
       html: '<div id="file-editor-modal-content" style="padding:0;height:540px"></div>',
       showCloseButton: false,
       showConfirmButton: false,
@@ -367,9 +492,10 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
         const container = document.getElementById('file-editor-modal-content');
         if (!container) return;
         const child = document.createElement('file-preview') as any;
+        child.translation = this.translation;
         child.fileContent = content;
         child.fileName = fileName;
-        child.closeLabel = '← Volver al editor';
+        child.closeLabel = this.translation.translate('FILE_PREVIEW.BACK_TO_EDITOR');
         child.itBlock = itBlock;
         child.interceptorsBlock = interceptorsBlock;
         container.appendChild(child);
@@ -382,9 +508,9 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
             const writable = await (handle as any).createWritable();
             await writable.write(e.detail);
             await writable.close();
-            showToast('✓ Archivo guardado');
+            showToast(this.translation.translate('RECORDER.FILE_SAVED_TOAST'));
           } catch {
-            showToast('Error al guardar el archivo', false);
+            showToast(this.translation.translate('RECORDER.FILE_SAVE_ERROR_TOAST'), false);
           }
           Swal.close();
           setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
@@ -396,19 +522,21 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
 
   // ── save handlers ─────────────────────────────────────────────────────────
 
-  private async onSaveTest(description: string | null): Promise<void> {
+  private async onSaveTest(description: string | null, tags: string[] = []): Promise<void> {
     if (description) {
-      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors);
+      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags);
       this.recording.clearCommands();
+      this.clearRecordingHistory();
       this.cypressCommands = [];
       this.interceptors = [];
     }
   }
 
-  private async onSaveAndExportTest(description: string | null): Promise<void> {
+  private async onSaveAndExportTest(description: string | null, tags: string[] = []): Promise<void> {
     if (description) {
-      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors);
+      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags);
       this.recording.clearCommands();
+      this.clearRecordingHistory();
       this.cypressCommands = [];
       this.interceptors = [];
       setTimeout(() => this.showAdvancedEditorDialog(id), 300);
@@ -435,7 +563,8 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
   }
 
   private render(): void {
-    const rec = this.isRecording;
+    const rec    = this.isRecording;
+    const paused = this.isPaused;
     this.shadow.innerHTML = `
       <style>
         :host { all: initial; }
@@ -488,6 +617,31 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           0%,100% { box-shadow: 0 4px 20px rgba(248,81,73,.55),0 0 0 4px rgba(248,81,73,.13); }
           50%      { box-shadow: 0 6px 28px rgba(248,81,73,.75),0 0 0 8px rgba(248,81,73,.06); }
         }
+
+        /* ── Pause button ────────────────────────────────── */
+        .btn-pause {
+          position: absolute;
+          bottom: 78px;
+          right: 24px;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          font-size: 15px;
+          display: ${rec ? 'flex' : 'none'};
+          align-items: center;
+          justify-content: center;
+          background: ${paused
+            ? 'linear-gradient(135deg,#2f81f7 0%,#1f6feb 100%)'
+            : 'rgba(13,17,23,0.85)'};
+          color: ${paused ? '#fff' : '#e3b341'};
+          box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 0 0 1px rgba(48,54,61,.8);
+          transition: transform .15s, background .2s, color .2s;
+          z-index: 2;
+        }
+        .btn-pause:hover { transform: scale(1.12); }
+        .btn-pause:active { transform: scale(0.93); }
 
         /* ── Action buttons ──────────────────────────────── */
         /*
@@ -587,13 +741,15 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           transform: translateX(-50%);
         }
 
-        /* ── REC badge ───────────────────────────────────── */
+        /* ── REC / PAUSED badge ──────────────────────────── */
         .rec-badge {
           position: fixed;
           top: 14px;
           left: 50%;
           transform: translateX(-50%);
-          background: linear-gradient(90deg,#f85149,#da3633);
+          background: ${paused
+            ? 'linear-gradient(90deg,#e3b341,#d29922)'
+            : 'linear-gradient(90deg,#f85149,#da3633)'};
           color: #fff;
           padding: 3px 16px;
           border-radius: 20px;
@@ -603,9 +759,11 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           text-transform: uppercase;
           z-index: 2147483647;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          box-shadow: 0 4px 16px rgba(248,81,73,.4);
+          box-shadow: ${paused
+            ? '0 4px 16px rgba(227,179,65,.4)'
+            : '0 4px 16px rgba(248,81,73,.4)'};
           display: ${rec ? 'block' : 'none'};
-          animation: rec-pulse 1.8s ease-in-out infinite;
+          ${!paused ? 'animation: rec-pulse 1.8s ease-in-out infinite;' : ''}
         }
         @keyframes rec-pulse {
           0%,100% { opacity: 1; }
@@ -615,22 +773,28 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
 
       <div class="widget">
         <button class="btn-action" data-n="1" data-action="config"
-                data-label="Config">⚙️</button>
+                data-label="${this.translation.translate('RECORDER.BTN_CONFIG')}">⚙️</button>
         <button class="btn-action" data-n="2" data-action="browse"
-                data-label="Ficheros">📁</button>
+                data-label="${this.translation.translate('RECORDER.BTN_FILES')}">📁</button>
         <button class="btn-action" data-n="3" data-action="commands"
-                data-label="Comandos">⌨️</button>
+                data-label="${this.translation.translate('RECORDER.BTN_COMMANDS')}">⌨️</button>
         <button class="btn-action" data-n="4" data-action="tests"
-                data-label="Tests">📋</button>
+                data-label="${this.translation.translate('RECORDER.BTN_TESTS')}">📋</button>
+        <button class="btn-pause" data-action="pause"
+                title="${paused ? this.translation.translate('RECORDER.RESUME_TITLE') : this.translation.translate('RECORDER.PAUSE_TITLE')}">
+          ${paused ? '▶' : '⏸'}
+        </button>
         <button class="btn-toggle" data-action="toggle"
-                title="${rec ? 'Detener (Ctrl+R)' : 'Grabar (Ctrl+R)'}">
+                title="${rec ? this.translation.translate('RECORDER.STOP_TITLE') : this.translation.translate('RECORDER.START_TITLE')}">
           ${rec ? '⏹' : '⏺'}
         </button>
       </div>
-      <div class="rec-badge">● REC</div>
+      <div class="rec-badge">${paused ? this.translation.translate('RECORDER.BADGE_PAUSED') : this.translation.translate('RECORDER.BADGE_REC')}</div>
     `;
     this.shadow.querySelector('[data-action="toggle"]')!
       .addEventListener('click', () => this.toggle());
+    this.shadow.querySelector('[data-action="pause"]')
+      ?.addEventListener('click', () => this.togglePause());
     this.shadow.querySelector('[data-action="tests"]')!
       .addEventListener('click', () => this.showSavedTestsDialog());
     this.shadow.querySelector('[data-action="commands"]')!

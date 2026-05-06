@@ -97,4 +97,72 @@ describe('Phase 8.1 — TestPrevisualizerElement', () => {
     el.copyToClipboard();
     expect(writeMock).not.toHaveBeenCalled();
   });
+
+  // ── editable mode ────────────────────────────────────────────────────────
+
+  it('editable defaults to false', () => {
+    expect(el.editable).toBe(false);
+  });
+
+  it('no delete buttons when editable is false', () => {
+    el.commands = ["cy.get('[data-cy=\"btn\"]').click()"];
+    const del = el.shadowRoot!.querySelector('[data-del]');
+    expect(del).toBeNull();
+  });
+
+  it('delete buttons appear when editable is true', () => {
+    el.editable = true;
+    el.commands = ["cy.get('[data-cy=\"btn\"]').click()"];
+    const del = el.shadowRoot!.querySelector('[data-del]');
+    expect(del).not.toBeNull();
+  });
+
+  it('clicking delete button dispatches deletecommand event with correct index', () => {
+    el.editable = true;
+    el.commands = ['cmd-0', 'cmd-1'];
+    let received: number | null = null;
+    el.addEventListener('deletecommand', (e: Event) => {
+      received = (e as CustomEvent).detail;
+    });
+    const delBtn = el.shadowRoot!.querySelector<HTMLButtonElement>('[data-del="1"]');
+    delBtn?.click();
+    expect(received).toBe(1);
+  });
+
+  it('clicking move-up button dispatches movecommand event with from/to', () => {
+    el.editable = true;
+    el.commands = ['cmd-0', 'cmd-1'];
+    let received: { from: number; to: number } | null = null;
+    el.addEventListener('movecommand', (e: Event) => {
+      received = (e as CustomEvent).detail;
+    });
+    const upBtn = el.shadowRoot!.querySelector<HTMLButtonElement>('[data-move-up="1"]');
+    upBtn?.click();
+    expect(received).toEqual({ from: 1, to: 0 });
+  });
+
+  it('clicking move-down button dispatches movecommand event with from/to', () => {
+    el.editable = true;
+    el.commands = ['cmd-0', 'cmd-1'];
+    let received: { from: number; to: number } | null = null;
+    el.addEventListener('movecommand', (e: Event) => {
+      received = (e as CustomEvent).detail;
+    });
+    const dnBtn = el.shadowRoot!.querySelector<HTMLButtonElement>('[data-move-dn="0"]');
+    dnBtn?.click();
+    expect(received).toEqual({ from: 0, to: 1 });
+  });
+
+  it('delete interceptor button dispatches deleteinterceptor event', () => {
+    el.editable = true;
+    el.interceptors = ['cy.intercept("GET", "**/api").as("api")'];
+    el.toggleInterceptors();
+    let received: number | null = null;
+    el.addEventListener('deleteinterceptor', (e: Event) => {
+      received = (e as CustomEvent).detail;
+    });
+    const delBtn = el.shadowRoot!.querySelector<HTMLButtonElement>('[data-del-icp="0"]');
+    delBtn?.click();
+    expect(received).toBe(0);
+  });
 });

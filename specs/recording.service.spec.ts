@@ -351,4 +351,198 @@ describe('Phase 4 — RecordingService', () => {
       expect(service.getCommandsSnapshot().length).toBe(before);
     });
   });
+
+  // ── pause/resume ─────────────────────────────────────────────────────────
+
+  describe('pause / resume', () => {
+    beforeEach(() => service.startRecording());
+
+    it('getPausedSnapshot() is false initially', () => {
+      expect(service.getPausedSnapshot()).toBe(false);
+    });
+
+    it('pauseRecording() sets isPaused to true', () => {
+      service.pauseRecording();
+      expect(service.getPausedSnapshot()).toBe(true);
+    });
+
+    it('resumeRecording() sets isPaused to false', () => {
+      service.pauseRecording();
+      service.resumeRecording();
+      expect(service.getPausedSnapshot()).toBe(false);
+    });
+
+    it('togglePause() toggles paused state', () => {
+      service.togglePause();
+      expect(service.getPausedSnapshot()).toBe(true);
+      service.togglePause();
+      expect(service.getPausedSnapshot()).toBe(false);
+    });
+
+    it('pauseRecording() does nothing when not recording', () => {
+      service.stopRecording();
+      service.pauseRecording();
+      expect(service.getPausedSnapshot()).toBe(false);
+    });
+
+    it('addCommand() is ignored when paused', () => {
+      const before = service.getCommandsSnapshot().length;
+      service.pauseRecording();
+      service.addCommand('cy.get(".foo").click()');
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('addCommand() works again after resuming', () => {
+      service.pauseRecording();
+      service.resumeRecording();
+      const before = service.getCommandsSnapshot().length;
+      service.addCommand('cy.get(".foo").click()');
+      expect(service.getCommandsSnapshot().length).toBe(before + 1);
+    });
+
+    it('registerInterceptor() is ignored when paused', () => {
+      service.pauseRecording();
+      service.registerInterceptor('GET', 'http://localhost/api/test', 'test');
+      expect(service.getInterceptorsSnapshot()).toHaveLength(0);
+    });
+
+    it('stopRecording() resets pause to false', () => {
+      service.pauseRecording();
+      service.stopRecording();
+      expect(service.getPausedSnapshot()).toBe(false);
+    });
+
+    it('onPauseChange() callback fires when pause state changes', () => {
+      const states: boolean[] = [];
+      service.onPauseChange((p) => states.push(p));
+      service.pauseRecording();
+      service.resumeRecording();
+      expect(states).toContain(true);
+      expect(states).toContain(false);
+    });
+  });
+
+  // ── appendCommand / removeCommand / moveCommand ──────────────────────────
+
+  describe('appendCommand', () => {
+    it('adds command regardless of recording state', () => {
+      service.appendCommand('cy.get(".foo").click()');
+      expect(service.getCommandsSnapshot()).toContain('cy.get(".foo").click()');
+    });
+
+    it('adds command even when not recording', () => {
+      service.appendCommand('added-without-recording');
+      expect(service.getCommandsSnapshot()).toContain('added-without-recording');
+    });
+  });
+
+  describe('removeCommand', () => {
+    beforeEach(() => service.startRecording());
+
+    it('removes command at given index', () => {
+      service.addCommand('cy.get(".a").click()');
+      const len = service.getCommandsSnapshot().length;
+      service.removeCommand(len - 1);
+      expect(service.getCommandsSnapshot()).not.toContain('cy.get(".a").click()');
+    });
+
+    it('out-of-bounds index is a no-op', () => {
+      const len = service.getCommandsSnapshot().length;
+      service.removeCommand(99);
+      expect(service.getCommandsSnapshot().length).toBe(len);
+    });
+
+    it('negative index is a no-op', () => {
+      const len = service.getCommandsSnapshot().length;
+      service.removeCommand(-1);
+      expect(service.getCommandsSnapshot().length).toBe(len);
+    });
+  });
+
+  describe('moveCommand', () => {
+    it('moves a command from one position to another', () => {
+      service.startRecording();
+      service.addCommand('cmd-A');
+      service.addCommand('cmd-B');
+      const cmds = service.getCommandsSnapshot();
+      const idxA = cmds.indexOf('cmd-A');
+      const idxB = cmds.indexOf('cmd-B');
+      service.moveCommand(idxA, idxB);
+      const after = service.getCommandsSnapshot();
+      expect(after.indexOf('cmd-A')).toBe(idxB);
+    });
+
+    it('same from/to is a no-op', () => {
+      service.startRecording();
+      service.addCommand('cmd-X');
+      const before = [...service.getCommandsSnapshot()];
+      const idx = before.indexOf('cmd-X');
+      service.moveCommand(idx, idx);
+      expect(service.getCommandsSnapshot()).toEqual(before);
+    });
+
+    it('out-of-bounds from is a no-op', () => {
+      service.startRecording();
+      const before = [...service.getCommandsSnapshot()];
+      service.moveCommand(99, 0);
+      expect(service.getCommandsSnapshot()).toEqual(before);
+    });
+  });
+
+  describe('removeInterceptor', () => {
+    beforeEach(() => service.startRecording());
+
+    it('removes interceptor at given index', () => {
+      service.registerInterceptor('GET', 'http://localhost/api/a', 'a');
+      service.registerInterceptor('POST', 'http://localhost/api/b', 'b');
+      service.removeInterceptor(0);
+      expect(service.getInterceptorsSnapshot()).toHaveLength(1);
+    });
+
+    it('out-of-bounds index is a no-op', () => {
+      service.registerInterceptor('GET', 'http://localhost/api/a', 'a');
+      service.removeInterceptor(99);
+      expect(service.getInterceptorsSnapshot()).toHaveLength(1);
+    });
+  });
+
+  // ── selectorStrategy ────────────────────────────────────────────────────
+
+  describe('selectorStrategy', () => {
+    beforeEach(() => service.startRecording());
+
+    it('default strategy is data-cy', () => {
+      const btn = makeElement('button', { 'data-cy': 'my-btn', 'data-testid': 'alt', id: 'validId' });
+      click(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toContain('[data-cy="my-btn"]');
+    });
+
+    it('data-testid strategy prefers data-testid over data-cy', () => {
+      service.selectorStrategy = 'data-testid';
+      const btn = makeElement('button', { 'data-cy': 'my-btn', 'data-testid': 'test-btn' });
+      click(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toContain('[data-testid="test-btn"]');
+    });
+
+    it('data-testid strategy falls back to data-cy when no data-testid', () => {
+      service.selectorStrategy = 'data-testid';
+      const btn = makeElement('button', { 'data-cy': 'fallback-btn' });
+      click(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toContain('[data-cy="fallback-btn"]');
+    });
+
+    it('aria-label strategy prefers aria-label', () => {
+      service.selectorStrategy = 'aria-label';
+      const btn = makeElement('button', { 'aria-label': 'Close dialog', 'data-cy': 'close-btn' });
+      click(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toContain('[aria-label="Close dialog"]');
+    });
+
+    it('id strategy prefers id over data-cy', () => {
+      service.selectorStrategy = 'id';
+      const btn = makeElement('button', { id: 'myButton', 'data-cy': 'my-btn' });
+      click(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toContain('#myButton');
+    });
+  });
 });
