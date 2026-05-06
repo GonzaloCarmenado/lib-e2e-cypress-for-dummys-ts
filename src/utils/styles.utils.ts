@@ -35,6 +35,11 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
 .swal2-container, .swal2-popup {
   z-index: 99999 !important;
 }
+.swal2-container {
+  padding: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 .swal2-popup {
   background: #161b22 !important;
   color: #e6edf3 !important;

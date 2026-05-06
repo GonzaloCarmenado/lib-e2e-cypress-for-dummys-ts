@@ -4,11 +4,16 @@ export function makeModalResizable(
 ): () => void {
   if (!modal || modal.querySelector('.modal-resizer')) return () => { /* no-op */ };
 
+  const rect = modal.getBoundingClientRect();
+  modal.style.position = 'fixed';
+  modal.style.top = `${rect.top}px`;
+  modal.style.left = `${rect.left}px`;
+  modal.style.width = `${rect.width}px`;
+  modal.style.margin = '0';
   modal.style.resize = 'both';
   modal.style.overflow = 'auto';
   modal.style.minWidth = (options?.minWidth ?? 320) + 'px';
   modal.style.minHeight = (options?.minHeight ?? 180) + 'px';
-  modal.style.position = 'fixed';
 
   const resizer = document.createElement('div');
   resizer.className = 'modal-resizer';

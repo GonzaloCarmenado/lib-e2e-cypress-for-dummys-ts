@@ -614,14 +614,14 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
       </style>
 
       <div class="widget">
-        <button class="btn-action" data-n="1" data-action="tests"
-                data-label="Tests">📋</button>
-        <button class="btn-action" data-n="2" data-action="commands"
-                data-label="Comandos">⌨️</button>
-        <button class="btn-action" data-n="3" data-action="config"
+        <button class="btn-action" data-n="1" data-action="config"
                 data-label="Config">⚙️</button>
-        <button class="btn-action" data-n="4" data-action="browse"
+        <button class="btn-action" data-n="2" data-action="browse"
                 data-label="Ficheros">📁</button>
+        <button class="btn-action" data-n="3" data-action="commands"
+                data-label="Comandos">⌨️</button>
+        <button class="btn-action" data-n="4" data-action="tests"
+                data-label="Tests">📋</button>
         <button class="btn-toggle" data-action="toggle"
                 title="${rec ? 'Detener (Ctrl+R)' : 'Grabar (Ctrl+R)'}">
           ${rec ? '⏹' : '⏺'}

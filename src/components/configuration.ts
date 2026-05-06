@@ -6,48 +6,95 @@ import { showToast } from "../utils/toast.utils"
 const STYLES = `
   :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
-  .section { padding: 16px 20px; border-bottom: 1px solid #21262d; }
-  .section:last-child { border-bottom: none; }
-  h4 { margin: 0 0 12px; font-size: 10px; text-transform: uppercase;
-       letter-spacing: 0.8px; color: #484f58; font-weight: 700; }
-  label { display: flex; align-items: center; gap: 10px; font-size: 13px;
-          color: #8b949e; cursor: pointer; margin-bottom: 10px; }
-  label:last-child { margin-bottom: 0; }
+
+  /* ── Grid container ───────────────────────────────────── */
+  .cfg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  /* ── Cards ────────────────────────────────────────────── */
+  .card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: #30363d; }
+  .card-wide { grid-column: 1 / -1; }
+
+  /* ── Card header ──────────────────────────────────────── */
+  .card-hd {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: #484f58; margin-bottom: 12px;
+  }
+  .card-hd-icon { font-size: 13px; }
+
+  /* ── Language ─────────────────────────────────────────── */
+  .field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .field-label { font-size: 12px; color: #8b949e; }
   select {
     background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
-    border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none;
-    cursor: pointer; transition: border-color 0.15s;
+    border-radius: 6px; padding: 6px 10px; font-size: 12px; outline: none;
+    cursor: pointer; transition: border-color 0.15s; flex-shrink: 0;
   }
   select:focus { border-color: #2f81f7; box-shadow: 0 0 0 3px rgba(47,129,247,0.12); }
-  input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #2f81f7; }
-  .toggle-desc { font-size: 11px; color: #484f58; margin-left: 2px; }
+
+  /* ── HTTP toggle ──────────────────────────────────────── */
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    cursor: pointer; user-select: none;
+  }
+  input[type="checkbox"] { width: 15px; height: 15px; margin-top: 2px; cursor: pointer; accent-color: #2f81f7; flex-shrink: 0; }
+  .check-title { font-size: 12px; color: #c9d1d9; margin-bottom: 3px; }
+  .check-sub   { font-size: 10px; color: #484f58; line-height: 1.5; }
+
+  /* ── Cypress folder ───────────────────────────────────── */
+  .fs-layout { display: flex; gap: 12px; align-items: flex-start; }
+  .fs-tree {
+    flex-shrink: 0;
+    margin: 0; padding: 8px 10px;
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    font-size: 10px; color: #c9d1d9; line-height: 1.8;
+    font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+  }
+  .fs-right { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .fs-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #8b949e;
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .fs-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .fs-dot.on  { background: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,.5); }
+  .fs-dot.off { background: #484f58; }
+  .fs-folder  { color: #e6edf3; font-family: 'Cascadia Code','Fira Code','Consolas',monospace; font-size: 11px; }
+
+  /* ── Buttons ──────────────────────────────────────────── */
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
   button {
-    padding: 7px 16px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
+    padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
     font-size: 12px; font-weight: 500; background: #21262d; color: #8b949e;
     transition: background 0.15s, color 0.12s, border-color 0.15s;
   }
   button:hover { background: #30363d; color: #e6edf3; border-color: #484f58; }
-  .file-input { display: none; }
   .btn-import {
-    padding: 7px 16px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
+    display: inline-block;
+    padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
     font-size: 12px; font-weight: 500; background: #21262d; color: #8b949e;
     transition: background 0.15s, color 0.12s, border-color 0.15s;
   }
   .btn-import:hover { background: #30363d; color: #e6edf3; border-color: #484f58; }
   .btn-danger { border-color: rgba(248,81,73,.4); color: #f85149; background: transparent; }
   .btn-danger:hover { background: rgba(248,81,73,.08); border-color: #f85149; color: #f85149; }
-  .fs-info {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: #8b949e; margin-bottom: 12px;
-  }
-  .fs-dot {
-    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-  }
-  .fs-dot.on  { background: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,.5); }
-  .fs-dot.off { background: #484f58; }
-  .fs-folder  { color: #e6edf3; font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
-                font-size: 11px; }
+  .file-input { display: none; }
+
+  /* ── Data section desc ────────────────────────────────── */
+  .data-desc { font-size: 11px; color: #484f58; margin-bottom: 10px; line-height: 1.5; }
 `
 
 const LANGS = [
@@ -159,52 +206,68 @@ export class ConfigurationElement extends HTMLElement {
 
     this.shadow.innerHTML = `
       <style>${STYLES}</style>
-      <div class="section">
-        <h4>Idioma</h4>
-        <label>
-          Idioma de la interfaz:
-          <select id="lang-select">${langOptions}</select>
-        </label>
-      </div>
-      <div class="section">
-        <h4>HTTP Avanzado</h4>
-        <label>
-          <input type="checkbox" id="http-toggle" ${this.advancedHttpConfig ? "checked" : ""} />
-          Validaciones automáticas de body
-          <span class="toggle-desc">(GET → response, POST/PUT → request)</span>
-        </label>
-      </div>
-      <div class="section">
-        <h4>Carpeta Cypress</h4>
-        <pre style="margin:0 0 12px;padding:8px 12px;background:#0d1117;border:1px solid #21262d;
-                    border-radius:6px;font-size:10px;color:#c9d1d9;line-height:1.8;
-                    font-family:'Cascadia Code','Fira Code','Consolas',monospace">cypress/         <span style="color:#484f58">← selecciona esta</span>
-└── e2e/
-    └── *.cy.ts</pre>
-        <div class="fs-info">
-          <span class="fs-dot ${this.filesystemGranted ? 'on' : 'off'}"></span>
-          ${this.filesystemGranted && this.cypressFolderName
-            ? `<span>conectado &mdash;</span><span class="fs-folder">📁 ${this.cypressFolderName}</span>`
-            : `<span>sin configurar</span>`}
+      <div class="cfg-grid">
+
+        <!-- Idioma -->
+        <div class="card">
+          <div class="card-hd"><span class="card-hd-icon">🌐</span> Idioma</div>
+          <div class="field-row">
+            <span class="field-label">Interfaz</span>
+            <select id="lang-select">${langOptions}</select>
+          </div>
         </div>
-        <div class="btn-row">
-          <button id="btn-change-folder">
-            ${this.filesystemGranted ? '📁 Cambiar carpeta' : '📁 Seleccionar carpeta'}
-          </button>
-          ${this.filesystemGranted
-            ? '<button id="btn-revoke" class="btn-danger">✕ Quitar acceso</button>'
-            : ''}
-        </div>
-      </div>
-      <div class="section">
-        <h4>Datos</h4>
-        <div class="btn-row">
-          <button id="btn-export">⬆️ Exportar tests</button>
-          <label style="cursor:pointer;margin:0">
-            <span class="btn-import">⬇️ Importar tests</span>
-            <input type="file" class="file-input" id="file-input" accept=".json" />
+
+        <!-- HTTP Avanzado -->
+        <div class="card">
+          <div class="card-hd"><span class="card-hd-icon">⚡</span> HTTP Avanzado</div>
+          <label class="check-row">
+            <input type="checkbox" id="http-toggle" ${this.advancedHttpConfig ? "checked" : ""} />
+            <div>
+              <div class="check-title">Validaciones de body</div>
+              <div class="check-sub">GET → response · POST/PUT → request</div>
+            </div>
           </label>
         </div>
+
+        <!-- Carpeta Cypress -->
+        <div class="card card-wide">
+          <div class="card-hd"><span class="card-hd-icon">📁</span> Carpeta Cypress</div>
+          <div class="fs-layout">
+            <pre class="fs-tree">cypress/  <span style="color:#484f58">← selecciona</span>
+└── e2e/
+    └── *.cy.ts</pre>
+            <div class="fs-right">
+              <div class="fs-status">
+                <span class="fs-dot ${this.filesystemGranted ? 'on' : 'off'}"></span>
+                ${this.filesystemGranted && this.cypressFolderName
+                  ? `<span>conectado &mdash;</span>&nbsp;<span class="fs-folder">📁 ${this.cypressFolderName}</span>`
+                  : `<span>sin configurar</span>`}
+              </div>
+              <div class="btn-row">
+                <button id="btn-change-folder">
+                  ${this.filesystemGranted ? '📁 Cambiar carpeta' : '📁 Seleccionar carpeta'}
+                </button>
+                ${this.filesystemGranted
+                  ? '<button id="btn-revoke" class="btn-danger">✕ Quitar acceso</button>'
+                  : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos -->
+        <div class="card card-wide">
+          <div class="card-hd"><span class="card-hd-icon">💾</span> Datos</div>
+          <p class="data-desc">Exporta todos tus tests a JSON o importa una copia de seguridad.</p>
+          <div class="btn-row">
+            <button id="btn-export">⬆️ Exportar tests</button>
+            <label style="cursor:pointer;margin:0">
+              <span class="btn-import">⬇️ Importar tests</span>
+              <input type="file" class="file-input" id="file-input" accept=".json" />
+            </label>
+          </div>
+        </div>
+
       </div>
     `
     ;(this.shadow.getElementById("lang-select") as HTMLSelectElement).addEventListener("change", (e) =>
