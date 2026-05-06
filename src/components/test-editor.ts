@@ -23,7 +23,7 @@ const STYLES = `
   .test-name { flex: 1; font-size: 13px; font-weight: 500; color: #e6edf3; }
   .test-date { font-size: 10.5px; color: #484f58; margin-right: 4px; }
   .btn-icon {
-    padding: 3px 8px; border: none; border-radius: 5px; cursor: pointer;
+    padding: 3px 8px; border: none; border-radius: 6px; cursor: pointer;
     font-size: 11px; background: #21262d; color: #8b949e;
     transition: background 0.15s, color 0.12s;
   }

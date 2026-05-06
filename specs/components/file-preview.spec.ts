@@ -85,4 +85,74 @@ describe('Phase 8.6 — FilePreviewElement', () => {
     expect(fresh.fileContent).toBeNull();
     fresh.remove();
   });
+
+  it('closeLabel defaults to "✕ Cerrar"', () => {
+    expect(el.closeLabel).toBe('✕ Cerrar');
+  });
+
+  it('default closeLabel renders in the close button', () => {
+    const btn = el.shadowRoot!.querySelector('#btn-close');
+    expect(btn?.textContent?.trim()).toBe('✕ Cerrar');
+  });
+
+  it('closeLabel set before mount renders custom text in close button', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.closeLabel = '← Volver al editor';
+    document.body.appendChild(fresh);
+    const btn = fresh.shadowRoot!.querySelector('#btn-close');
+    expect(btn?.textContent?.trim()).toBe('← Volver al editor');
+    fresh.remove();
+  });
+
+  it('blocks panel is hidden when both itBlock and interceptorsBlock are empty', () => {
+    expect(el.shadowRoot!.querySelector('.blocks-panel')).toBeNull();
+  });
+
+  it('blocks panel appears when itBlock is set before mount', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('test', () => { cy.visit('/'); });";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('.blocks-panel')).not.toBeNull();
+    expect(fresh.shadowRoot!.querySelector('#btn-copy-it')).not.toBeNull();
+    fresh.remove();
+  });
+
+  it('blocks panel appears when only interceptorsBlock is set', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.interceptorsBlock = "beforeEach(() => { cy.intercept('GET', '*'); });";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('.blocks-panel')).not.toBeNull();
+    expect(fresh.shadowRoot!.querySelector('#btn-copy-icp')).not.toBeNull();
+    fresh.remove();
+  });
+
+  it('interceptorsBlock copy button appears when both blocks are set', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('test', () => {});";
+    fresh.interceptorsBlock = "beforeEach(() => { cy.intercept('GET', '*'); });";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('#btn-copy-it')).not.toBeNull();
+    expect(fresh.shadowRoot!.querySelector('#btn-copy-icp')).not.toBeNull();
+    fresh.remove();
+  });
+
+  it('interceptorsBlock copy button is absent when only itBlock is set', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('test', () => {});";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('#btn-copy-icp')).toBeNull();
+    fresh.remove();
+  });
+
+  it('it() copy button is absent when only interceptorsBlock is set', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.interceptorsBlock = "beforeEach(() => {});";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('#btn-copy-it')).toBeNull();
+    fresh.remove();
+  });
+
+  it('interceptorsBlock defaults to empty string', () => {
+    expect(el.interceptorsBlock).toBe('');
+  });
 });

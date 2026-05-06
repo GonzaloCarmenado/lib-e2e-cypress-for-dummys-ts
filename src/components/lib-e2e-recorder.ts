@@ -14,6 +14,7 @@ import {
   setSwal2DataCyAttribute,
 } from '../utils/modal.utils';
 import type { Lang } from '../models/lang.model';
+import { showToast } from '../utils/toast.utils';
 
 export class LibE2eRecorderElement extends HTMLElement {
   private shadow: ShadowRoot;
@@ -57,6 +58,7 @@ export class LibE2eRecorderElement extends HTMLElement {
 
     this.initHttpConfig();
     this.initLanguage();
+    this.initFilesystemAccess();
     this.initSubscriptions();
     this.render();
 
@@ -126,6 +128,80 @@ export class LibE2eRecorderElement extends HTMLElement {
     else if (key === '3') { event.preventDefault(); this.showSettingsDialog(); }
   }
 
+  // ── filesystem setup ─────────────────────────────────────────────────────
+
+  private async initFilesystemAccess(): Promise<void> {
+    const config = await this.persistence.getGeneralConfig();
+    // Only show if the user has never made a choice (key doesn't exist yet)
+    if (config && 'allowReadWriteFiles' in config) return;
+    this.showFilesystemSetupDialog();
+  }
+
+  private showFilesystemSetupDialog(): void {
+    Swal.fire({
+      title: '📁 Acceso a ficheros',
+      html: '<div id="fs-setup-content"></div>',
+      showCloseButton: true,
+      showConfirmButton: false,
+      didOpen: () => {
+        makeSwalDraggable();
+        setSwal2DataCyAttribute();
+        const container = document.getElementById('fs-setup-content')!;
+        container.innerHTML = `
+          <div style="padding:16px 20px 20px;color:#8b949e;font-size:13px;line-height:1.7">
+            <p>El <strong style="color:#e6edf3">editor avanzado</strong> puede insertar tus tests
+               directamente en los archivos
+               <code style="background:#0d1117;padding:1px 6px;border-radius:4px;
+                            font-size:11px;color:#c9d1d9">.cy.ts</code> de Cypress.</p>
+            <p style="margin-top:10px;margin-bottom:6px;font-size:11px;color:#8b949e">
+              Selecciona la carpeta que contiene la subcarpeta <code style="background:#0d1117;
+              padding:1px 5px;border-radius:4px;font-size:10px;color:#c9d1d9">e2e/</code>.
+              La extensión espera esta estructura:
+            </p>
+            <pre style="margin:0;padding:10px 14px;background:#0d1117;border:1px solid #21262d;
+                        border-radius:8px;font-size:11px;color:#c9d1d9;line-height:1.8;
+                        font-family:'Cascadia Code','Fira Code','Consolas',monospace">
+cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
+└── e2e/         <span style="color:#484f58">← la extensión leerá aquí</span>
+    └── *.cy.ts</pre>
+            <p style="margin-top:8px;font-size:11px;color:#484f58">
+              El permiso se guarda en el navegador y no se vuelve a solicitar.
+            </p>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+              <button id="fs-skip"
+                style="padding:7px 16px;border:1px solid #30363d;border-radius:6px;cursor:pointer;
+                       font-size:12px;font-weight:500;background:transparent;color:#8b949e">
+                Ahora no
+              </button>
+              <button id="fs-select"
+                style="padding:7px 16px;border:none;border-radius:6px;cursor:pointer;
+                       font-size:12px;font-weight:500;background:#2f81f7;color:#fff">
+                📁 Seleccionar carpeta
+              </button>
+            </div>
+          </div>`;
+
+        document.getElementById('fs-skip')!.addEventListener('click', async () => {
+          await this.persistence.setConfigKey('allowReadWriteFiles', 'false');
+          Swal.close();
+        });
+
+        document.getElementById('fs-select')!.addEventListener('click', async () => {
+          try {
+            await this.persistence.requestDirectoryPermissions();
+            Swal.close();
+            showToast('✓ Carpeta de Cypress configurada');
+          } catch (e: unknown) {
+            if ((e as DOMException)?.name !== 'AbortError') {
+              showToast('Error al acceder a la carpeta', false);
+            }
+            // AbortError = user cancelled the picker, leave dialog open
+          }
+        });
+      },
+    });
+  }
+
   // ── dialogs ──────────────────────────────────────────────────────────────
 
   showCommandsDialog(): void {
@@ -136,8 +212,7 @@ export class LibE2eRecorderElement extends HTMLElement {
         showCloseButton: true,
         showConfirmButton: false,
         width: 640,
-        background: '#181c24',
-        color: '#fff',
+        color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
@@ -166,8 +241,7 @@ export class LibE2eRecorderElement extends HTMLElement {
         showCloseButton: true,
         showConfirmButton: false,
         width: 680,
-        background: '#181c24',
-        color: '#fff',
+        color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
@@ -190,8 +264,7 @@ export class LibE2eRecorderElement extends HTMLElement {
         html: '<div id="save-test-modal-content" style="padding:0"></div>',
         showCloseButton: true,
         showConfirmButton: false,
-        background: '#181c24',
-        color: '#fff',
+        color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
@@ -221,8 +294,7 @@ export class LibE2eRecorderElement extends HTMLElement {
         showCloseButton: true,
         showConfirmButton: false,
         width: 520,
-        background: '#181c24',
-        color: '#fff',
+        color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
@@ -247,8 +319,7 @@ export class LibE2eRecorderElement extends HTMLElement {
         showCloseButton: true,
         showConfirmButton: false,
         width: 780,
-        background: '#181c24',
-        color: '#fff',
+        color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
@@ -260,11 +331,67 @@ export class LibE2eRecorderElement extends HTMLElement {
           if (testId !== undefined) child.testId = testId;
           container.appendChild(child);
           child.addEventListener('closemodal', () => Swal.close());
+          child.addEventListener('openfileeditor', (e: CustomEvent) => {
+            Swal.close();
+            setTimeout(() => this.showFileEditorDialog(
+              e.detail.handle, e.detail.content, e.detail.fileName, e.detail.testId,
+              e.detail.itBlock, e.detail.interceptorsBlock,
+            ), 150);
+          });
         },
         willClose: () => { this.isAdvancedEditorDialogOpen = false; },
       });
       this.resizePopup();
     });
+  }
+
+  private showFileEditorDialog(
+    handle: FileSystemFileHandle,
+    content: string,
+    fileName: string,
+    testId?: number,
+    itBlock = '',
+    interceptorsBlock = '',
+  ): void {
+    Swal.fire({
+      title: '✏️ Editor de archivo',
+      html: '<div id="file-editor-modal-content" style="padding:0"></div>',
+      showCloseButton: false,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      width: 1100,
+      color: '#e6edf3',
+      didOpen: () => {
+        makeSwalDraggable();
+        setSwal2DataCyAttribute();
+        const container = document.getElementById('file-editor-modal-content');
+        if (!container) return;
+        const child = document.createElement('file-preview') as any;
+        child.fileContent = content;
+        child.fileName = fileName;
+        child.closeLabel = '← Volver al editor';
+        child.itBlock = itBlock;
+        child.interceptorsBlock = interceptorsBlock;
+        container.appendChild(child);
+        child.addEventListener('close', () => {
+          Swal.close();
+          setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
+        });
+        child.addEventListener('save', async (e: CustomEvent) => {
+          try {
+            const writable = await (handle as any).createWritable();
+            await writable.write(e.detail);
+            await writable.close();
+            showToast('✓ Archivo guardado');
+          } catch {
+            showToast('Error al guardar el archivo', false);
+          }
+          Swal.close();
+          setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
+        });
+      },
+    });
+    this.resizePopup();
   }
 
   // ── save handlers ─────────────────────────────────────────────────────────
@@ -308,92 +435,153 @@ export class LibE2eRecorderElement extends HTMLElement {
   }
 
   private render(): void {
+    const rec = this.isRecording;
     this.shadow.innerHTML = `
       <style>
         :host { all: initial; }
         *, *::before, *::after { box-sizing: border-box; }
+
+        /*
+         * Invisible 130×130 hit area anchored at bottom-right.
+         * Keeps :hover alive while the cursor travels from the
+         * toggle to any of the radial action buttons.
+         */
         .widget {
           position: fixed;
-          bottom: 24px;
-          right: 24px;
+          bottom: 0;
+          right: 0;
+          width: 130px;
+          height: 130px;
           z-index: 2147483647;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 8px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
-        .toolbar {
-          display: flex;
-          gap: 2px;
-          background: rgba(13, 17, 23, 0.95);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          padding: 4px;
-          border-radius: 10px;
-          border: 1px solid rgba(48, 54, 61, 0.9);
-          box-shadow: 0 8px 32px rgba(0,0,0,0.55);
-        }
-        .btn-action {
-          position: relative;
-          width: 30px;
-          height: 30px;
-          border: none;
-          border-radius: 7px;
-          cursor: pointer;
-          background: transparent;
-          color: #8b949e;
-          font-size: 15px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.15s, color 0.12s;
-        }
-        .btn-action:hover { background: #21262d; color: #e6edf3; }
-        .btn-action:active { background: #30363d; }
-        .btn-action::after {
-          content: attr(data-tooltip);
-          position: absolute;
-          bottom: calc(100% + 7px);
-          left: 50%;
-          transform: translateX(-50%);
-          background: #1c2128;
-          color: #e6edf3;
-          font-size: 11px;
-          font-weight: 500;
-          padding: 3px 8px;
-          border-radius: 5px;
-          white-space: nowrap;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.15s;
-          border: 1px solid #30363d;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        .btn-action:hover::after { opacity: 1; }
+
+        /* ── Toggle ──────────────────────────────────────── */
         .btn-toggle {
-          width: 38px;
-          height: 38px;
+          position: absolute;
+          bottom: 24px;
+          right: 24px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           border: none;
           cursor: pointer;
-          font-size: 17px;
-          background: ${this.isRecording ? 'linear-gradient(135deg, #f85149 0%, #da3633 100%)' : 'linear-gradient(135deg, #2f81f7 0%, #1f6feb 100%)'};
+          font-size: 19px;
+          background: ${rec
+            ? 'linear-gradient(135deg,#f85149 0%,#da3633 100%)'
+            : 'linear-gradient(135deg,#2f81f7 0%,#1f6feb 100%)'};
           color: #fff;
-          box-shadow: ${this.isRecording ? '0 4px 16px rgba(248,81,73,0.5), 0 0 0 3px rgba(248,81,73,0.12)' : '0 4px 16px rgba(47,129,247,0.4), 0 0 0 3px rgba(47,129,247,0.1)'};
-          transition: transform 0.15s, box-shadow 0.2s;
+          box-shadow: ${rec
+            ? '0 4px 20px rgba(248,81,73,.55),0 0 0 4px rgba(248,81,73,.13)'
+            : '0 4px 20px rgba(47,129,247,.45),0 0 0 4px rgba(47,129,247,.11)'};
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: transform .18s, box-shadow .2s;
+          z-index: 2;
+          ${rec ? 'animation: toggle-pulse 2s ease-in-out infinite;' : ''}
         }
-        .btn-toggle:hover { transform: scale(1.08); }
-        .btn-toggle:active { transform: scale(0.94); }
+        .btn-toggle:hover  { transform: scale(1.1); }
+        .btn-toggle:active { transform: scale(0.93); }
+
+        @keyframes toggle-pulse {
+          0%,100% { box-shadow: 0 4px 20px rgba(248,81,73,.55),0 0 0 4px rgba(248,81,73,.13); }
+          50%      { box-shadow: 0 6px 28px rgba(248,81,73,.75),0 0 0 8px rgba(248,81,73,.06); }
+        }
+
+        /* ── Action buttons ──────────────────────────────── */
+        /*
+         * All three start centered on the toggle button
+         * (toggle center = bottom:46px right:46px from widget edge;
+         *  button half = 18px → bottom:28px right:28px).
+         */
+        .btn-action {
+          position: absolute;
+          bottom: 28px;
+          right: 28px;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(13,17,23,.92);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          color: #8b949e;
+          box-shadow: 0 4px 18px rgba(0,0,0,.45), 0 0 0 1px rgba(48,54,61,.75);
+          opacity: 0;
+          transform: scale(0.35);
+          pointer-events: none;
+          /* Collapse: fast, no spring */
+          transition: opacity .15s, transform .18s ease-in,
+                      background .15s, color .12s, box-shadow .15s;
+        }
+
+        /* Label to the left of each button */
+        .btn-action::after {
+          content: attr(data-label);
+          position: absolute;
+          right: calc(100% + 9px);
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(13,17,23,.95);
+          color: #e6edf3;
+          font-size: 11px;
+          font-weight: 500;
+          padding: 3px 9px;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity .15s .05s;
+          border: 1px solid rgba(48,54,61,.8);
+          box-shadow: 0 2px 8px rgba(0,0,0,.35);
+        }
+        /* Button 1 (top) — label above instead of left to avoid overlap with btn 2 */
+        .btn-action[data-n="1"]::after {
+          right: auto;
+          left: 50%;
+          top: auto;
+          bottom: calc(100% + 9px);
+          transform: translateX(-50%);
+        }
+        .btn-action:hover::after   { opacity: 1; }
+        .btn-action:hover          { background: #21262d; color: #e6edf3; }
+        .btn-action:active         { background: #30363d !important; }
+
+        /* Expand: spring + stagger */
+        .widget:hover .btn-action {
+          opacity: 1;
+          pointer-events: all;
+          transition: opacity .2s, transform .32s cubic-bezier(.34,1.56,.64,1),
+                      background .15s, color .12s, box-shadow .15s;
+        }
+
+        /* Arc positions (radius 65 px from toggle centre) */
+        .widget:hover .btn-action[data-n="1"] {   /* straight up     */
+          transform: translateY(-65px) scale(1);
+          transition-delay: .03s;
+        }
+        .widget:hover .btn-action[data-n="2"] {   /* 135° diagonal   */
+          transform: translate(-46px,-46px) scale(1);
+          transition-delay: .08s;
+        }
+        .widget:hover .btn-action[data-n="3"] {   /* straight left   */
+          transform: translateX(-65px) scale(1);
+          transition-delay: .13s;
+        }
+
+        /* ── REC badge ───────────────────────────────────── */
         .rec-badge {
           position: fixed;
           top: 14px;
           left: 50%;
           transform: translateX(-50%);
-          background: linear-gradient(90deg, #f85149, #da3633);
+          background: linear-gradient(90deg,#f85149,#da3633);
           color: #fff;
           padding: 3px 16px;
           border-radius: 20px;
@@ -403,24 +591,26 @@ export class LibE2eRecorderElement extends HTMLElement {
           text-transform: uppercase;
           z-index: 2147483647;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          box-shadow: 0 4px 16px rgba(248,81,73,0.4);
-          display: ${this.isRecording ? 'block' : 'none'};
+          box-shadow: 0 4px 16px rgba(248,81,73,.4);
+          display: ${rec ? 'block' : 'none'};
           animation: rec-pulse 1.8s ease-in-out infinite;
         }
         @keyframes rec-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.65; }
+          0%,100% { opacity: 1; }
+          50%      { opacity: 0.6; }
         }
       </style>
+
       <div class="widget">
-        <div class="toolbar">
-          <button class="btn-action" data-action="tests"    data-tooltip="Tests">📋</button>
-          <button class="btn-action" data-action="commands" data-tooltip="Comandos">⌨️</button>
-          <button class="btn-action" data-action="config"   data-tooltip="Config">⚙️</button>
-        </div>
+        <button class="btn-action" data-n="1" data-action="tests"
+                data-label="Tests">📋</button>
+        <button class="btn-action" data-n="2" data-action="commands"
+                data-label="Comandos">⌨️</button>
+        <button class="btn-action" data-n="3" data-action="config"
+                data-label="Config">⚙️</button>
         <button class="btn-toggle" data-action="toggle"
-          title="${this.isRecording ? 'Detener (Ctrl+R)' : 'Grabar (Ctrl+R)'}">
-          ${this.isRecording ? '⏹' : '⏺'}
+                title="${rec ? 'Detener (Ctrl+R)' : 'Grabar (Ctrl+R)'}">
+          ${rec ? '⏹' : '⏺'}
         </button>
       </div>
       <div class="rec-badge">● REC</div>

@@ -57,6 +57,13 @@ const STYLES = `
   .btn-save:hover { background: #1f6feb; border-color: #1f6feb; color: #fff; }
   .btn-save:disabled { background: #21262d; border-color: #30363d; color: #8b949e; }
   .placeholder { color: #484f58; font-size: 13px; padding: 28px; text-align: center; }
+  .block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .btn-copy {
+    padding: 3px 10px; border: 1px solid #30363d; border-radius: 5px; cursor: pointer;
+    font-size: 10px; font-weight: 500; background: #21262d; color: #8b949e;
+    transition: background 0.12s, color 0.12s; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-copy:hover { background: #30363d; color: #e6edf3; }
 `;
 
 export class AdvancedTestEditorElement extends HTMLElement {
@@ -78,6 +85,8 @@ export class AdvancedTestEditorElement extends HTMLElement {
   previewFileName: string | null = null;
   previewFileContent: string | null = null;
   private hasPermission = false;
+  private needsReauth = false;
+  private _dirHandle: FileSystemDirectoryHandle | null = null;
 
   constructor() {
     super();
@@ -91,20 +100,39 @@ export class AdvancedTestEditorElement extends HTMLElement {
   }
 
   private async init(): Promise<void> {
-    const config = await this.persistence.getConfig('allowReadWriteFiles');
-    this.hasPermission = config?.['allowReadWriteFiles'] === 'true';
+    const config = await this.persistence.getGeneralConfig();
+    const allowed = config?.['allowReadWriteFiles'] === 'true';
+
+    if (!allowed) {
+      this.hasPermission = false;
+      if (this.testId !== undefined) await this.loadCypressCommandsForTest(this.testId);
+      this.render();
+      return;
+    }
+
+    const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | null;
+    if (!handle) {
+      this.hasPermission = false;
+      if (this.testId !== undefined) await this.loadCypressCommandsForTest(this.testId);
+      this.render();
+      return;
+    }
+
+    // queryPermission does NOT require a user gesture
+    const perm = await (handle as any).queryPermission({ mode: 'readwrite' });
+    this._dirHandle = handle;
+    this.hasPermission = perm === 'granted';
+    this.needsReauth  = perm === 'prompt';
+
     if (this.testId !== undefined) await this.loadCypressCommandsForTest(this.testId);
-    await this.getFoldersData();
+    if (this.hasPermission) await this.getFoldersData();
     this.render();
   }
 
   async getFoldersData(): Promise<void> {
-    if (!this.hasPermission) return;
-    const dirConfig = await this.persistence.getConfig('cypressDirectoryHandle');
-    const dirHandle = dirConfig?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | null;
-    if (!dirHandle) return;
+    if (!this.hasPermission || !this._dirHandle) return;
     try {
-      for await (const entry of (dirHandle as any).values()) {
+      for await (const entry of (this._dirHandle as any).values()) {
         if ((entry as any).kind === 'directory' && (entry as any).name === 'e2e') {
           const tree = await this.transformationService.scanDirectory(entry as FileSystemDirectoryHandle);
           this.e2eTree = tree.children ?? [];
@@ -134,11 +162,8 @@ export class AdvancedTestEditorElement extends HTMLElement {
     this.selectedFile = file;
     this.saveButtonEnabled = true;
 
-    const dirConfig = await this.persistence.getConfig('cypressDirectoryHandle');
-    const dirHandle = dirConfig?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | null;
-    if (!dirHandle) return;
-
-    const handle = await findFileHandleRecursive(dirHandle, (file as any).name);
+    if (!this._dirHandle) return;
+    const handle = await findFileHandleRecursive(this._dirHandle, (file as any).name);
     if (!handle) return;
     this.selectedFileHandle = handle;
     const fileObj = await handle.getFile();
@@ -162,6 +187,26 @@ export class AdvancedTestEditorElement extends HTMLElement {
     this.render();
   }
 
+  copyToClipboard(text: string): void {
+    navigator.clipboard?.writeText(text);
+  }
+
+  openEditManually(): void {
+    if (!this.selectedFileHandle || !this.selectedFileContent) return;
+    this.dispatchEvent(new CustomEvent('openfileeditor', {
+      detail: {
+        handle: this.selectedFileHandle,
+        content: this.selectedFileContent,
+        fileName: (this.selectedFile as any)?.name ?? '',
+        testId: this.testId,
+        itBlock: this.testItBlock,
+        interceptorsBlock: this.interceptorsBlock,
+      },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
   closePreview(): void {
     this.isPreviewMode = false;
     this.previewFileName = null;
@@ -174,12 +219,33 @@ export class AdvancedTestEditorElement extends HTMLElement {
 
   private render(): void {
     if (!this.hasPermission) {
+      const reauthBtn = this.needsReauth
+        ? `<button id="btn-reauth"
+             style="margin-top:14px;padding:7px 16px;border:none;border-radius:6px;cursor:pointer;
+                    font-size:12px;font-weight:500;background:#2f81f7;color:#fff">
+             🔓 Reactivar acceso
+           </button>`
+        : '';
       this.shadow.innerHTML = `
         <style>${STYLES}</style>
         <div class="no-perm">
-          <div>🔒 Sin acceso a archivos locales</div>
-          <div style="font-size:11px">Configura el acceso en la pestaña de configuración o recarga la página para solicitar permisos.</div>
+          <div>${this.needsReauth ? '🔑 El permiso ha caducado' : '🔒 Sin acceso a archivos locales'}</div>
+          <div style="font-size:11px">${this.needsReauth
+            ? 'Haz clic para reactivar el acceso a tu carpeta de Cypress.'
+            : 'Configura el acceso en ⚙️ Config.'}</div>
+          ${reauthBtn}
         </div>`;
+
+      this.shadow.getElementById('btn-reauth')?.addEventListener('click', async () => {
+        if (!this._dirHandle) return;
+        const perm = await (this._dirHandle as any).requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          this.hasPermission = true;
+          this.needsReauth   = false;
+          await this.getFoldersData();
+          this.render();
+        }
+      });
       return;
     }
 
@@ -194,8 +260,20 @@ export class AdvancedTestEditorElement extends HTMLElement {
 
     const itHtml = this.testItBlock
       ? `<div style="margin-top:10px">
-           <div class="file-name">🧪 it() a insertar:</div>
+           <div class="file-name block-header">
+             <span>🧪 it() a insertar:</span>
+             <button id="btn-copy-it" class="btn-copy">📋 Copiar it()</button>
+           </div>
            <pre style="max-height:120px;font-size:10.5px">${escHtml(this.testItBlock.slice(0, 500))}</pre>
+         </div>` : '';
+
+    const interceptorsHtml = this.interceptorsBlock
+      ? `<div style="margin-top:10px">
+           <div class="file-name block-header">
+             <span>🔀 beforeEach() interceptores:</span>
+             <button id="btn-copy-interceptors" class="btn-copy">📋 Copiar interceptores</button>
+           </div>
+           <pre style="max-height:120px;font-size:10.5px;color:#3fb950">${escHtml(this.interceptorsBlock.slice(0, 500))}</pre>
          </div>` : '';
 
     this.shadow.innerHTML = `
@@ -203,11 +281,14 @@ export class AdvancedTestEditorElement extends HTMLElement {
       <div class="layout">
         <div class="sidebar">${treeHtml}</div>
         <div class="main">
-          <div class="content-area">${contentHtml}${itHtml}</div>
+          <div class="content-area">${contentHtml}${itHtml}${interceptorsHtml}</div>
           <div class="footer">
             <button id="btn-save" class="btn-save"
               ${!this.saveButtonEnabled || !this.testItBlock ? 'disabled' : ''}>
               💾 Insertar en archivo
+            </button>
+            <button id="btn-edit" ${!this.saveButtonEnabled ? 'disabled' : ''}>
+              ✏️ Editar manualmente
             </button>
             <button id="btn-close">✕ Cerrar</button>
           </div>
@@ -219,6 +300,12 @@ export class AdvancedTestEditorElement extends HTMLElement {
     });
     this.shadow.getElementById('btn-save')
       ?.addEventListener('click', () => this.saveCommandsToFile());
+    this.shadow.getElementById('btn-edit')
+      ?.addEventListener('click', () => this.openEditManually());
+    this.shadow.getElementById('btn-copy-it')
+      ?.addEventListener('click', () => this.copyToClipboard(this.testItBlock));
+    this.shadow.getElementById('btn-copy-interceptors')
+      ?.addEventListener('click', () => this.copyToClipboard(this.interceptorsBlock));
     this.shadow.getElementById('btn-close')
       ?.addEventListener('click', () => this.closePreview());
   }

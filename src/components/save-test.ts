@@ -5,8 +5,8 @@ const STYLES = `
   p { margin: 0 0 20px; font-size: 14px; color: #8b949e; line-height: 1.5; }
   .btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
   button {
-    padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer;
-    font-size: 13px; font-weight: 500; transition: filter 0.15s, transform 0.1s;
+    padding: 7px 16px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 500; transition: filter 0.15s, transform 0.1s;
     letter-spacing: 0.1px;
   }
   button:hover { filter: brightness(1.1); }

@@ -1,6 +1,7 @@
 import { PersistenceService } from "../services/persistence.service"
 import { TranslationService } from "../services/translation.service"
 import type { Lang } from "../models/lang.model"
+import { showToast } from "../utils/toast.utils"
 
 const STYLES = `
   :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
@@ -28,6 +29,25 @@ const STYLES = `
   }
   button:hover { background: #30363d; color: #e6edf3; border-color: #484f58; }
   .file-input { display: none; }
+  .btn-import {
+    padding: 7px 16px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 500; background: #21262d; color: #8b949e;
+    transition: background 0.15s, color 0.12s, border-color 0.15s;
+  }
+  .btn-import:hover { background: #30363d; color: #e6edf3; border-color: #484f58; }
+  .btn-danger { border-color: rgba(248,81,73,.4); color: #f85149; background: transparent; }
+  .btn-danger:hover { background: rgba(248,81,73,.08); border-color: #f85149; color: #f85149; }
+  .fs-info {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #8b949e; margin-bottom: 12px;
+  }
+  .fs-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .fs-dot.on  { background: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,.5); }
+  .fs-dot.off { background: #484f58; }
+  .fs-folder  { color: #e6edf3; font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+                font-size: 11px; }
 `
 
 const LANGS = [
@@ -44,6 +64,8 @@ export class ConfigurationElement extends HTMLElement {
   translation!: TranslationService
   selectedLanguage = "es"
   advancedHttpConfig = false
+  private filesystemGranted = false
+  private cypressFolderName: string | null = null
 
   constructor() {
     super()
@@ -59,12 +81,15 @@ export class ConfigurationElement extends HTMLElement {
   }
 
   private async loadConfig(): Promise<void> {
-    const config = await this.persistence.getConfig("language")
+    const config = await this.persistence.getGeneralConfig()
     if (config?.['language']) {
       this.selectedLanguage = config['language'] as string
       this.translation.setLang(this.selectedLanguage as Lang)
     }
     this.advancedHttpConfig = localStorage.getItem("extendedHttpCommands") === "true"
+    this.filesystemGranted = config?.['allowReadWriteFiles'] === 'true'
+    const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined
+    this.cypressFolderName = handle?.name ?? null
     this.render()
   }
 
@@ -79,6 +104,25 @@ export class ConfigurationElement extends HTMLElement {
     this.advancedHttpConfig = checked
     localStorage.setItem("extendedHttpCommands", checked ? "true" : "false")
     this.persistence.setConfig({ extendedHttpCommands: checked ? "true" : "false" })
+    this.render()
+  }
+
+  async changeFolder(): Promise<void> {
+    try {
+      await this.persistence.requestDirectoryPermissions()
+      await this.loadConfig()
+      showToast('✓ Carpeta de Cypress actualizada')
+    } catch (e: unknown) {
+      if ((e as DOMException)?.name !== 'AbortError') {
+        showToast('Error al acceder a la carpeta', false)
+      }
+    }
+  }
+
+  async revokeAccess(): Promise<void> {
+    await this.persistence.setConfig({ allowReadWriteFiles: 'false', cypressDirectoryHandle: null })
+    this.filesystemGranted = false
+    this.cypressFolderName = null
     this.render()
   }
 
@@ -131,13 +175,33 @@ export class ConfigurationElement extends HTMLElement {
         </label>
       </div>
       <div class="section">
+        <h4>Carpeta Cypress</h4>
+        <pre style="margin:0 0 12px;padding:8px 12px;background:#0d1117;border:1px solid #21262d;
+                    border-radius:6px;font-size:10px;color:#c9d1d9;line-height:1.8;
+                    font-family:'Cascadia Code','Fira Code','Consolas',monospace">cypress/         <span style="color:#484f58">← selecciona esta</span>
+└── e2e/
+    └── *.cy.ts</pre>
+        <div class="fs-info">
+          <span class="fs-dot ${this.filesystemGranted ? 'on' : 'off'}"></span>
+          ${this.filesystemGranted && this.cypressFolderName
+            ? `<span>conectado &mdash;</span><span class="fs-folder">📁 ${this.cypressFolderName}</span>`
+            : `<span>sin configurar</span>`}
+        </div>
+        <div class="btn-row">
+          <button id="btn-change-folder">
+            ${this.filesystemGranted ? '📁 Cambiar carpeta' : '📁 Seleccionar carpeta'}
+          </button>
+          ${this.filesystemGranted
+            ? '<button id="btn-revoke" class="btn-danger">✕ Quitar acceso</button>'
+            : ''}
+        </div>
+      </div>
+      <div class="section">
         <h4>Datos</h4>
         <div class="btn-row">
           <button id="btn-export">⬆️ Exportar tests</button>
-          <label class="btn-row" style="cursor:pointer;margin:0">
-            <span style="padding:7px 16px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#2a3245;color:#adb5d0">
-              ⬇️ Importar tests
-            </span>
+          <label style="cursor:pointer;margin:0">
+            <span class="btn-import">⬇️ Importar tests</span>
             <input type="file" class="file-input" id="file-input" accept=".json" />
           </label>
         </div>
@@ -150,6 +214,8 @@ export class ConfigurationElement extends HTMLElement {
       this.onAdvancedHttpConfigChange((e.target as HTMLInputElement).checked),
     )
 
+    this.shadow.getElementById("btn-change-folder")!.addEventListener("click", () => this.changeFolder())
+    this.shadow.getElementById("btn-revoke")?.addEventListener("click", () => this.revokeAccess())
     this.shadow.getElementById("btn-export")!.addEventListener("click", () => this.exportAllData())
     ;(this.shadow.getElementById("file-input") as HTMLInputElement).addEventListener("change", async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]

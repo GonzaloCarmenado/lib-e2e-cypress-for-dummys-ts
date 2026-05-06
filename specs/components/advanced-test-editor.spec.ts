@@ -91,4 +91,90 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
     el.closePreview();
     expect(fired).toBe(true);
   });
+
+  it('openEditManually() does nothing when no file is selected', () => {
+    let fired = false;
+    el.addEventListener('openfileeditor', () => { fired = true; });
+    el.openEditManually();
+    expect(fired).toBe(false);
+  });
+
+  it('openEditManually() does nothing when selectedFileContent is null', () => {
+    el.selectedFileHandle = {} as FileSystemFileHandle;
+    el.selectedFileContent = null;
+    let fired = false;
+    el.addEventListener('openfileeditor', () => { fired = true; });
+    el.openEditManually();
+    expect(fired).toBe(false);
+  });
+
+  it('openEditManually() dispatches openfileeditor with correct detail', () => {
+    const mockHandle = {} as FileSystemFileHandle;
+    el.selectedFileHandle = mockHandle;
+    el.selectedFileContent = 'describe("suite", () => {});';
+    el.selectedFile = { kind: 'file', name: 'login.cy.ts' };
+    el.saveButtonEnabled = true;
+    el.testId = 42;
+
+    let detail: any = null;
+    el.addEventListener('openfileeditor', (e) => { detail = (e as CustomEvent).detail; });
+    el.openEditManually();
+
+    expect(detail).toMatchObject({
+      handle: mockHandle,
+      content: 'describe("suite", () => {});',
+      fileName: 'login.cy.ts',
+      testId: 42,
+    });
+  });
+
+  it('copyToClipboard() calls navigator.clipboard.writeText', () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeMock },
+      configurable: true,
+    });
+    el.copyToClipboard('cy.visit("/")');
+    expect(writeMock).toHaveBeenCalledWith('cy.visit("/")');
+  });
+
+  it('copyToClipboard() does not throw when clipboard is unavailable', () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    expect(() => el.copyToClipboard('text')).not.toThrow();
+  });
+
+  it('copy-it button appears when testItBlock is set', async () => {
+    const id = await persistence.insertTest('copy test', ["cy.visit('/')"], []);
+    await el.loadCypressCommandsForTest(id);
+    // init() resets hasPermission async; force the full UI after all async work
+    (el as any).hasPermission = true;
+    (el as any).render();
+    expect(el.shadowRoot!.querySelector('#btn-copy-it')).not.toBeNull();
+  });
+
+  it('copy-interceptors button appears when interceptorsBlock is set', async () => {
+    const id = await persistence.insertTest('icp test', ["cy.visit('/')"], ["cy.intercept('GET', '**/api')"]);
+    await el.loadCypressCommandsForTest(id);
+    (el as any).hasPermission = true;
+    (el as any).render();
+    expect(el.shadowRoot!.querySelector('#btn-copy-interceptors')).not.toBeNull();
+  });
+
+  it('copy-interceptors button is absent when there are no interceptors', async () => {
+    const id = await persistence.insertTest('no icp', ["cy.visit('/')"], []);
+    await el.loadCypressCommandsForTest(id);
+    (el as any).hasPermission = true;
+    (el as any).render();
+    expect(el.shadowRoot!.querySelector('#btn-copy-interceptors')).toBeNull();
+  });
+
+  it('openEditManually() uses empty string for fileName when selectedFile has no name', () => {
+    el.selectedFileHandle = {} as FileSystemFileHandle;
+    el.selectedFileContent = 'content';
+    el.selectedFile = null;
+    let detail: any = null;
+    el.addEventListener('openfileeditor', (e) => { detail = (e as CustomEvent).detail; });
+    el.openEditManually();
+    expect(detail.fileName).toBe('');
+  });
 });

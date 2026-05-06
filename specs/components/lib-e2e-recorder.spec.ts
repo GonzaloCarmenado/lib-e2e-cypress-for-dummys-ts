@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import Swal from 'sweetalert2';
 
 vi.mock('sweetalert2', () => ({
   default: {
@@ -122,5 +123,24 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(el.isSavedTestsDialogOpen).toBe(true);
     el.showSavedTestsDialog();
     expect(el.isSavedTestsDialogOpen).toBe(false);
+  });
+
+  it('showAdvancedEditorDialog() sets isAdvancedEditorDialogOpen to true', () => {
+    el.showAdvancedEditorDialog();
+    expect(el.isAdvancedEditorDialogOpen).toBe(true);
+  });
+
+  it('showAdvancedEditorDialog() called twice toggles isAdvancedEditorDialogOpen to false', () => {
+    el.showAdvancedEditorDialog();
+    el.showAdvancedEditorDialog();
+    expect(el.isAdvancedEditorDialogOpen).toBe(false);
+  });
+
+  it('showFileEditorDialog() calls Swal.fire', () => {
+    const mockHandle = {
+      createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }),
+    } as unknown as FileSystemFileHandle;
+    (el as any).showFileEditorDialog(mockHandle, 'content', 'test.cy.ts', 1);
+    expect(Swal.fire).toHaveBeenCalled();
   });
 });
