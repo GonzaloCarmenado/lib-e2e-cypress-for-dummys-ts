@@ -3,52 +3,60 @@ import { TranslationService } from '../services/translation.service';
 import { AdvancedTestTransformationService } from '../services/advanced-test.transformation.service';
 
 const STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
   .layout { display: flex; height: 380px; }
   .sidebar {
-    width: 220px; border-right: 1px solid #2a3245; overflow-y: auto;
-    padding: 8px; scrollbar-width: thin; scrollbar-color: #1976d2 #1e2535;
-    flex-shrink: 0;
+    width: 220px; border-right: 1px solid #21262d; overflow-y: auto;
+    padding: 8px; background: #0d1117; flex-shrink: 0;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
   }
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #161b22; }
   .no-perm {
-    padding: 24px; color: #6c7a99; font-size: 13px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 28px; color: #484f58; font-size: 13px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 12px; line-height: 1.6;
   }
   .tree-item {
     padding: 5px 8px; border-radius: 5px; cursor: pointer;
-    font-size: 12px; color: #c9d1d9; white-space: nowrap;
+    font-size: 12px; color: #8b949e; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis;
+    transition: background 0.12s, color 0.12s;
   }
-  .tree-item:hover { background: #2a3245; }
-  .tree-item.selected { background: #1976d2; color: #fff; }
-  .tree-item.dir { color: #82b366; font-weight: 600; }
+  .tree-item:hover { background: #161b22; color: #c9d1d9; }
+  .tree-item.selected { background: rgba(47,129,247,0.12); color: #2f81f7; }
+  .tree-item.dir { color: #e3b341; font-weight: 600; }
   .content-area {
-    flex: 1; padding: 10px 14px; overflow-y: auto;
-    scrollbar-width: thin; scrollbar-color: #1976d2 #1e2535;
+    flex: 1; padding: 12px 14px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
   }
-  .file-name { font-size: 11px; color: #6c7a99; margin-bottom: 8px; }
+  .content-area::-webkit-scrollbar { width: 4px; }
+  .content-area::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  .file-name { font-size: 11px; color: #484f58; margin-bottom: 8px; font-family: monospace; }
   pre {
-    background: #0d1117; padding: 10px; border-radius: 6px;
-    font-size: 11.5px; color: #c9d1d9; overflow-x: auto;
+    background: #0d1117; padding: 12px; border-radius: 8px;
+    font-size: 11px; color: #c9d1d9; overflow-x: auto;
     white-space: pre-wrap; word-break: break-all; margin: 0;
-    font-family: 'Fira Code', monospace; line-height: 1.6; max-height: 280px;
-    overflow-y: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    line-height: 1.7; max-height: 280px; overflow-y: auto;
+    border: 1px solid #21262d;
   }
   .footer {
-    padding: 8px 14px; border-top: 1px solid #2a3245;
-    display: flex; gap: 8px; justify-content: flex-end;
+    padding: 10px 14px; border-top: 1px solid #21262d;
+    display: flex; gap: 8px; justify-content: flex-end; background: #161b22;
   }
   button {
-    padding: 7px 16px; border: none; border-radius: 6px; cursor: pointer;
-    font-size: 12px; font-weight: 600; background: #2a3245; color: #adb5d0;
-    transition: background 0.15s;
+    padding: 6px 16px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 500; background: #21262d; color: #8b949e;
+    transition: background 0.15s, color 0.12s;
   }
-  button:hover { background: #1976d2; color: #fff; }
-  button:disabled { opacity: 0.4; cursor: default; }
-  .btn-save:hover { background: #388e3c; }
-  .placeholder { color: #6c7a99; font-size: 13px; padding: 24px; text-align: center; }
+  button:hover { background: #30363d; color: #e6edf3; }
+  button:disabled { opacity: 0.35; cursor: default; }
+  .btn-save { background: #2f81f7; border-color: #2f81f7; color: #fff; }
+  .btn-save:hover { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  .btn-save:disabled { background: #21262d; border-color: #30363d; color: #8b949e; }
+  .placeholder { color: #484f58; font-size: 13px; padding: 28px; text-align: center; }
 `;
 
 export class AdvancedTestEditorElement extends HTMLElement {
@@ -84,7 +92,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
 
   private async init(): Promise<void> {
     const config = await this.persistence.getConfig('allowReadWriteFiles');
-    this.hasPermission = config?.allowReadWriteFiles === 'true';
+    this.hasPermission = config?.['allowReadWriteFiles'] === 'true';
     if (this.testId !== undefined) await this.loadCypressCommandsForTest(this.testId);
     await this.getFoldersData();
     this.render();
@@ -93,7 +101,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
   async getFoldersData(): Promise<void> {
     if (!this.hasPermission) return;
     const dirConfig = await this.persistence.getConfig('cypressDirectoryHandle');
-    const dirHandle = dirConfig?.cypressDirectoryHandle as FileSystemDirectoryHandle | null;
+    const dirHandle = dirConfig?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | null;
     if (!dirHandle) return;
     try {
       for await (const entry of (dirHandle as any).values()) {
@@ -127,7 +135,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
     this.saveButtonEnabled = true;
 
     const dirConfig = await this.persistence.getConfig('cypressDirectoryHandle');
-    const dirHandle = dirConfig?.cypressDirectoryHandle as FileSystemDirectoryHandle | null;
+    const dirHandle = dirConfig?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | null;
     if (!dirHandle) return;
 
     const handle = await findFileHandleRecursive(dirHandle, (file as any).name);
@@ -207,7 +215,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
       </div>`;
 
     this.shadow.querySelectorAll('[data-file]').forEach((el) => {
-      el.addEventListener('click', () => this.onFileClick(JSON.parse((el as HTMLElement).dataset.file!)));
+      el.addEventListener('click', () => this.onFileClick(JSON.parse((el as HTMLElement).dataset['file']!)));
     });
     this.shadow.getElementById('btn-save')
       ?.addEventListener('click', () => this.saveCommandsToFile());

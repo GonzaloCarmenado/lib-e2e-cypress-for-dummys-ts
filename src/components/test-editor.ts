@@ -2,39 +2,44 @@ import { PersistenceService } from '../services/persistence.service';
 import type { TestWithDetails } from '../services/persistence.service';
 
 const STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
-  .list { padding: 10px 12px; max-height: 380px; overflow-y: auto;
-          scrollbar-width: thin; scrollbar-color: #1976d2 #1e2535; }
-  .empty { color: #6c7a99; text-align: center; padding: 24px; font-size: 13px; }
+  .list { padding: 8px; max-height: 380px; overflow-y: auto;
+          scrollbar-width: thin; scrollbar-color: #30363d transparent; }
+  .list::-webkit-scrollbar { width: 4px; }
+  .list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  .empty { color: #484f58; text-align: center; padding: 32px; font-size: 13px; }
   .row {
-    background: #1e2535; border-radius: 8px; margin-bottom: 8px;
-    overflow: hidden; border: 1px solid #2a3245;
+    background: #0d1117; border-radius: 8px; margin-bottom: 6px;
+    overflow: hidden; border: 1px solid #21262d;
+    transition: border-color 0.15s;
   }
+  .row:hover { border-color: #30363d; }
   .row-header {
     display: flex; align-items: center; gap: 8px;
-    padding: 9px 12px; cursor: pointer;
+    padding: 10px 12px; cursor: pointer; user-select: none;
   }
-  .row-header:hover { background: #252f45; }
-  .test-name { flex: 1; font-size: 13px; font-weight: 500; }
-  .test-date { font-size: 10px; color: #6c7a99; margin-right: 6px; }
+  .row-header:hover { background: rgba(48,54,61,0.3); }
+  .test-name { flex: 1; font-size: 13px; font-weight: 500; color: #e6edf3; }
+  .test-date { font-size: 10.5px; color: #484f58; margin-right: 4px; }
   .btn-icon {
     padding: 3px 8px; border: none; border-radius: 5px; cursor: pointer;
-    font-size: 11px; background: #2a3245; color: #adb5d0;
-    transition: background 0.15s;
+    font-size: 11px; background: #21262d; color: #8b949e;
+    transition: background 0.15s, color 0.12s;
   }
-  .btn-icon:hover { background: #1976d2; color: #fff; }
-  .btn-del:hover  { background: #d32f2f; color: #fff; }
+  .btn-icon:hover { background: #30363d; color: #e6edf3; }
+  .btn-del:hover  { background: rgba(248,81,73,0.15); color: #f85149; }
   .row-body {
-    background: #0d1117; padding: 10px 12px;
-    border-top: 1px solid #2a3245;
+    background: #0d1117; padding: 10px 14px;
+    border-top: 1px solid #21262d;
   }
-  .section-title { font-size: 10px; color: #6c7a99; text-transform: uppercase;
-                   letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 700; }
-  .cmd-list { font-family: monospace; font-size: 11.5px; color: #c9d1d9; line-height: 1.6; }
-  .icp-list { font-family: monospace; font-size: 11.5px; color: #82b366; line-height: 1.6;
-              margin-top: 8px; }
-  .copy-row { display: flex; gap: 6px; margin-top: 8px; }
+  .section-title { font-size: 10px; color: #484f58; text-transform: uppercase;
+                   letter-spacing: 0.8px; margin-bottom: 6px; font-weight: 600; }
+  .cmd-list { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+              font-size: 11px; color: #c9d1d9; line-height: 1.8; }
+  .icp-list { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+              font-size: 11px; color: #3fb950; line-height: 1.8; margin-top: 10px; }
+  .copy-row { display: flex; gap: 6px; margin-top: 10px; }
 `;
 
 export class TestEditorElement extends HTMLElement {
@@ -119,25 +124,25 @@ export class TestEditorElement extends HTMLElement {
       </div>`;
 
     this.shadow.querySelectorAll('[data-action="expand"]').forEach((el) => {
-      el.addEventListener('click', () => this.toggleExpand(Number((el as HTMLElement).dataset.idx)));
+      el.addEventListener('click', () => this.toggleExpand(Number((el as HTMLElement).dataset['idx'])));
     });
     this.shadow.querySelectorAll('[data-action="delete"]').forEach((el) => {
       el.addEventListener('click', (ev) => {
         ev.stopPropagation();
-        this.deleteTest(Number((el as HTMLElement).dataset.id));
+        this.deleteTest(Number((el as HTMLElement).dataset['id']));
       });
     });
     this.shadow.querySelectorAll('[data-action="copy-cmds"]').forEach((el) => {
       el.addEventListener('click', (ev) => {
         ev.stopPropagation();
-        const idx = Number((el as HTMLElement).dataset.idx);
+        const idx = Number((el as HTMLElement).dataset['idx']);
         this.copyToClipboard((this.tests[idx]?.commands ?? []).join('\n'));
       });
     });
     this.shadow.querySelectorAll('[data-action="copy-icps"]').forEach((el) => {
       el.addEventListener('click', (ev) => {
         ev.stopPropagation();
-        const idx = Number((el as HTMLElement).dataset.idx);
+        const idx = Number((el as HTMLElement).dataset['idx']);
         const t = this.tests[idx];
         this.copyToClipboard((this.interceptorsByTest[t?.id] ?? []).join('\n'));
       });

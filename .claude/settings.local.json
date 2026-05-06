@@ -5,7 +5,16 @@
       "Bash(Select-Object FullName)",
       "Bash(Sort-Object FullName)",
       "Bash(npm test *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Users\\\\gonzalo.carmenado\\\\GIT\\\\OTROS\\\\lib-e2e-cypress-for-dummys-ts\" -Force | Select-Object Name, @{N=\"Type\";E={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Users\\\\gonzalo.carmenado\\\\GIT\\\\OTROS\\\\lib-e2e-cypress-for-dummys-ts\\\\src\" -Recurse | Select-Object FullName, @{N=\"Type\";E={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} | Sort-Object FullName | Format-Table -AutoSize -Wrap)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\Users\\\\gonzalo.carmenado\\\\GIT\\\\OTROS\\\\lib-e2e-cypress-for-dummys-ts\\\\ejemplo\" -Recurse -Force | Select-Object FullName, @{N=\"Type\";E={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} | Sort-Object FullName)",
+      "Bash(npm run *)",
+      "Bash(Remove-Item \"D:\\\\Users\\\\gonzalo.carmenado\\\\GIT\\\\OTROS\\\\lib-e2e-cypress-for-dummys-ts\\\\ejemplo\\\\package-lock.json\" -Force)",
+      "Bash(Write-Output \"Deleted\")",
+      "Bash(npm install *)",
+      "Bash(npx ng *)",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

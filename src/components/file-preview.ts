@@ -1,32 +1,38 @@
 const STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
   .container { display: flex; flex-direction: column; height: 100%; }
   .header {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 12px; border-bottom: 1px solid #2a3245;
-    background: #1e2535;
+    padding: 8px 12px; border-bottom: 1px solid #21262d;
+    background: #161b22;
   }
-  .file-name { flex: 1; font-size: 12px; color: #c9d1d9; font-family: monospace; }
+  .file-name { flex: 1; font-size: 12px; color: #8b949e;
+               font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
   .editor {
-    flex: 1; width: 100%; min-height: 320px; padding: 12px;
+    flex: 1; width: 100%; min-height: 320px; padding: 14px;
     background: #0d1117; color: #c9d1d9; border: none; outline: none;
-    font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 12px;
-    line-height: 1.6; resize: vertical;
-    scrollbar-width: thin; scrollbar-color: #1976d2 #1e2535;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 12px;
+    line-height: 1.7; resize: vertical;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
   }
+  .editor::-webkit-scrollbar { width: 5px; }
+  .editor::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
   .footer {
     display: flex; gap: 8px; padding: 8px 12px;
-    border-top: 1px solid #2a3245; justify-content: flex-end;
+    border-top: 1px solid #21262d; justify-content: flex-end;
+    background: #161b22;
   }
   button {
-    padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer;
-    font-size: 12px; font-weight: 600; background: #2a3245; color: #adb5d0;
-    transition: background 0.15s;
+    padding: 6px 14px; border: 1px solid #30363d; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 500; background: #21262d; color: #8b949e;
+    transition: background 0.15s, color 0.12s;
   }
-  button:hover { background: #1976d2; color: #fff; }
-  .btn-save:hover { background: #388e3c; }
-  .btn-launch:hover { background: #f57c00; }
+  button:hover { background: #30363d; color: #e6edf3; }
+  .btn-save { background: #3fb950; border-color: #3fb950; color: #fff; }
+  .btn-save:hover { background: #2ea043; border-color: #2ea043; }
+  .btn-launch { background: transparent; border-color: #e3b341; color: #e3b341; }
+  .btn-launch:hover { background: rgba(227,179,65,0.1); }
 `;
 
 export class FilePreviewElement extends HTMLElement {

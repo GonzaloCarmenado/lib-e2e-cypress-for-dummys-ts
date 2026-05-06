@@ -1,25 +1,28 @@
 const STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
-  .container { padding: 20px 24px; text-align: center; }
-  p { margin: 0 0 18px; font-size: 14px; color: #c9d1d9; }
-  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  .container { padding: 24px 28px; text-align: center; }
+  p { margin: 0 0 20px; font-size: 14px; color: #8b949e; line-height: 1.5; }
+  .btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
   button {
-    padding: 9px 22px; border: none; border-radius: 7px; cursor: pointer;
-    font-size: 13px; font-weight: 600; transition: opacity 0.15s;
+    padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 500; transition: filter 0.15s, transform 0.1s;
+    letter-spacing: 0.1px;
   }
-  button:hover { opacity: 0.88; }
-  .btn-primary { background: #1976d2; color: #fff; }
-  .btn-success { background: #388e3c; color: #fff; }
-  .btn-danger  { background: #d32f2f; color: #fff; }
+  button:hover { filter: brightness(1.1); }
+  button:active { transform: scale(0.97); }
+  .btn-primary { background: #2f81f7; color: #fff; }
+  .btn-success { background: #3fb950; color: #fff; }
+  .btn-danger  { background: transparent; color: #f85149; border: 1px solid rgba(248,81,73,0.5); }
+  .btn-danger:hover { background: rgba(248,81,73,0.08); filter: none; }
   input[type="text"] {
-    width: 100%; padding: 10px 14px; border: 1px solid #2a3245;
-    border-radius: 7px; background: #0d1117; color: #fff;
+    width: 100%; padding: 10px 14px; border: 1px solid #30363d;
+    border-radius: 8px; background: #0d1117; color: #e6edf3;
     font-size: 14px; outline: none; margin-bottom: 4px;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  input[type="text"]:focus { border-color: #1976d2; }
-  input[type="text"]::placeholder { color: #6c7a99; }
+  input[type="text"]:focus { border-color: #2f81f7; box-shadow: 0 0 0 3px rgba(47,129,247,0.15); }
+  input[type="text"]::placeholder { color: #484f58; }
 `;
 
 export class SaveTestElement extends HTMLElement {

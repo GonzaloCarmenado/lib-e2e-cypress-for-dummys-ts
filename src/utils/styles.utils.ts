@@ -1,24 +1,33 @@
 export const SCROLLBAR_STYLES = `
-.swal2-popup, .modal-resizer, .swal2-html-container, .swal2-content, .swal2-container, .modal {
+.swal2-popup::-webkit-scrollbar,
+.swal2-html-container::-webkit-scrollbar,
+.swal2-content::-webkit-scrollbar,
+.swal2-container::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  background: transparent;
+}
+.swal2-popup::-webkit-scrollbar-thumb,
+.swal2-html-container::-webkit-scrollbar-thumb,
+.swal2-content::-webkit-scrollbar-thumb,
+.swal2-container::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+.swal2-popup::-webkit-scrollbar-thumb:hover,
+.swal2-html-container::-webkit-scrollbar-thumb:hover,
+.swal2-content::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+.swal2-popup::-webkit-scrollbar-track,
+.swal2-html-container::-webkit-scrollbar-track,
+.swal2-content::-webkit-scrollbar-track,
+.swal2-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.swal2-popup, .swal2-html-container, .swal2-content, .swal2-container {
   scrollbar-width: thin;
-  scrollbar-color: #1976d2 #e0e0e0;
-}
-.swal2-popup::-webkit-scrollbar, .modal-resizer::-webkit-scrollbar, .swal2-html-container::-webkit-scrollbar, .swal2-content::-webkit-scrollbar, .swal2-container::-webkit-scrollbar, .modal::-webkit-scrollbar {
-  width: 8px;
-  background: #e0e0e0;
-  border-radius: 8px;
-}
-.swal2-popup::-webkit-scrollbar-thumb, .modal-resizer::-webkit-scrollbar-thumb, .swal2-html-container::-webkit-scrollbar-thumb, .swal2-content::-webkit-scrollbar-thumb, .swal2-container::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #1976d2 60%, #42a5f5 100%);
-  border-radius: 8px;
-  min-height: 24px;
-}
-.swal2-popup::-webkit-scrollbar-thumb:hover, .modal-resizer::-webkit-scrollbar-thumb:hover, .swal2-html-container::-webkit-scrollbar-thumb:hover, .swal2-content::-webkit-scrollbar-thumb:hover, .swal2-container::-webkit-scrollbar-thumb:hover, .modal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #1565c0 60%, #1976d2 100%);
-}
-.swal2-popup::-webkit-scrollbar-track, .modal-resizer::-webkit-scrollbar-track, .swal2-html-container::-webkit-scrollbar-track, .swal2-content::-webkit-scrollbar-track, .swal2-container::-webkit-scrollbar-track, .modal::-webkit-scrollbar-track {
-  background: #e0e0e0;
-  border-radius: 8px;
+  scrollbar-color: #30363d transparent;
 }
 `;
 
@@ -27,11 +36,11 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   z-index: 99999 !important;
 }
 .swal2-popup {
-  background: #181c24 !important;
-  color: #fff !important;
+  background: #161b22 !important;
+  color: #e6edf3 !important;
   border-radius: 12px !important;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  border: 1px solid #232a3a !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.72), 0 0 0 1px #30363d !important;
+  border: none !important;
   padding: 0 !important;
   min-width: 400px;
   max-width: 90vw;
@@ -39,28 +48,39 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  overflow: hidden;
 }
 .swal2-title {
-  color: #2196f3 !important;
-  font-weight: bold;
-  font-size: 1.05rem;
-  background: #181c24;
-  border-radius: 12px 12px 0 0;
-  padding: 10px 18px 6px 18px;
-  margin-bottom: 0 !important;
-  border-bottom: 1px solid #181c24;
+  color: #e6edf3 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  background: #161b22;
+  padding: 14px 48px 13px 18px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid #21262d;
+  text-align: left !important;
+  letter-spacing: 0.1px;
 }
 .swal2-close {
-  color: #fff !important;
-  font-size: 1.5rem !important;
-  top: 12px !important;
-  right: 16px !important;
-  z-index: 1!important;
+  color: #8b949e !important;
+  font-size: 1.1rem !important;
+  top: 10px !important;
+  right: 12px !important;
+  z-index: 1 !important;
+  border-radius: 6px !important;
+  width: 28px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  transition: background 0.15s, color 0.15s !important;
+}
+.swal2-close:hover {
+  background: #21262d !important;
+  color: #e6edf3 !important;
 }
 .swal2-html-container {
-  background: #181c24;
-  border-radius: 0 0 12px 12px;
-  padding: 0 12px 12px 12px !important;
+  background: #161b22;
+  padding: 0 !important;
+  margin: 0 !important;
   width: 100%;
   display: flex;
   flex-direction: column;

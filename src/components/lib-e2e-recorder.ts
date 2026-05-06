@@ -79,13 +79,13 @@ export class LibE2eRecorderElement extends HTMLElement {
       await this.persistence.setConfig({ extendedHttpCommands: 'true' });
       localStorage.setItem('extendedHttpCommands', 'true');
     } else {
-      localStorage.setItem('extendedHttpCommands', (config.extendedHttpCommands as string) ?? 'true');
+      localStorage.setItem('extendedHttpCommands', (config['extendedHttpCommands'] as string) ?? 'true');
     }
   }
 
   private async initLanguage(): Promise<void> {
     const config = await this.persistence.getConfig('language');
-    const lang = config?.language as Lang | undefined;
+    const lang = config?.['language'] as Lang | undefined;
     this.translation.setLang(lang ?? this.translation.detectLang());
   }
 
@@ -325,67 +325,98 @@ export class LibE2eRecorderElement extends HTMLElement {
         }
         .toolbar {
           display: flex;
-          gap: 6px;
-          background: rgba(24, 28, 36, 0.97);
-          padding: 6px 10px;
+          gap: 2px;
+          background: rgba(13, 17, 23, 0.95);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          padding: 4px;
           border-radius: 10px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.45);
-          border: 1px solid rgba(255,255,255,0.07);
+          border: 1px solid rgba(48, 54, 61, 0.9);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.55);
         }
         .btn-action {
-          padding: 5px 10px;
+          position: relative;
+          width: 30px;
+          height: 30px;
           border: none;
-          border-radius: 6px;
+          border-radius: 7px;
           cursor: pointer;
-          background: #2a3245;
-          color: #adb5d0;
+          background: transparent;
+          color: #8b949e;
+          font-size: 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.15s, color 0.12s;
+        }
+        .btn-action:hover { background: #21262d; color: #e6edf3; }
+        .btn-action:active { background: #30363d; }
+        .btn-action::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          bottom: calc(100% + 7px);
+          left: 50%;
+          transform: translateX(-50%);
+          background: #1c2128;
+          color: #e6edf3;
           font-size: 11px;
           font-weight: 500;
-          transition: background 0.15s, color 0.15s;
+          padding: 3px 8px;
+          border-radius: 5px;
           white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.15s;
+          border: 1px solid #30363d;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
-        .btn-action:hover { background: #1976d2; color: #fff; }
+        .btn-action:hover::after { opacity: 1; }
         .btn-toggle {
-          width: 48px;
-          height: 48px;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
           border: none;
           cursor: pointer;
-          font-size: 20px;
-          background: ${this.isRecording ? '#f44336' : '#1976d2'};
+          font-size: 17px;
+          background: ${this.isRecording ? 'linear-gradient(135deg, #f85149 0%, #da3633 100%)' : 'linear-gradient(135deg, #2f81f7 0%, #1f6feb 100%)'};
           color: #fff;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-          transition: background 0.2s, transform 0.1s;
+          box-shadow: ${this.isRecording ? '0 4px 16px rgba(248,81,73,0.5), 0 0 0 3px rgba(248,81,73,0.12)' : '0 4px 16px rgba(47,129,247,0.4), 0 0 0 3px rgba(47,129,247,0.1)'};
+          transition: transform 0.15s, box-shadow 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .btn-toggle:hover { transform: scale(1.08); }
+        .btn-toggle:active { transform: scale(0.94); }
         .rec-badge {
           position: fixed;
-          top: 12px;
+          top: 14px;
           left: 50%;
           transform: translateX(-50%);
-          background: #f44336;
+          background: linear-gradient(90deg, #f85149, #da3633);
           color: #fff;
           padding: 3px 16px;
           border-radius: 20px;
-          font-size: 12px;
+          font-size: 10px;
           font-weight: 700;
-          letter-spacing: 1px;
+          letter-spacing: 2px;
+          text-transform: uppercase;
           z-index: 2147483647;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          box-shadow: 0 2px 10px rgba(244,67,54,0.4);
+          box-shadow: 0 4px 16px rgba(248,81,73,0.4);
           display: ${this.isRecording ? 'block' : 'none'};
-          animation: pulse 1.5s infinite;
+          animation: rec-pulse 1.8s ease-in-out infinite;
         }
-        @keyframes pulse {
+        @keyframes rec-pulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
+          50% { opacity: 0.65; }
         }
       </style>
       <div class="widget">
         <div class="toolbar">
-          <button class="btn-action" data-action="tests">📋 Tests</button>
-          <button class="btn-action" data-action="commands">⌨️ Comandos</button>
-          <button class="btn-action" data-action="config">⚙️ Config</button>
+          <button class="btn-action" data-action="tests"    data-tooltip="Tests">📋</button>
+          <button class="btn-action" data-action="commands" data-tooltip="Comandos">⌨️</button>
+          <button class="btn-action" data-action="config"   data-tooltip="Config">⚙️</button>
         </div>
         <button class="btn-toggle" data-action="toggle"
           title="${this.isRecording ? 'Detener (Ctrl+R)' : 'Grabar (Ctrl+R)'}">

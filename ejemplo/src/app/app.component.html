@@ -1,0 +1,28 @@
+Email
+<input data-cy="email-input" type="email" />
+<br><br>
+Password
+<input data-cy="password-input" type="password" />
+<br><br>
+<select data-cy="user-role">
+    <option value="admin">{{ translation.translate('APP.ADMIN') }}</option>
+    <option value="user">{{ translation.translate('APP.USER') }}</option>
+</select>
+<br><br>
+
+{{ translation.translate('APP.NO_ID_INPUT') }}
+<input type="text" />
+
+<br><br>
+<button data-cy="login-button">{{ translation.translate('APP.LOGIN') }}</button>
+
+<br><br><br><br><br><br><br>
+<button data-cy="button-get-clients" (click)="getClientList()">{{ translation.translate('APP.GET_CLIENTS') }}</button>
+<br><br><br><br><br><br><br>
+<button data-cy="button-get-client" (click)="getClient()">Obtener un cliente</button>
+<button data-cy="button-post-client" (click)="postClient()">Crear un cliente</button>
+
+<button (click)="goToNavigationWindow()">Ir a NavigationWindow</button>
+<br><br>
+<router-outlet></router-outlet>
+<lib-e2e-recorder />
