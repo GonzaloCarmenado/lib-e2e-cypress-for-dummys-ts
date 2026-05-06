@@ -355,7 +355,7 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
   ): void {
     Swal.fire({
       title: '✏️ Editor de archivo',
-      html: '<div id="file-editor-modal-content" style="padding:0"></div>',
+      html: '<div id="file-editor-modal-content" style="padding:0;height:540px"></div>',
       showCloseButton: false,
       showConfirmButton: false,
       allowOutsideClick: false,
@@ -450,8 +450,8 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
           position: fixed;
           bottom: 0;
           right: 0;
-          width: 130px;
-          height: 130px;
+          width: 190px;
+          height: 190px;
           z-index: 2147483647;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
@@ -561,18 +561,30 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
                       background .15s, color .12s, box-shadow .15s;
         }
 
-        /* Arc positions (radius 65 px from toggle centre) */
-        .widget:hover .btn-action[data-n="1"] {   /* straight up     */
-          transform: translateY(-65px) scale(1);
+        /* Arc positions — 4 buttons, 30° spacing, radius 90px */
+        .widget:hover .btn-action[data-n="1"] {   /* 0°  — straight up   */
+          transform: translateY(-90px) scale(1);
           transition-delay: .03s;
         }
-        .widget:hover .btn-action[data-n="2"] {   /* 135° diagonal   */
-          transform: translate(-46px,-46px) scale(1);
-          transition-delay: .08s;
+        .widget:hover .btn-action[data-n="2"] {   /* 30° — upper-left    */
+          transform: translate(-45px,-78px) scale(1);
+          transition-delay: .07s;
         }
-        .widget:hover .btn-action[data-n="3"] {   /* straight left   */
-          transform: translateX(-65px) scale(1);
-          transition-delay: .13s;
+        .widget:hover .btn-action[data-n="3"] {   /* 60° — left-upper    */
+          transform: translate(-78px,-45px) scale(1);
+          transition-delay: .11s;
+        }
+        .widget:hover .btn-action[data-n="4"] {   /* 90° — straight left */
+          transform: translateX(-90px) scale(1);
+          transition-delay: .15s;
+        }
+        /* Button 4 (pure left) — label above to avoid going off-screen */
+        .btn-action[data-n="4"]::after {
+          right: auto;
+          left: 50%;
+          top: auto;
+          bottom: calc(100% + 9px);
+          transform: translateX(-50%);
         }
 
         /* ── REC badge ───────────────────────────────────── */
@@ -608,6 +620,8 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
                 data-label="Comandos">⌨️</button>
         <button class="btn-action" data-n="3" data-action="config"
                 data-label="Config">⚙️</button>
+        <button class="btn-action" data-n="4" data-action="browse"
+                data-label="Ficheros">📁</button>
         <button class="btn-toggle" data-action="toggle"
                 title="${rec ? 'Detener (Ctrl+R)' : 'Grabar (Ctrl+R)'}">
           ${rec ? '⏹' : '⏺'}
@@ -623,6 +637,8 @@ cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
       .addEventListener('click', () => this.showCommandsDialog());
     this.shadow.querySelector('[data-action="config"]')!
       .addEventListener('click', () => this.showSettingsDialog());
+    this.shadow.querySelector('[data-action="browse"]')!
+      .addEventListener('click', () => this.showAdvancedEditorDialog());
   }
 }
 

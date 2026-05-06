@@ -136,6 +136,17 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(el.isAdvancedEditorDialogOpen).toBe(false);
   });
 
+  it('browse button (data-action="browse") opens advanced editor dialog', () => {
+    const btn = el.shadowRoot!.querySelector('[data-action="browse"]') as HTMLElement;
+    btn.click();
+    expect(el.isAdvancedEditorDialogOpen).toBe(true);
+  });
+
+  it('widget renders 4 action buttons', () => {
+    const buttons = el.shadowRoot!.querySelectorAll('.btn-action');
+    expect(buttons.length).toBe(4);
+  });
+
   it('showFileEditorDialog() calls Swal.fire', () => {
     const mockHandle = {
       createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }),

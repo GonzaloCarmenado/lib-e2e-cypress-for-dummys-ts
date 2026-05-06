@@ -1,5 +1,5 @@
 const STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
+  :host { display: block; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
   .container { display: flex; flex-direction: column; height: 100%; }
   .header {
