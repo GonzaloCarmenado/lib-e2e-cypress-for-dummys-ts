@@ -43,33 +43,33 @@ describe('Phase 2 — TranslationService', () => {
   describe('translate', () => {
     it('translates a nested key in Spanish', () => {
       service.setLang('es');
-      expect(service.translate('MAIN_FRAME.RECORD')).toBe('Grabar');
+      expect(service.translate('MAIN_FRAME.SETTINGS')).toBe('Configuración');
     });
 
     it('translates a nested key in English', () => {
       service.setLang('en');
-      expect(service.translate('MAIN_FRAME.RECORD')).toBe('Record');
+      expect(service.translate('MAIN_FRAME.SETTINGS')).toBe('Settings');
     });
 
     it('translates a nested key in French', () => {
       service.setLang('fr');
-      expect(service.translate('MAIN_FRAME.RECORD')).toBe('Enregistrer');
+      expect(service.translate('MAIN_FRAME.SETTINGS')).toBe('Paramètres');
     });
 
     it('translates a nested key in Italian', () => {
       service.setLang('it');
-      expect(service.translate('MAIN_FRAME.RECORD')).toBe('Registrare');
+      expect(service.translate('MAIN_FRAME.SETTINGS')).toBe('Impostazioni');
     });
 
     it('translates a nested key in German', () => {
       service.setLang('de');
-      expect(service.translate('MAIN_FRAME.RECORD')).toBe('Aufzeichnen');
+      expect(service.translate('MAIN_FRAME.SETTINGS')).toBe('Einstellungen');
     });
 
     it('translates a deeply nested key', () => {
       service.setLang('es');
-      expect(service.translate('ADVANCED_EDITOR.SUCCESS')).toBe(
-        'Prueba Cypress e interceptores insertados correctamente.'
+      expect(service.translate('RECORDER.FS_PERMISSION_NOTE')).toBe(
+        'El permiso se guarda en el navegador y no se vuelve a solicitar.'
       );
     });
 

@@ -16,7 +16,11 @@
       "Bash(npx ng *)",
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(Get-ChildItem -Path \"D:\\\\Users\\\\gonzalo.carmenado\\\\GIT\\\\OTROS\\\\lib-e2e-cypress-for-dummys-ts\\\\src\" -Recurse -Filter \"*.ts\")",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(npx tsx *)"
     ]
   }
 }

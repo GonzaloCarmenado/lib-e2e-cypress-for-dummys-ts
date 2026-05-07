@@ -76,7 +76,7 @@ export class PersistenceService {
     const interceptors = await this.getInterceptorStrings(testId);
     const itBlock = `it('${record.name}', () => {\n  ${commands.join('\n  ')}\n});`;
     const interceptorsBlock = interceptors.length
-      ? '  // Interceptores Cypress generados automáticamente\n' +
+      ? '  // Auto-generated Cypress interceptors\n' +
         interceptors.map((i) => '  ' + i).join('\n') + '\n'
       : '';
 

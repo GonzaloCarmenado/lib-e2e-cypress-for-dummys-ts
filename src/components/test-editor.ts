@@ -160,7 +160,7 @@ export class TestEditorElement extends HTMLElement {
     )];
 
     const beforeEach = allInterceptors.length
-      ? `  beforeEach(() => {\n    // Interceptores Cypress generados automáticamente\n    ${allInterceptors.join('\n    ')}\n  });\n\n`
+      ? `  beforeEach(() => {\n    // Auto-generated Cypress interceptors\n    ${allInterceptors.join('\n    ')}\n  });\n\n`
       : '';
 
     const itBlocks = selected

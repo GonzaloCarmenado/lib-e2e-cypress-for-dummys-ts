@@ -201,23 +201,18 @@ export class LibE2eRecorderElement extends HTMLElement {
         const container = document.getElementById('fs-setup-content')!;
         container.innerHTML = `
           <div style="padding:16px 20px 20px;color:#8b949e;font-size:13px;line-height:1.7">
-            <p>El <strong style="color:#e6edf3">editor avanzado</strong> puede insertar tus tests
-               directamente en los archivos
-               <code style="background:#0d1117;padding:1px 6px;border-radius:4px;
-                            font-size:11px;color:#c9d1d9">.cy.ts</code> de Cypress.</p>
+            <p>${this.translation.translate('RECORDER.FS_INTRO_HTML')}</p>
             <p style="margin-top:10px;margin-bottom:6px;font-size:11px;color:#8b949e">
-              Selecciona la carpeta que contiene la subcarpeta <code style="background:#0d1117;
-              padding:1px 5px;border-radius:4px;font-size:10px;color:#c9d1d9">e2e/</code>.
-              La extensión espera esta estructura:
+              ${this.translation.translate('RECORDER.FS_STRUCTURE_HINT_HTML')}
             </p>
             <pre style="margin:0;padding:10px 14px;background:#0d1117;border:1px solid #21262d;
                         border-radius:8px;font-size:11px;color:#c9d1d9;line-height:1.8;
                         font-family:'Cascadia Code','Fira Code','Consolas',monospace">
-cypress/         <span style="color:#484f58">← selecciona esta carpeta</span>
-└── e2e/         <span style="color:#484f58">← la extensión leerá aquí</span>
+cypress/         <span style="color:#484f58">${this.translation.translate('RECORDER.FS_TREE_PICK_HINT')}</span>
+└── e2e/         <span style="color:#484f58">${this.translation.translate('RECORDER.FS_TREE_READ_HINT')}</span>
     └── *.cy.ts</pre>
             <p style="margin-top:8px;font-size:11px;color:#484f58">
-              El permiso se guarda en el navegador y no se vuelve a solicitar.
+              ${this.translation.translate('RECORDER.FS_PERMISSION_NOTE')}
             </p>
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
               <button id="fs-skip"
