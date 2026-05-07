@@ -20,7 +20,10 @@
       "Bash(node -e ' *)",
       "Bash(node --input-type=module -e ' *)",
       "Bash(npx tsx -e ' *)",
-      "Bash(npx tsx *)"
+      "Bash(npx tsx *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
