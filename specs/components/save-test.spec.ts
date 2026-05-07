@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import '../../src/components/save-test';
-import type { SaveTestElement } from '../../src/components/save-test';
+import '../../src/components/save-test/save-test';
+import type { SaveTestElement } from '../../src/components/save-test/save-test';
 
 describe('Phase 8.2 — SaveTestElement', () => {
   let el: SaveTestElement;

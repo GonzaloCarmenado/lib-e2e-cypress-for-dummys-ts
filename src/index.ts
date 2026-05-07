@@ -29,10 +29,10 @@ export * from './utils/modal.utils';
 export * from './utils/toast.utils';
 
 // Phase 8 — Web Components
-export * from './components/test-previsualizer';
-export * from './components/save-test';
-export * from './components/test-editor';
-export * from './components/configuration';
-export * from './components/advanced-test-editor';
-export * from './components/file-preview';
-export * from './components/lib-e2e-recorder';
+export * from './components/test-previsualizer/test-previsualizer';
+export * from './components/save-test/save-test';
+export * from './components/test-editor/test-editor';
+export * from './components/configuration/configuration';
+export * from './components/advanced-test-editor/advanced-test-editor';
+export * from './components/file-preview/file-preview';
+export * from './components/lib-e2e-recorder/lib-e2e-recorder';

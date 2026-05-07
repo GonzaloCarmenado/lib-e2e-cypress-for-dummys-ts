@@ -9,8 +9,8 @@ vi.mock('sweetalert2', () => ({
   },
 }));
 
-import '../../src/components/lib-e2e-recorder';
-import type { LibE2eRecorderElement } from '../../src/components/lib-e2e-recorder';
+import '../../src/components/lib-e2e-recorder/lib-e2e-recorder';
+import type { LibE2eRecorderElement } from '../../src/components/lib-e2e-recorder/lib-e2e-recorder';
 import { RecordingService } from '../../src/services/recording.service';
 import { PersistenceService } from '../../src/services/persistence.service';
 import { TranslationService } from '../../src/services/translation.service';

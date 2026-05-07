@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import '../../src/components/advanced-test-editor';
-import type { AdvancedTestEditorElement } from '../../src/components/advanced-test-editor';
+import '../../src/components/advanced-test-editor/advanced-test-editor';
+import type { AdvancedTestEditorElement } from '../../src/components/advanced-test-editor/advanced-test-editor';
 import { PersistenceService } from '../../src/services/persistence.service';
 import { TranslationService } from '../../src/services/translation.service';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import '../../src/components/configuration';
-import type { ConfigurationElement } from '../../src/components/configuration';
+import '../../src/components/configuration/configuration';
+import type { ConfigurationElement } from '../../src/components/configuration/configuration';
 import { PersistenceService } from '../../src/services/persistence.service';
 import { TranslationService } from '../../src/services/translation.service';
 

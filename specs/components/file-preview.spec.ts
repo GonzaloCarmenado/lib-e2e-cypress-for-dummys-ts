@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import '../../src/components/file-preview';
-import type { FilePreviewElement } from '../../src/components/file-preview';
+import '../../src/components/file-preview/file-preview';
+import type { FilePreviewElement } from '../../src/components/file-preview/file-preview';
 
 describe('Phase 8.6 — FilePreviewElement', () => {
   let el: FilePreviewElement;

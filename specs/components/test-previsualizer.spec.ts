@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import '../../src/components/test-previsualizer';
-import type { TestPrevisualizerElement } from '../../src/components/test-previsualizer';
+import '../../src/components/test-previsualizer/test-previsualizer';
+import type { TestPrevisualizerElement } from '../../src/components/test-previsualizer/test-previsualizer';
 
 describe('Phase 8.1 — TestPrevisualizerElement', () => {
   let el: TestPrevisualizerElement;

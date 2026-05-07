@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import '../../src/components/test-editor';
-import type { TestEditorElement } from '../../src/components/test-editor';
+import '../../src/components/test-editor/test-editor';
+import type { TestEditorElement } from '../../src/components/test-editor/test-editor';
 import { PersistenceService } from '../../src/services/persistence.service';
 
 let dbCounter = 0;
