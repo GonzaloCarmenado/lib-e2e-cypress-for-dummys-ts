@@ -158,7 +158,8 @@ export class RecordingService {
       (e: Event) => {
         if (!this.isRecording$.getValue()) return;
         const target = e.target as HTMLElement;
-        if (target) this.handleClickEvent(target);
+        if (!target || this.isOwnElement(target)) return;
+        this.handleClickEvent(target);
       },
       { signal: this.abort.signal }
     );
@@ -170,7 +171,8 @@ export class RecordingService {
       (e: Event) => {
         if (!this.isRecording$.getValue()) return;
         const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-        if (target) this.handleInputEvent(target);
+        if (!target || this.isOwnElement(target)) return;
+        this.handleInputEvent(target);
       },
       { signal: this.abort.signal }
     );
@@ -182,7 +184,8 @@ export class RecordingService {
       (e: Event) => {
         if (!this.isRecording$.getValue()) return;
         const target = e.target as HTMLSelectElement;
-        if (target?.tagName.toLowerCase() === 'select') {
+        if (!target || this.isOwnElement(target)) return;
+        if (target.tagName.toLowerCase() === 'select') {
           this.handleSelectEvent(target);
         }
       },
@@ -388,6 +391,10 @@ export class RecordingService {
 
   private isOwnSelector(selector: string | null): boolean {
     return selector === OWN_SELECTOR;
+  }
+
+  private isOwnElement(target: HTMLElement): boolean {
+    return !!target.closest('[data-cy="lib-e2e-cypress-for-dummys"]');
   }
 
   private urlToWildcard(url: string, method: string): string {

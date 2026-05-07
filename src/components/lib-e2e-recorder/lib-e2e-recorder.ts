@@ -52,6 +52,9 @@ export class LibE2eRecorderElement extends HTMLElement {
   }
 
   connectedCallback(): void {
+    if (!this.getAttribute('data-cy')) {
+      this.setAttribute('data-cy', 'lib-e2e-cypress-for-dummys');
+    }
     if (!this.recording) this.recording = new RecordingService();
     if (!this.persistence) this.persistence = new PersistenceService();
     if (!this.translation) this.translation = new TranslationService();
@@ -280,6 +283,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         html: '<div id="commands-modal-content" style="min-height:250px;padding:0"></div>',
         showCloseButton: true,
         showConfirmButton: false,
+        allowOutsideClick: false,
         width: 640,
         color: '#e6edf3',
         didOpen: () => {

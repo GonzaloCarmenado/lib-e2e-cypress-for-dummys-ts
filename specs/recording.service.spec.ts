@@ -546,6 +546,56 @@ describe('Phase 4 — RecordingService', () => {
     });
   });
 
+  // ── own-element filtering ────────────────────────────────────────────────
+
+  describe('own-element filtering (data-cy="lib-e2e-cypress-for-dummys")', () => {
+    beforeEach(() => service.startRecording());
+
+    it('click inside own container adds no command', () => {
+      const host = makeElement('div', { 'data-cy': 'lib-e2e-cypress-for-dummys' });
+      const btn = document.createElement('button');
+      btn.setAttribute('data-cy', 'inner-btn');
+      host.appendChild(btn);
+      const before = service.getCommandsSnapshot().length;
+      click(btn);
+      expect(service.getCommandsSnapshot().length).toBe(before);
+      host.remove();
+    });
+
+    it('click directly on own container adds no command', () => {
+      const host = makeElement('div', { 'data-cy': 'lib-e2e-cypress-for-dummys' });
+      const before = service.getCommandsSnapshot().length;
+      click(host);
+      expect(service.getCommandsSnapshot().length).toBe(before);
+      host.remove();
+    });
+
+    it('does not emit selectorNotFound for clicks inside own container', () => {
+      const host = makeElement('div', { 'data-cy': 'lib-e2e-cypress-for-dummys' });
+      const inner = document.createElement('span');
+      host.appendChild(inner);
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(inner);
+      expect(fired).toBe(false);
+      host.remove();
+    });
+
+    it('input inside own container is not recorded', () => {
+      vi.useFakeTimers();
+      const host = makeElement('div', { 'data-cy': 'lib-e2e-cypress-for-dummys' });
+      const inp = document.createElement('input') as HTMLInputElement;
+      inp.setAttribute('id', 'recorder-input');
+      inp.type = 'text';
+      host.appendChild(inp);
+      const before = service.getCommandsSnapshot().length;
+      input(inp, 'hello');
+      vi.advanceTimersByTime(1200);
+      expect(service.getCommandsSnapshot().length).toBe(before);
+      host.remove();
+    });
+  });
+
   // ── onSelectorNotFound ───────────────────────────────────────────────────
 
   describe('onSelectorNotFound', () => {

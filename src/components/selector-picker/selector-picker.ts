@@ -25,6 +25,7 @@ export class SelectorPickerElement extends HTMLElement {
   }
 
   connectedCallback(): void {
+    this.setAttribute('data-cy', 'lib-e2e-cypress-for-dummys');
     this.ancestors = this.buildAncestors();
     this.selectedIndex = this.findBestIndex();
     this.render();
