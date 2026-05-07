@@ -1,10 +1,7 @@
 import { INPUT_TYPES } from '../models/input-types.model';
 import { Subject } from '../utils/subject';
+import { FORBIDDEN_ID_PREFIXES } from '../utils/selector-quality.utils';
 
-const FORBIDDEN_ID_PREFIXES = [
-  'cdk-', 'mat-', 'p-', 'ng-', 'mdc-',
-  'primeng-', 'auto-', 'field-', 'input-', 'select-',
-];
 const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
 
 export type SelectorStrategy = 'data-cy' | 'data-testid' | 'aria-label' | 'id';
@@ -14,6 +11,7 @@ export class RecordingService {
   private readonly interceptors$ = new Subject<string[]>([]);
   private readonly isRecording$ = new Subject<boolean>(false);
   private readonly isPaused$ = new Subject<boolean>(false);
+  private readonly selectorNotFound$ = new Subject<{ target: HTMLElement; action: 'click' } | null>(null);
   private readonly inputDebounceTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
   private readonly abort = new AbortController();
 
@@ -138,6 +136,12 @@ export class RecordingService {
     return this.isPaused$.subscribe(fn);
   }
 
+  onSelectorNotFound(fn: (target: HTMLElement, action: 'click') => void): () => void {
+    return this.selectorNotFound$.subscribe((v) => {
+      if (v) fn(v.target, v.action);
+    });
+  }
+
   destroy(): void {
     this.abort.abort();
     history.pushState = this.origPushState;
@@ -244,7 +248,11 @@ export class RecordingService {
       const matSelect = target.closest('mat-select');
       if (matSelect) {
         const sel = this.getReliableSelector(matSelect as HTMLElement);
-        this.addCommand(sel ? `cy.get('${sel}').click()` : '// No se pudo generar un selector confiable para mat-select');
+        if (sel) {
+          this.addCommand(`cy.get('${sel}').click()`);
+        } else {
+          this.selectorNotFound$.next({ target: matSelect as HTMLElement, action: 'click' });
+        }
         return;
       }
     }
@@ -253,7 +261,10 @@ export class RecordingService {
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
     const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
-    if (!container) return;
+    if (!container) {
+      this.selectorNotFound$.next({ target, action: 'click' });
+      return;
+    }
 
     const selector = this.getReliableSelector(container);
     if (selector === OWN_SELECTOR) return;
@@ -281,7 +292,7 @@ export class RecordingService {
     if (selector) {
       this.addCommand(`cy.get('${selector}').eq(0).click()`);
     } else {
-      this.addCommand('// No se pudo generar un selector confiable para mat-option');
+      this.selectorNotFound$.next({ target, action: 'click' });
     }
   }
 

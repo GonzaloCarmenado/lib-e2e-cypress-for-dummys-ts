@@ -25,9 +25,11 @@ export class LibE2eRecorderElement extends HTMLElement {
   private commandsUnsub?: () => void;
   private interceptorsUnsub?: () => void;
   private pauseUnsub?: () => void;
+  private selectorNotFoundUnsub?: () => void;
   private controlFirstTimeData = true;
   private _previsualizerRef: any = null;
   private httpMonitor?: HttpMonitor;
+  private smartSelectorEnabled = true;
 
   recording!: RecordingService;
   persistence!: PersistenceService;
@@ -77,6 +79,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.commandsUnsub?.();
     this.interceptorsUnsub?.();
     this.pauseUnsub?.();
+    this.selectorNotFoundUnsub?.();
     this.httpMonitor?.uninstall();
     this.recording.destroy();
   }
@@ -119,12 +122,29 @@ export class LibE2eRecorderElement extends HTMLElement {
       this.isPaused = paused;
       this.render();
     });
+    this.selectorNotFoundUnsub = this.recording.onSelectorNotFound((target) => {
+      if (this.smartSelectorEnabled) this.showSelectorPicker(target);
+    });
+  }
+
+  private showSelectorPicker(target: HTMLElement): void {
+    import('../../components/selector-picker/selector-picker').then(() => {
+      const existing = document.querySelector('selector-picker');
+      if (existing) existing.remove();
+
+      const picker = document.createElement('selector-picker') as any;
+      picker.targetElement = target;
+      picker.recording = this.recording;
+      picker.translation = this.translation;
+      document.body.appendChild(picker);
+    });
   }
 
   private async initSelectorStrategy(): Promise<void> {
     const config = await this.persistence.getGeneralConfig();
     const strategy = config?.['selectorStrategy'] as string | undefined;
     if (strategy) this.recording.selectorStrategy = strategy as any;
+    this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false';
   }
 
   toggle(): void {
@@ -423,6 +443,9 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           child.persistence = this.persistence;
           child.translation = this.translation;
           container.appendChild(child);
+          child.addEventListener('smartselectorchange', (e: CustomEvent) => {
+            this.smartSelectorEnabled = e.detail;
+          });
         },
         willClose: () => { this.isSettingsDialogOpen = false; },
       });

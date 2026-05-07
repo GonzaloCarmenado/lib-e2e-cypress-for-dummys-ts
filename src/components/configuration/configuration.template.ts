@@ -12,10 +12,11 @@ export interface ConfigurationState {
   selectorStrategy: string;
   filesystemGranted: boolean;
   cypressFolderName: string | null;
+  smartSelectorEnabled: boolean;
 }
 
 export function renderConfiguration(state: ConfigurationState, t: (key: string) => string): string {
-  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName } = state;
+  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled } = state;
 
   const langOptions = LANGS.map(
     (l) => `<option value="${l.value}" ${selectedLanguage === l.value ? 'selected' : ''}>${l.label}</option>`,
@@ -41,6 +42,18 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
           <div>
             <div class="check-title">${t('CONFIG.HTTP_TITLE')}</div>
             <div class="check-sub">${t('CONFIG.HTTP_SUB')}</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Smart Selector -->
+      <div class="card">
+        <div class="card-hd">${t('CONFIG.SMART_SELECTOR_SECTION')}</div>
+        <label class="check-row">
+          <input type="checkbox" id="smart-selector-toggle" ${smartSelectorEnabled ? 'checked' : ''} />
+          <div>
+            <div class="check-title">${t('CONFIG.SMART_SELECTOR_TITLE')}</div>
+            <div class="check-sub">${t('CONFIG.SMART_SELECTOR_SUB')}</div>
           </div>
         </label>
       </div>

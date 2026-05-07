@@ -545,4 +545,93 @@ describe('Phase 4 — RecordingService', () => {
       expect(service.getCommandsSnapshot().at(-1)).toContain('#myButton');
     });
   });
+
+  // ── onSelectorNotFound ───────────────────────────────────────────────────
+
+  describe('onSelectorNotFound', () => {
+    beforeEach(() => service.startRecording());
+
+    it('emits when clicking an element with no testable selector', () => {
+      const plain = makeElement('div'); // no data-cy, no id, no class
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(plain);
+      expect(fired).toBe(true);
+    });
+
+    it('emits with the clicked element as target', () => {
+      const plain = makeElement('button'); // no testable attrs
+      let capturedTarget: HTMLElement | null = null;
+      service.onSelectorNotFound((t) => { capturedTarget = t; });
+      click(plain);
+      expect(capturedTarget).toBe(plain);
+    });
+
+    it('emits action "click"', () => {
+      const plain = makeElement('div');
+      let capturedAction: string | null = null;
+      service.onSelectorNotFound((_t, action) => { capturedAction = action; });
+      click(plain);
+      expect(capturedAction).toBe('click');
+    });
+
+    it('does NOT emit when element has a valid selector (data-cy)', () => {
+      const btn = makeElement('button', { 'data-cy': 'submit' });
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(btn);
+      expect(fired).toBe(false);
+    });
+
+    it('does NOT emit when not recording', () => {
+      service.stopRecording();
+      const plain = makeElement('div');
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(plain);
+      expect(fired).toBe(false);
+    });
+
+    it('does not add a comment command when emitting selectorNotFound', () => {
+      const plain = makeElement('div');
+      service.onSelectorNotFound(() => {});
+      click(plain);
+      const hasComment = service.getCommandsSnapshot().some((c) => c.startsWith('//'));
+      expect(hasComment).toBe(false);
+    });
+
+    it('unsubscribes when the returned function is called', () => {
+      const plain = makeElement('div');
+      let count = 0;
+      const unsub = service.onSelectorNotFound(() => { count++; });
+      click(plain);
+      unsub();
+      click(plain);
+      expect(count).toBe(1);
+    });
+
+    it('emits for mat-select with no valid selector', () => {
+      const matSelect = document.createElement('mat-select');
+      document.body.appendChild(matSelect);
+
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(matSelect);
+
+      expect(fired).toBe(true);
+      matSelect.remove();
+    });
+
+    it('does not add comment for mat-select when no selector (emits instead)', () => {
+      const matSelect = document.createElement('mat-select');
+      document.body.appendChild(matSelect);
+
+      service.onSelectorNotFound(() => {});
+      click(matSelect);
+
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.some((c) => c.startsWith('//') && c.includes('mat-select'))).toBe(false);
+      matSelect.remove();
+    });
+  });
 });

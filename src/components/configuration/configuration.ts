@@ -13,6 +13,7 @@ export class ConfigurationElement extends HTMLElement {
   selectedLanguage = "es"
   advancedHttpConfig = false
   selectorStrategy: SelectorStrategy = 'data-cy'
+  smartSelectorEnabled = true
   private filesystemGranted = false
   private cypressFolderName: string | null = null
 
@@ -39,6 +40,7 @@ export class ConfigurationElement extends HTMLElement {
     }
     this.advancedHttpConfig = localStorage.getItem("extendedHttpCommands") === "true"
     this.selectorStrategy = (config?.['selectorStrategy'] as SelectorStrategy) ?? 'data-cy'
+    this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false'
     this.filesystemGranted = config?.['allowReadWriteFiles'] === 'true'
     const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined
     this.cypressFolderName = handle?.name ?? null
@@ -56,6 +58,13 @@ export class ConfigurationElement extends HTMLElement {
     this.advancedHttpConfig = checked
     localStorage.setItem("extendedHttpCommands", checked ? "true" : "false")
     this.persistence.setConfig({ extendedHttpCommands: checked ? "true" : "false" })
+    this.render()
+  }
+
+  async onSmartSelectorChange(enabled: boolean): Promise<void> {
+    this.smartSelectorEnabled = enabled
+    await this.persistence.setConfig({ smartSelectorEnabled: enabled ? 'true' : 'false' })
+    this.dispatchEvent(new CustomEvent('smartselectorchange', { detail: enabled, bubbles: true, composed: true }))
     this.render()
   }
 
@@ -118,12 +127,16 @@ export class ConfigurationElement extends HTMLElement {
       selectorStrategy: this.selectorStrategy,
       filesystemGranted: this.filesystemGranted,
       cypressFolderName: this.cypressFolderName,
+      smartSelectorEnabled: this.smartSelectorEnabled,
     }, this.t.bind(this))}`;
     ;(this.shadow.getElementById("lang-select") as HTMLSelectElement).addEventListener("change", (e) =>
       this.onLanguageChange((e.target as HTMLSelectElement).value),
     )
     ;(this.shadow.getElementById("http-toggle") as HTMLInputElement).addEventListener("change", (e) =>
       this.onAdvancedHttpConfigChange((e.target as HTMLInputElement).checked),
+    )
+    ;(this.shadow.getElementById("smart-selector-toggle") as HTMLInputElement).addEventListener("change", (e) =>
+      this.onSmartSelectorChange((e.target as HTMLInputElement).checked),
     )
     ;(this.shadow.getElementById("selector-strategy") as HTMLSelectElement).addEventListener("change", (e) =>
       this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),

@@ -193,6 +193,31 @@ Forbidden id prefixes (`cdk-`, `mat-`, `ng-`, `mdc-`, `p-`, and others) are auto
 
 ---
 
+### Smart selector picker
+
+When the recorder cannot generate a reliable selector for a clicked element (no `data-cy`, `data-testid`, `aria-label`, or clean `id`), the **Smart Selector Picker** appears as an overlay.
+
+The picker walks the DOM ancestor chain of the clicked element (up to 10 levels) and colour-codes each ancestor by selector quality:
+
+| Badge | Quality | Criteria |
+|---|---|---|
+| 🟢 Excellent | Best | Has `data-cy`, `data-testid`, or `aria-label` |
+| 🔵 Good | Reliable | Has a valid `id` (no framework-generated prefix) |
+| 🟡 Acceptable | Fragile | Has CSS classes — no testing attribute |
+| 🔴 Not recommended | Avoid | Only tag name or inline `style` |
+
+**How to use:**
+1. The picker auto-selects the best available ancestor
+2. Use **↑ / ↓** to navigate the ancestor list
+3. Press **Enter** (or click a row) to record `cy.get('<selector>').click()`
+4. Press **Escape** or click outside to dismiss without recording
+
+The picker also closes automatically when recording is stopped or paused.
+
+**Toggle in settings:** ⚙️ Config → Smart selector. When disabled, unresolvable clicks are silently dropped (the previous behaviour).
+
+---
+
 ### Saving and managing tests
 
 When recording stops, a dialog prompts you to:

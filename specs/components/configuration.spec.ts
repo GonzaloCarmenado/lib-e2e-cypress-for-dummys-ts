@@ -137,4 +137,61 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     const config = await persistence.getConfig('selectorStrategy');
     expect(config).toMatchObject({ selectorStrategy: 'id' });
   });
+
+  // ── smartSelectorEnabled (AC-01, AC-02) ─────────────────────────────────
+
+  it('smartSelectorEnabled defaults to true', () => {
+    expect(el.smartSelectorEnabled).toBe(true);
+  });
+
+  it('smart-selector-toggle checkbox is rendered in shadow DOM', () => {
+    const checkbox = el.shadowRoot!.getElementById('smart-selector-toggle');
+    expect(checkbox).not.toBeNull();
+  });
+
+  it('smart-selector-toggle is checked when smartSelectorEnabled is true', () => {
+    el.smartSelectorEnabled = true;
+    (el as any).render();
+    const checkbox = el.shadowRoot!.getElementById('smart-selector-toggle') as HTMLInputElement;
+    expect(checkbox.hasAttribute('checked')).toBe(true);
+  });
+
+  it('smart-selector-toggle is unchecked when smartSelectorEnabled is false', () => {
+    el.smartSelectorEnabled = false;
+    (el as any).render();
+    const checkbox = el.shadowRoot!.getElementById('smart-selector-toggle') as HTMLInputElement;
+    expect(checkbox.hasAttribute('checked')).toBe(false);
+  });
+
+  it('onSmartSelectorChange(false) sets smartSelectorEnabled to false', () => {
+    el.onSmartSelectorChange(false);
+    expect(el.smartSelectorEnabled).toBe(false);
+  });
+
+  it('onSmartSelectorChange(true) sets smartSelectorEnabled to true', () => {
+    el.smartSelectorEnabled = false;
+    el.onSmartSelectorChange(true);
+    expect(el.smartSelectorEnabled).toBe(true);
+  });
+
+  it('onSmartSelectorChange persists to IndexedDB as "false"', async () => {
+    await el.onSmartSelectorChange(false);
+    const config = await persistence.getConfig('smartSelectorEnabled');
+    expect(config).toMatchObject({ smartSelectorEnabled: 'false' });
+  });
+
+  it('onSmartSelectorChange persists to IndexedDB as "true"', async () => {
+    await el.onSmartSelectorChange(true);
+    const config = await persistence.getConfig('smartSelectorEnabled');
+    expect(config).toMatchObject({ smartSelectorEnabled: 'true' });
+  });
+
+  it('onSmartSelectorChange dispatches smartselectorchange event', async () => {
+    let received: boolean | null = null;
+    el.addEventListener('smartselectorchange', (e: Event) => {
+      received = (e as CustomEvent).detail;
+    });
+    await el.onSmartSelectorChange(false);
+    expect(received).toBe(false);
+  });
 });
