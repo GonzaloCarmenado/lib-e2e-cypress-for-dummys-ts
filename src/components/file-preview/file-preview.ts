@@ -1,4 +1,4 @@
-import { translationService, TranslationService } from '../../services/translation.service';
+import { translationService, type TranslationService } from '../../services/translation.service';
 import { FILE_PREVIEW_STYLES } from './file-preview.styles';
 import { renderFilePreview } from './file-preview.template';
 

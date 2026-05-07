@@ -24,7 +24,6 @@ function lastInterceptor(service: RecordingService): string {
 describe('Phase 6 — HttpMonitor', () => {
   let recording: RecordingService;
   let monitor: HttpMonitor;
-  let originalFetch: typeof fetch;
   let mockFetch: Mock;
 
   beforeEach(() => {
@@ -34,7 +33,6 @@ describe('Phase 6 — HttpMonitor', () => {
     recording = new RecordingService();
     recording.startRecording();
 
-    originalFetch = window.fetch;
     mockFetch = vi.fn();
     vi.stubGlobal('fetch', mockFetch);
 

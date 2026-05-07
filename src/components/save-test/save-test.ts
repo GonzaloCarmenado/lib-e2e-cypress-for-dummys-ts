@@ -1,4 +1,4 @@
-import { translationService, TranslationService } from '../../services/translation.service';
+import { translationService, type TranslationService } from '../../services/translation.service';
 import { SAVE_TEST_STYLES } from './save-test.styles';
 import { renderSaveTestAsk, renderSaveTestDesc } from './save-test.template';
 

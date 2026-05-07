@@ -172,7 +172,7 @@ describe('Phase 7 — UI Utilities', () => {
 
     it('acts on the LAST popup when multiple exist', () => {
       makeSwalPopup(true);
-      const second = makeSwalPopup(true);
+      makeSwalPopup(true);
       makeSwalDraggable();
       const headers = document.querySelectorAll('.swal2-header') as NodeListOf<HTMLElement>;
       expect(headers[1].style.cursor).toBe('move');

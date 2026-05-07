@@ -46,7 +46,11 @@ export class RecordingService {
   }
 
   toggleRecording(): void {
-    this.isRecording$.getValue() ? this.stopRecording() : this.startRecording();
+    if (this.isRecording$.getValue()) {
+      this.stopRecording();
+    } else {
+      this.startRecording();
+    }
   }
 
   pauseRecording(): void {
@@ -59,7 +63,11 @@ export class RecordingService {
   }
 
   togglePause(): void {
-    this.isPaused$.getValue() ? this.resumeRecording() : this.pauseRecording();
+    if (this.isPaused$.getValue()) {
+      this.resumeRecording();
+    } else {
+      this.pauseRecording();
+    }
   }
 
   addCommand(cmd: string): void {

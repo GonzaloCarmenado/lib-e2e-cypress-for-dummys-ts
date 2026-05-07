@@ -94,12 +94,11 @@ export class HttpMonitor {
   private installFetch(): void {
     if (this.originalFetch) return;
     this.originalFetch = window.fetch;
-    const monitor = this;
 
-    window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-      const response = await monitor.originalFetch!(input, init);
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const response = await this.originalFetch!(input, init);
       try {
-        await monitor.handleFetchInterception(input, init, response.clone());
+        await this.handleFetchInterception(input, init, response.clone());
       } catch {
         // Never let monitoring errors break the actual request
       }
@@ -116,8 +115,8 @@ export class HttpMonitor {
   private installXhr(): void {
     if (this.originalXHR) return;
     this.originalXHR = window.XMLHttpRequest;
-    const monitor = this;
     const OrigXHR = this.originalXHR;
+    const handleXhrInterception = this.handleXhrInterception.bind(this);
 
     window.XMLHttpRequest = class extends OrigXHR {
       private _xhrMethod = 'GET';
@@ -142,7 +141,7 @@ export class HttpMonitor {
         }
         this.addEventListener('load', () => {
           try {
-            monitor.handleXhrInterception(
+            handleXhrInterception(
               this._xhrMethod,
               this._xhrUrl,
               this._xhrRequestBody,

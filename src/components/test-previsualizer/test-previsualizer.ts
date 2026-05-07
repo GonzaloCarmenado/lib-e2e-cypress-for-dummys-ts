@@ -1,4 +1,4 @@
-import { translationService, TranslationService } from '../../services/translation.service';
+import { translationService, type TranslationService } from '../../services/translation.service';
 import { TEST_PREVISUALIZER_STYLES } from './test-previsualizer.styles';
 import { renderTestPrevisualizer } from './test-previsualizer.template';
 
