@@ -211,4 +211,404 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     el.recoverLastRecording();
     expect(spy).not.toHaveBeenCalled();
   });
+
+  // ── showSaveTestDialog ────────────────────────────────────────────────────
+
+  it('showSaveTestDialog() sets isSaveTestDialogOpen to true', () => {
+    el.showSaveTestDialog();
+    expect(el.isSaveTestDialogOpen).toBe(true);
+  });
+
+  it('showSaveTestDialog() calling twice toggles isSaveTestDialogOpen to false', () => {
+    el.showSaveTestDialog();
+    el.showSaveTestDialog();
+    expect(el.isSaveTestDialogOpen).toBe(false);
+  });
+
+  // ── saveRecordingHistory ──────────────────────────────────────────────────
+
+  it('saveRecordingHistory() skips saving when cypressCommands is empty', () => {
+    localStorage.removeItem('e2e-recording-history');
+    el.cypressCommands = [];
+    (el as any).saveRecordingHistory();
+    expect(localStorage.getItem('e2e-recording-history')).toBeNull();
+  });
+
+  it('saveRecordingHistory() saves commands to localStorage', () => {
+    localStorage.removeItem('e2e-recording-history');
+    el.cypressCommands = ["cy.visit('/')"];
+    el.interceptors = [];
+    (el as any).saveRecordingHistory();
+    const history = el.getRecordingHistory();
+    expect(history).toHaveLength(1);
+    expect(history[0].commands).toContain("cy.visit('/')");
+  });
+
+  it('saveRecordingHistory() prepends new entries and keeps max 5', () => {
+    const entries = Array.from({ length: 5 }, (_, i) => ({
+      commands: [`cy.visit('/page${i}')`],
+      interceptors: [],
+      savedAt: Date.now() - i * 1000,
+    }));
+    localStorage.setItem('e2e-recording-history', JSON.stringify(entries));
+
+    el.cypressCommands = ["cy.get('#new').click()"];
+    el.interceptors = [];
+    (el as any).saveRecordingHistory();
+
+    const history = el.getRecordingHistory();
+    expect(history).toHaveLength(5);
+    expect(history[0].commands).toContain("cy.get('#new').click()");
+  });
+
+  it('stop recording triggers saveRecordingHistory when commands exist', () => {
+    localStorage.removeItem('e2e-recording-history');
+    el.toggle(); // start — adds 3 initial commands, sets controlFirstTimeData = false
+    el.toggle(); // stop  — calls saveRecordingHistory()
+    const history = el.getRecordingHistory();
+    expect(history).toHaveLength(1);
+    expect(history[0].commands.length).toBeGreaterThan(0);
+  });
+
+  it('getRecordingHistory() returns [] when localStorage contains invalid JSON', () => {
+    localStorage.setItem('e2e-recording-history', '{invalid json}');
+    expect(el.getRecordingHistory()).toEqual([]);
+  });
+
+  // ── onSaveTest ────────────────────────────────────────────────────────────
+
+  it('onSaveTest() does nothing when description is null', async () => {
+    el.cypressCommands = ["cy.visit('/')"];
+    await (el as any).onSaveTest(null, []);
+    expect(el.cypressCommands).toEqual(["cy.visit('/')"]);
+  });
+
+  it('onSaveTest() clears commands and recording history when description is given', async () => {
+    el.cypressCommands = ["cy.visit('/')"];
+    el.interceptors = [];
+    localStorage.setItem('e2e-recording-history', JSON.stringify([{ commands: [], interceptors: [], savedAt: 1 }]));
+    await (el as any).onSaveTest('My Test', ['tag1']);
+    expect(el.cypressCommands).toEqual([]);
+    expect(el.getRecordingHistory()).toEqual([]);
+  });
+
+  // ── onSaveAndExportTest ───────────────────────────────────────────────────
+
+  it('onSaveAndExportTest() does nothing when description is null', async () => {
+    el.cypressCommands = ["cy.visit('/')"];
+    await (el as any).onSaveAndExportTest(null, []);
+    expect(el.cypressCommands).toEqual(["cy.visit('/')"]);
+  });
+
+  it('onSaveAndExportTest() clears commands', async () => {
+    el.cypressCommands = ["cy.visit('/')"];
+    el.interceptors = [];
+    await (el as any).onSaveAndExportTest('Export Test', []);
+    expect(el.cypressCommands).toEqual([]);
+  });
+
+  it('onSaveAndExportTest() schedules showAdvancedEditorDialog', async () => {
+    const dialogSpy = vi.spyOn(el, 'showAdvancedEditorDialog');
+    const timeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementationOnce((fn: any) => {
+      fn(); // invoke immediately instead of waiting 300 ms
+      return 0 as any;
+    });
+    el.cypressCommands = ["cy.visit('/')"];
+    el.interceptors = [];
+    await (el as any).onSaveAndExportTest('Export Test', []);
+    expect(dialogSpy).toHaveBeenCalled();
+    timeoutSpy.mockRestore();
+  });
+
+  // ── willClose callbacks ───────────────────────────────────────────────────
+
+  describe('willClose callbacks reset dialog flags', () => {
+    function withWillClose(fn: () => void): void {
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.willClose) opts.willClose();
+        return { isConfirmed: false } as any;
+      });
+      fn();
+    }
+
+    it('showSavedTestsDialog willClose resets isSavedTestsDialogOpen', () => {
+      withWillClose(() => el.showSavedTestsDialog());
+      expect(el.isSavedTestsDialogOpen).toBe(false);
+    });
+
+    it('showCommandsDialog willClose resets isCommandsDialogOpen', () => {
+      withWillClose(() => el.showCommandsDialog());
+      expect(el.isCommandsDialogOpen).toBe(false);
+    });
+
+    it('showSettingsDialog willClose resets isSettingsDialogOpen', () => {
+      withWillClose(() => el.showSettingsDialog());
+      expect(el.isSettingsDialogOpen).toBe(false);
+    });
+
+    it('showAdvancedEditorDialog willClose resets isAdvancedEditorDialogOpen', () => {
+      withWillClose(() => el.showAdvancedEditorDialog());
+      expect(el.isAdvancedEditorDialogOpen).toBe(false);
+    });
+
+    it('showSaveTestDialog willClose resets isSaveTestDialogOpen', () => {
+      withWillClose(() => el.showSaveTestDialog());
+      expect(el.isSaveTestDialogOpen).toBe(false);
+    });
+  });
+
+  // ── assertion builder (showCommandsDialog didOpen) ────────────────────────
+
+  describe('assertion builder in showCommandsDialog', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'commands-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => {
+      container.remove();
+    });
+
+    it('adds a cy.get command with a value', () => {
+      el.showCommandsDialog();
+      const selectorInput = document.getElementById('assert-selector') as HTMLInputElement;
+      const typeSelect    = document.getElementById('assert-type')     as HTMLSelectElement;
+      const valueInput    = document.getElementById('assert-value')    as HTMLInputElement;
+      const addBtn        = document.getElementById('btn-add-assertion') as HTMLButtonElement;
+
+      selectorInput.value = '[data-cy="btn"]';
+      typeSelect.value    = 'contain.text';
+      valueInput.value    = 'Submit';
+      addBtn.click();
+
+      expect(recording.getCommandsSnapshot().at(-1)).toBe(
+        "cy.get('[data-cy=\"btn\"]').should('contain.text', 'Submit')"
+      );
+    });
+
+    it('adds a command without value for no-value assertion types', () => {
+      el.showCommandsDialog();
+      const selectorInput = document.getElementById('assert-selector') as HTMLInputElement;
+      const typeSelect    = document.getElementById('assert-type')     as HTMLSelectElement;
+      const addBtn        = document.getElementById('btn-add-assertion') as HTMLButtonElement;
+
+      selectorInput.value = '[data-cy="btn"]';
+      typeSelect.value    = 'be.visible';
+      addBtn.click();
+
+      expect(recording.getCommandsSnapshot().at(-1)).toBe(
+        "cy.get('[data-cy=\"btn\"]').should('be.visible')"
+      );
+    });
+
+    it('skips adding command when selector is empty', () => {
+      el.showCommandsDialog();
+      const before = recording.getCommandsSnapshot().length;
+      (document.getElementById('btn-add-assertion') as HTMLButtonElement).click();
+      expect(recording.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('deletecommand event calls recording.removeCommand', () => {
+      recording.startRecording();
+      el.showCommandsDialog();
+      const child = container.querySelector('test-previsualizer')!;
+      child.dispatchEvent(new CustomEvent('deletecommand', { detail: 0 }));
+      expect(recording.getCommandsSnapshot().length).toBe(2); // 3 initial → remove index 0 → 2
+    });
+
+    it('movecommand event calls recording.moveCommand', () => {
+      recording.startRecording();
+      el.showCommandsDialog();
+      const [first, second] = recording.getCommandsSnapshot();
+      const child = container.querySelector('test-previsualizer')!;
+      child.dispatchEvent(new CustomEvent('movecommand', { detail: { from: 0, to: 1 } }));
+      expect(recording.getCommandsSnapshot()[0]).toBe(second);
+      expect(recording.getCommandsSnapshot()[1]).toBe(first);
+    });
+
+    it('deleteinterceptor event calls recording.removeInterceptor', () => {
+      recording.startRecording();
+      recording.registerInterceptor('GET', '/api/users', 'get-api-users');
+      el.showCommandsDialog();
+      const child = container.querySelector('test-previsualizer')!;
+      child.dispatchEvent(new CustomEvent('deleteinterceptor', { detail: 0 }));
+      expect(recording.getInterceptorsSnapshot()).toHaveLength(0);
+    });
+  });
+
+  // ── remaining dialog didOpen callbacks ───────────────────────────────────
+
+  describe('showSavedTestsDialog didOpen', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'saved-tests-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => { container.remove(); });
+
+    it('appends a test-editor child element', () => {
+      el.showSavedTestsDialog();
+      expect(container.querySelector('test-editor')).not.toBeNull();
+    });
+  });
+
+  describe('showSaveTestDialog didOpen', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'save-test-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => { container.remove(); });
+
+    it('appends a save-test child element', () => {
+      el.showSaveTestDialog();
+      expect(container.querySelector('save-test')).not.toBeNull();
+    });
+
+    it('savetest event calls Swal.close', () => {
+      el.showSaveTestDialog();
+      const child = container.querySelector('save-test')!;
+      child.dispatchEvent(new CustomEvent('savetest', { detail: { description: 'from-event', tags: [] } }));
+      expect(Swal.close).toHaveBeenCalled();
+    });
+
+    it('saveandexport event calls Swal.close', () => {
+      el.showSaveTestDialog();
+      const child = container.querySelector('save-test')!;
+      child.dispatchEvent(new CustomEvent('saveandexport', { detail: { description: 'export', tags: [] } }));
+      expect(Swal.close).toHaveBeenCalled();
+    });
+  });
+
+  describe('showSettingsDialog didOpen', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'settings-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => { container.remove(); });
+
+    it('appends an e2e-configuration child element', () => {
+      el.showSettingsDialog();
+      expect(container.querySelector('e2e-configuration')).not.toBeNull();
+    });
+  });
+
+  describe('showAdvancedEditorDialog didOpen', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'advanced-editor-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => { container.remove(); });
+
+    it('appends an advanced-test-editor child element', () => {
+      el.showAdvancedEditorDialog();
+      expect(container.querySelector('advanced-test-editor')).not.toBeNull();
+    });
+
+    it('closemodal event on child calls Swal.close', () => {
+      el.showAdvancedEditorDialog();
+      const child = container.querySelector('advanced-test-editor')!;
+      child.dispatchEvent(new CustomEvent('closemodal'));
+      expect(Swal.close).toHaveBeenCalled();
+    });
+
+    it('selectorstrategychange event updates recording.selectorStrategy', () => {
+      el.showAdvancedEditorDialog();
+      const child = container.querySelector('advanced-test-editor')!;
+      child.dispatchEvent(new CustomEvent('selectorstrategychange', { detail: 'aria-label' }));
+      expect(recording.selectorStrategy).toBe('aria-label');
+    });
+  });
+
+  // ── async init methods ────────────────────────────────────────────────────
+
+  describe('initHttpConfig', () => {
+    it('sets extendedHttpCommands to true when no config exists in DB', async () => {
+      const freshDb = new PersistenceService(`fresh_init_db_${Date.now()}`);
+      el.persistence = freshDb;
+      localStorage.removeItem('extendedHttpCommands');
+      await (el as any).initHttpConfig();
+      expect(localStorage.getItem('extendedHttpCommands')).toBe('true');
+    });
+
+    it('reads extendedHttpCommands from DB when config exists', async () => {
+      const freshDb = new PersistenceService(`fresh_init_db_${Date.now()}`);
+      el.persistence = freshDb;
+      await freshDb.setConfig({ extendedHttpCommands: 'false' });
+      localStorage.removeItem('extendedHttpCommands');
+      await (el as any).initHttpConfig();
+      expect(localStorage.getItem('extendedHttpCommands')).toBe('false');
+    });
+  });
+
+  describe('initLanguage', () => {
+    it('calls setLang with stored language when config exists', async () => {
+      const freshDb = new PersistenceService(`fresh_lang_db_${Date.now()}`);
+      el.persistence = freshDb;
+      await freshDb.setConfig({ language: 'en' });
+      const spy = vi.spyOn(translation, 'setLang');
+      await (el as any).initLanguage();
+      expect(spy).toHaveBeenCalledWith('en');
+    });
+
+    it('calls detectLang when no language config exists', async () => {
+      const freshDb = new PersistenceService(`fresh_lang_db_${Date.now()}`);
+      el.persistence = freshDb;
+      const spy = vi.spyOn(translation, 'detectLang').mockReturnValue('de');
+      await (el as any).initLanguage();
+      expect(spy).toHaveBeenCalled();
+    });
+  });
+
+  // ── disconnectedCallback ──────────────────────────────────────────────────
+
+  it('disconnectedCallback removes keyboard shortcut listener', () => {
+    const spy = vi.spyOn(el, 'toggle');
+    el.remove(); // triggers disconnectedCallback — removes window keydown listener
+    window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'r', bubbles: true }));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('non-Ctrl keyboard events are ignored', () => {
+    const spy = vi.spyOn(el, 'toggle');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }));
+    expect(spy).not.toHaveBeenCalled();
+  });
 });

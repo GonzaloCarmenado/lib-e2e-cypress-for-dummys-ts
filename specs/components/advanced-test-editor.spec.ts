@@ -177,4 +177,158 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
     el.openEditManually();
     expect(detail.fileName).toBe('');
   });
+
+  // ── btn-reauth click handler ──────────────────────────────────────────────
+
+  describe('btn-reauth click handler', () => {
+    it('does nothing when _dirHandle is null', async () => {
+      (el as any).hasPermission = false;
+      (el as any).needsReauth = true;
+      (el as any)._dirHandle = null;
+      (el as any).render();
+
+      const btn = el.shadowRoot!.getElementById('btn-reauth') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+      await Promise.resolve();
+
+      expect((el as any).hasPermission).toBe(false);
+    });
+
+    it('sets hasPermission to true when requestPermission returns granted', async () => {
+      const mockDirHandle = {
+        requestPermission: vi.fn().mockResolvedValue('granted'),
+      };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+
+      (el as any).hasPermission = false;
+      (el as any).needsReauth = true;
+      (el as any)._dirHandle = mockDirHandle;
+      (el as any).render();
+
+      const btn = el.shadowRoot!.getElementById('btn-reauth') as HTMLElement;
+      btn.click();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect((el as any).hasPermission).toBe(true);
+      expect((el as any).needsReauth).toBe(false);
+    });
+
+    it('does not change hasPermission when requestPermission is denied', async () => {
+      const mockDirHandle = {
+        requestPermission: vi.fn().mockResolvedValue('denied'),
+      };
+
+      (el as any).hasPermission = false;
+      (el as any).needsReauth = true;
+      (el as any)._dirHandle = mockDirHandle;
+      (el as any).render();
+
+      const btn = el.shadowRoot!.getElementById('btn-reauth') as HTMLElement;
+      btn.click();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect((el as any).hasPermission).toBe(false);
+    });
+  });
+
+  // ── saveCommandsToFile ────────────────────────────────────────────────────
+
+  describe('saveCommandsToFile', () => {
+    it('writes content with beforeEach when interceptorsBlock is set', async () => {
+      const writeMock = vi.fn();
+      const closeMock = vi.fn();
+      const mockHandle = {
+        createWritable: vi.fn().mockResolvedValue({ write: writeMock, close: closeMock }),
+      } as unknown as FileSystemFileHandle;
+
+      el.selectedFileHandle = mockHandle;
+      el.selectedFileContent = "describe('suite', () => {\n});";
+      el.testItBlock = "it('my test', () => { cy.visit('/'); });";
+      el.interceptorsBlock = "  cy.intercept('GET', '**/api').as('api');\n";
+
+      await el.saveCommandsToFile();
+
+      expect(writeMock).toHaveBeenCalled();
+      const written = writeMock.mock.calls[0][0] as string;
+      expect(written).toContain('beforeEach');
+      expect(written).toContain('my test');
+    });
+
+    it('dispatches closemodal event on success', async () => {
+      const mockHandle = {
+        createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }),
+      } as unknown as FileSystemFileHandle;
+
+      el.selectedFileHandle = mockHandle;
+      el.selectedFileContent = "describe('suite', () => {\n});";
+      el.testItBlock = "it('test', () => {});";
+      el.interceptorsBlock = '';
+
+      let fired = false;
+      el.addEventListener('closemodal', () => { fired = true; });
+
+      await el.saveCommandsToFile();
+
+      expect(fired).toBe(true);
+    });
+
+    it('does nothing when insertItBlock returns empty (content has no closing brace)', async () => {
+      const mockHandle = { createWritable: vi.fn() } as unknown as FileSystemFileHandle;
+
+      el.selectedFileHandle = mockHandle;
+      el.selectedFileContent = 'no closing brace here';
+      el.testItBlock = "it('test', () => {});";
+
+      await el.saveCommandsToFile();
+
+      expect(mockHandle.createWritable).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── onFileClick partial paths ─────────────────────────────────────────────
+
+  describe('onFileClick', () => {
+    it('sets saveButtonEnabled to true when entry is a file (no _dirHandle)', async () => {
+      const file = { kind: 'file', name: 'login.cy.ts' };
+      await el.onFileClick(file);
+      expect(el.saveButtonEnabled).toBe(true);
+    });
+
+    it('leaves selectedFileContent null when _dirHandle is null', async () => {
+      const file = { kind: 'file', name: 'login.cy.ts' };
+      await el.onFileClick(file);
+      expect(el.selectedFileContent).toBeNull();
+    });
+  });
+
+  // ── loadCypressCommandsForTest edge cases ─────────────────────────────────
+
+  it('loadCypressCommandsForTest sets empty strings when test does not exist', async () => {
+    el.testItBlock = 'something';
+    el.interceptorsBlock = 'something';
+    await el.loadCypressCommandsForTest(99999);
+    expect(el.testItBlock).toBe('');
+    expect(el.interceptorsBlock).toBe('');
+  });
+
+  // ── no-permission render variations ──────────────────────────────────────
+
+  describe('no-permission render', () => {
+    it('renders btn-reauth when needsReauth is true', () => {
+      (el as any).hasPermission = false;
+      (el as any).needsReauth = true;
+      (el as any).render();
+      expect(el.shadowRoot!.getElementById('btn-reauth')).not.toBeNull();
+    });
+
+    it('does not render btn-reauth when needsReauth is false', () => {
+      (el as any).hasPermission = false;
+      (el as any).needsReauth = false;
+      (el as any).render();
+      expect(el.shadowRoot!.getElementById('btn-reauth')).toBeNull();
+    });
+  });
 });
