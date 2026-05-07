@@ -23,7 +23,8 @@
       "Bash(npx tsx *)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
