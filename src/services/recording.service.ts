@@ -159,6 +159,8 @@ export class RecordingService {
         if (!this.isRecording$.getValue()) return;
         const target = e.target as HTMLElement;
         if (!target || this.isOwnElement(target)) return;
+        const tag = target.tagName?.toLowerCase();
+        if (tag === 'body' || tag === 'html') return;
         this.handleClickEvent(target);
       },
       { signal: this.abort.signal }

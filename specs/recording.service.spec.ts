@@ -546,6 +546,38 @@ describe('Phase 4 — RecordingService', () => {
     });
   });
 
+  // ── body / html click filtering ─────────────────────────────────────────
+
+  describe('body and html click filtering', () => {
+    beforeEach(() => service.startRecording());
+
+    it('click on document.body adds no command', () => {
+      const before = service.getCommandsSnapshot().length;
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('click on document.body does not emit selectorNotFound', () => {
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      expect(fired).toBe(false);
+    });
+
+    it('click on document.documentElement (html) adds no command', () => {
+      const before = service.getCommandsSnapshot().length;
+      document.documentElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('click on document.documentElement does not emit selectorNotFound', () => {
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      document.documentElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      expect(fired).toBe(false);
+    });
+  });
+
   // ── own-element filtering ────────────────────────────────────────────────
 
   describe('own-element filtering (data-cy="lib-e2e-cypress-for-dummys")', () => {
