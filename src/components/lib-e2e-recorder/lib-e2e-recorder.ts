@@ -284,11 +284,19 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         showCloseButton: true,
         showConfirmButton: false,
         allowOutsideClick: false,
+        backdrop: false,
         width: 640,
         color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
+          // Make the container click-through so the page underneath remains interactive
+          const swalContainer = document.querySelector('.swal2-container') as HTMLElement | null;
+          if (swalContainer) {
+            swalContainer.style.pointerEvents = 'none';
+            const popup = swalContainer.querySelector('.swal2-popup') as HTMLElement | null;
+            if (popup) popup.style.pointerEvents = 'all';
+          }
           const container = document.getElementById('commands-modal-content');
           if (!container) return;
 
