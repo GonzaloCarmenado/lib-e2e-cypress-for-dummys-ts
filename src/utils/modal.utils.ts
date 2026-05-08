@@ -11,7 +11,7 @@ export function makeModalResizable(
   modal.style.width = `${rect.width}px`;
   modal.style.margin = '0';
   modal.style.resize = 'both';
-  modal.style.overflow = 'auto';
+  modal.style.overflow = 'hidden';
   modal.style.minWidth = (options?.minWidth ?? 320) + 'px';
   modal.style.minHeight = (options?.minHeight ?? 180) + 'px';
 

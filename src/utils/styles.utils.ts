@@ -55,6 +55,10 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   align-items: stretch;
   overflow: hidden;
 }
+.swal2-header {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
 .swal2-title {
   color: #e6edf3 !important;
   font-weight: 600 !important;
@@ -82,7 +86,18 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   background: #21262d !important;
   color: #e6edf3 !important;
 }
+.swal2-content {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
 .swal2-html-container {
+  flex: 1 !important;
+  min-height: 0 !important;
   background: #161b22;
   padding: 0 !important;
   margin: 0 !important;
@@ -92,6 +107,10 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   align-items: stretch;
   box-sizing: border-box;
   overflow: auto;
+}
+.swal2-actions, .swal2-footer {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
 }
 `;
 

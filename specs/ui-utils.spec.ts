@@ -99,12 +99,12 @@ describe('Phase 7 — UI Utilities', () => {
       expect(el.querySelector('.modal-resizer')).not.toBeNull();
     });
 
-    it('sets resize: both and overflow: auto on the element', () => {
+    it('sets resize: both and overflow: hidden on the element', () => {
       const el = document.createElement('div');
       document.body.appendChild(el);
       makeModalResizable(el);
       expect(el.style.resize).toBe('both');
-      expect(el.style.overflow).toBe('auto');
+      expect(el.style.overflow).toBe('hidden');
     });
 
     it('applies default minWidth of 320px and minHeight of 180px', () => {
