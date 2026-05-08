@@ -1,8 +1,8 @@
 export const TEST_PREVISUALIZER_STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
+  :host { display: flex; flex-direction: column; flex: 1; min-height: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; overflow: hidden; }
   * { box-sizing: border-box; }
   .toolbar {
-    display: flex; gap: 6px; padding: 10px 12px;
+    display: flex; gap: 6px; padding: 10px 12px; flex-shrink: 0;
     background: #161b22; border-bottom: 1px solid #21262d;
   }
   button {
@@ -12,17 +12,19 @@ export const TEST_PREVISUALIZER_STYLES = `
   }
   button:hover { background: #30363d; color: #e6edf3; }
   button.active { background: #2f81f7; color: #fff; }
-  .section { padding: 10px 12px; }
+  .section { padding: 10px 12px; flex-shrink: 0; }
+  .section.section-cmds { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .section-title {
     font-size: 10px; font-weight: 600; color: #484f58; text-transform: uppercase;
-    letter-spacing: 0.8px; margin-bottom: 7px;
+    letter-spacing: 0.8px; margin-bottom: 7px; flex-shrink: 0;
   }
   .list {
-    max-height: 220px; overflow-y: auto; background: #0d1117;
+    overflow-y: auto; background: #0d1117;
     border-radius: 8px; padding: 6px 8px;
     border: 1px solid #21262d;
     scrollbar-width: thin; scrollbar-color: #30363d transparent;
   }
+  .section-cmds .list { flex: 1; min-height: 0; }
   .list::-webkit-scrollbar { width: 4px; }
   .list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
   .item {

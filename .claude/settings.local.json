@@ -24,7 +24,14 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"src\\\\i18n\" -Filter \"*.ts\")",
+      "Bash(Select-Object Name)",
+      "mcp__claude_ai_Atlassian__atlassianUserInfo",
+      "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
+      "Bash(node -e \"const s=require\\('./src/utils/styles.utils.ts'\\); console.log\\('ts'\\)\")",
+      "Bash(Get-ChildItem *)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\GIT\\\\IA\\\\omnissiah-spec-driven\\\\.specify\\\\templates\" | ForEach-Object { $_.Name })"
     ]
   }
 }

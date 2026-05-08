@@ -50,14 +50,18 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   min-width: 400px;
   max-width: 90vw;
   min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow: hidden;
+}
+/* Override SweetAlert2 v11's display:grid on .swal2-popup.swal2-modal */
+.swal2-popup.swal2-modal {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
 }
 .swal2-header {
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
+  overflow: hidden !important;
 }
 .swal2-title {
   color: #e6edf3 !important;
@@ -69,12 +73,16 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   border-bottom: 1px solid #21262d;
   text-align: left !important;
   letter-spacing: 0.1px;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 .swal2-close {
-  color: #8b949e !important;
-  font-size: 1.1rem !important;
+  position: absolute !important;
   top: 10px !important;
   right: 12px !important;
+  color: #8b949e !important;
+  font-size: 1.1rem !important;
   z-index: 1 !important;
   border-radius: 6px !important;
   width: 28px !important;
@@ -86,15 +94,7 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   background: #21262d !important;
   color: #e6edf3 !important;
 }
-.swal2-content {
-  flex: 1 !important;
-  min-height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  overflow: hidden !important;
-}
+/* In SweetAlert2 v11, .swal2-html-container is a direct child of .swal2-popup */
 .swal2-html-container {
   flex: 1 !important;
   min-height: 0 !important;
@@ -102,11 +102,19 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   padding: 0 !important;
   margin: 0 !important;
   width: 100%;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   align-items: stretch;
   box-sizing: border-box;
-  overflow: auto;
+  overflow: hidden !important;
+}
+/* The single wrapper div we inject inside each modal fills the container */
+.swal2-html-container > div {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
 }
 .swal2-actions, .swal2-footer {
   flex-shrink: 0 !important;

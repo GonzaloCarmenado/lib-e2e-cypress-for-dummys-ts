@@ -1,8 +1,8 @@
 export const TEST_EDITOR_STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
+  :host { display: flex; flex-direction: column; flex: 1; min-height: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; overflow: hidden; }
   * { box-sizing: border-box; }
   .toolbar {
-    display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+    display: flex; align-items: center; gap: 6px; padding: 8px 10px; flex-shrink: 0;
     background: #161b22; border-bottom: 1px solid #21262d; flex-wrap: wrap;
   }
   .tag-filter { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
@@ -38,7 +38,8 @@ export const TEST_EDITOR_STYLES = `
   }
   .btn-gen-describe:hover { background: rgba(47,129,247,0.25); }
   .selected-count { font-size: 11px; color: #8b949e; }
-  .list { padding: 8px; max-height: 340px; overflow-y: auto;
+  .describe-bar { flex-shrink: 0; }
+  .list { padding: 8px; flex: 1; min-height: 0; overflow-y: auto;
           scrollbar-width: thin; scrollbar-color: #30363d transparent; }
   .list::-webkit-scrollbar { width: 4px; }
   .list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }

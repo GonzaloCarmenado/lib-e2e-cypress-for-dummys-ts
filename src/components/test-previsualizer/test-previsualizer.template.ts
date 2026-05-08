@@ -51,7 +51,7 @@ export function renderTestPrevisualizer(
         ${showInterceptors ? t('TEST_PREVISUALIZER.HIDE_INTERCEPTORS') : t('TEST_PREVISUALIZER.SHOW_INTERCEPTORS')} (${interceptors.length})
       </button>
     </div>
-    <div class="section">
+    <div class="section section-cmds">
       <div class="section-title">${t('TEST_PREVISUALIZER.SECTION_COMMANDS')} (${commands.length})</div>
       <div class="list" data-ref="cmds">${cmdItems}</div>
     </div>

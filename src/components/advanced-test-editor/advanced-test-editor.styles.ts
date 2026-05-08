@@ -1,7 +1,7 @@
 export const ADVANCED_TEST_EDITOR_STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
+  :host { display: flex; flex-direction: column; flex: 1; min-height: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; overflow: hidden; }
   * { box-sizing: border-box; }
-  .layout { display: flex; height: 380px; }
+  .layout { display: flex; flex: 1; min-height: 0; }
   .sidebar {
     width: 220px; border-right: 1px solid #21262d; overflow-y: auto;
     padding: 8px; background: #0d1117; flex-shrink: 0;
@@ -35,7 +35,7 @@ export const ADVANCED_TEST_EDITOR_STYLES = `
     font-size: 11px; color: #c9d1d9; overflow-x: auto;
     white-space: pre-wrap; word-break: break-all; margin: 0;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    line-height: 1.7; max-height: 280px; overflow-y: auto;
+    line-height: 1.7; overflow-y: auto;
     border: 1px solid #21262d;
   }
   .footer {
