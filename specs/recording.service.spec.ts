@@ -715,5 +715,43 @@ describe('Phase 4 — RecordingService', () => {
       expect(cmds.some((c) => c.startsWith('//') && c.includes('mat-select'))).toBe(false);
       matSelect.remove();
     });
+
+    it('emits selectorNotFound for input with no valid selector', () => {
+      const inp = makeElement('input', { type: 'text' }) as HTMLInputElement;
+
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(inp);
+
+      expect(fired).toBe(true);
+    });
+
+    it('does not record a click command for input with no valid selector', () => {
+      const inp = makeElement('input', { type: 'text' }) as HTMLInputElement;
+      service.onSelectorNotFound(() => {});
+      const before = service.getCommandsSnapshot().length;
+      click(inp);
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('does not emit selectorNotFound for input that has data-cy', () => {
+      const inp = makeElement('input', { type: 'text', 'data-cy': 'my-input' }) as HTMLInputElement;
+
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(inp);
+
+      expect(fired).toBe(false);
+    });
+
+    it('emits selectorNotFound for textarea with no valid selector', () => {
+      const ta = makeElement('textarea') as HTMLTextAreaElement;
+
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(ta);
+
+      expect(fired).toBe(true);
+    });
   });
 });

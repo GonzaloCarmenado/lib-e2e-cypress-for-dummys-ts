@@ -263,7 +263,11 @@ export class RecordingService {
     }
 
     const tag = target.tagName.toLowerCase();
-    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
+      if (!container) this.selectorNotFound$.next({ target, action: 'click' });
+      return;
+    }
 
     const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
     if (!container) {

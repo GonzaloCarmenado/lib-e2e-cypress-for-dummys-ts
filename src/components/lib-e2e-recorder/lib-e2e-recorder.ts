@@ -412,6 +412,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         html: '<div id="save-test-modal-content" style="padding:0"></div>',
         showCloseButton: true,
         showConfirmButton: false,
+        allowOutsideClick: false,
         color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();
@@ -472,6 +473,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         html: '<div id="advanced-editor-modal-content" style="min-height:300px;padding:0"></div>',
         showCloseButton: true,
         showConfirmButton: false,
+        allowOutsideClick: false,
         width: 780,
         color: '#e6edf3',
         didOpen: () => {
