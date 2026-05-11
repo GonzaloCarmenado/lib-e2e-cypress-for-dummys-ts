@@ -16,7 +16,7 @@ export class AdvancedTestTransformationService {
       alertFn?.('ADVANCED_EDITOR.NO_DESCRIBE');
       return '';
     }
-    const insertPos = match.index! + match[0].length;
+    const insertPos = (match.index ?? 0) + match[0].length;
     const beforeEachBlock = `\n  beforeEach(() => {\n${interceptors}  })\n`;
     return content.slice(0, insertPos) + beforeEachBlock + content.slice(insertPos);
   }
@@ -36,7 +36,7 @@ export class AdvancedTestTransformationService {
 
   async scanDirectory(dirHandle: FileSystemDirectoryHandle): Promise<DirectoryNode> {
     const result: DirectoryNode = { name: dirHandle.name, kind: 'directory', children: [] };
-    for await (const entry of (dirHandle as any).values()) {
+    for await (const entry of dirHandle.values()) {
       if (entry.kind === 'directory') {
         result.children.push(await this.scanDirectory(entry as FileSystemDirectoryHandle));
       } else {

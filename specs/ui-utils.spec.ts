@@ -147,6 +147,62 @@ describe('Phase 7 — UI Utilities', () => {
       makeModalResizable(el);
       expect(el.querySelectorAll('.modal-resizer').length).toBe(1);
     });
+
+    it('mousedown on resizer sets userSelect to none', () => {
+      const el = document.createElement('div');
+      document.body.appendChild(el);
+      makeModalResizable(el);
+      const resizer = el.querySelector('.modal-resizer') as HTMLElement;
+      resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true, cancelable: true }));
+      expect(document.body.style.userSelect).toBe('none');
+    });
+
+    it('mousemove on window after mousedown adjusts modal dimensions', () => {
+      const el = document.createElement('div');
+      document.body.appendChild(el);
+      makeModalResizable(el);
+      const resizer = el.querySelector('.modal-resizer') as HTMLElement;
+      // Start at (100, 100), move to (150, 160): dx=50, dy=60
+      resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100 }));
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 160 }));
+      // jsdom getBoundingClientRect() returns 0; result = 0 + delta
+      expect(el.style.width).toBe('50px');
+      expect(el.style.height).toBe('60px');
+    });
+
+    it('mouseup on window stops resizing and restores userSelect', () => {
+      const el = document.createElement('div');
+      document.body.appendChild(el);
+      makeModalResizable(el);
+      const resizer = el.querySelector('.modal-resizer') as HTMLElement;
+      resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100 }));
+      expect(document.body.style.userSelect).toBe('none');
+      window.dispatchEvent(new MouseEvent('mouseup'));
+      expect(document.body.style.userSelect).toBe('');
+    });
+
+    it('mousemove after mouseup does not resize (isResizing reset)', () => {
+      const el = document.createElement('div');
+      document.body.appendChild(el);
+      makeModalResizable(el);
+      const resizer = el.querySelector('.modal-resizer') as HTMLElement;
+      resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
+      window.dispatchEvent(new MouseEvent('mouseup'));
+      const widthAfterStop = el.style.width;
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 200, clientY: 200 }));
+      expect(el.style.width).toBe(widthAfterStop);
+    });
+
+    it('cleanup removes mousemove and mouseup listeners from window', () => {
+      const el = document.createElement('div');
+      document.body.appendChild(el);
+      const cleanup = makeModalResizable(el);
+      const resizer = el.querySelector('.modal-resizer') as HTMLElement;
+      resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10 }));
+      cleanup();
+      // After cleanup, mouse events should not affect the (now-removed) resizer
+      expect(() => window.dispatchEvent(new MouseEvent('mousemove', { clientX: 50, clientY: 50 }))).not.toThrow();
+    });
   });
 
   // ── makeSwalDraggable ─────────────────────────────────────────────────────
@@ -178,6 +234,43 @@ describe('Phase 7 — UI Utilities', () => {
       expect(headers[1].style.cursor).toBe('move');
       expect(headers[0].style.cursor).not.toBe('move');
     });
+
+    it('mousedown on drag area positions popup as fixed and sets up move/up handlers', () => {
+      const popup = makeSwalPopup(true);
+      makeSwalDraggable();
+      const header = popup.querySelector('.swal2-header') as HTMLElement;
+      header.onmousedown!(new MouseEvent('mousedown', { clientX: 50, clientY: 60 }));
+      expect(document.onmousemove).not.toBeNull();
+      expect(document.onmouseup).not.toBeNull();
+    });
+
+    it('mousemove after mousedown moves the popup', () => {
+      const popup = makeSwalPopup(true);
+      makeSwalDraggable();
+      const header = popup.querySelector('.swal2-header') as HTMLElement;
+      header.onmousedown!(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
+      document.onmousemove!(new MouseEvent('mousemove', { clientX: 40, clientY: 80 }));
+      expect(popup.style.position).toBe('fixed');
+      expect(popup.style.left).toBe('40px');
+      expect(popup.style.top).toBe('80px');
+    });
+
+    it('mouseup after drag resets isDragging and clears document handlers', () => {
+      const popup = makeSwalPopup(true);
+      makeSwalDraggable();
+      const header = popup.querySelector('.swal2-header') as HTMLElement;
+      header.onmousedown!(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
+      document.onmouseup!();
+      expect(document.onmousemove).toBeNull();
+      expect(document.onmouseup).toBeNull();
+    });
+
+    it('does nothing if the popup has no valid drag area (.swal2-header or .swal2-title)', () => {
+      const popup = document.createElement('div');
+      popup.className = 'swal2-popup';
+      document.body.appendChild(popup);
+      expect(() => makeSwalDraggable()).not.toThrow();
+    });
   });
 
   // ── makeSwalDraggableByContentId ──────────────────────────────────────────
@@ -206,6 +299,18 @@ describe('Phase 7 — UI Utilities', () => {
       document.body.appendChild(popup);
 
       makeSwalDraggableByContentId('my-content');
+      expect(header.style.cursor).toBe('move');
+    });
+
+    it('falls back to document.querySelector when content exists but has no .swal2-popup ancestor', () => {
+      // popup exists in DOM but content is NOT inside it
+      const popup = makeSwalPopup(true);
+      const orphan = document.createElement('div');
+      orphan.id = 'orphan-content';
+      document.body.appendChild(orphan);
+
+      makeSwalDraggableByContentId('orphan-content');
+      const header = popup.querySelector('.swal2-header') as HTMLElement;
       expect(header.style.cursor).toBe('move');
     });
   });

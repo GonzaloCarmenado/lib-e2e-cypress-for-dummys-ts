@@ -93,10 +93,11 @@ export class HttpMonitor {
 
   private installFetch(): void {
     if (this.originalFetch) return;
-    this.originalFetch = window.fetch;
+    const originalFetch = window.fetch;
+    this.originalFetch = originalFetch;
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const response = await this.originalFetch!(input, init);
+      const response = await originalFetch(input, init);
       try {
         await this.handleFetchInterception(input, init, response.clone());
       } catch {

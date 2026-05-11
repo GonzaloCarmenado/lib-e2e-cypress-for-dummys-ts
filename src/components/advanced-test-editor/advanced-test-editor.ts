@@ -3,6 +3,7 @@ import { TranslationService } from '../../services/translation.service';
 import { AdvancedTestTransformationService } from '../../services/advanced-test.transformation.service';
 import { ADVANCED_TEST_EDITOR_STYLES } from './advanced-test-editor.styles';
 import { renderNoPermission, renderAdvancedEditor, findFileHandleRecursive } from './advanced-test-editor.template';
+import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
 
 export class AdvancedTestEditorElement extends HTMLElement {
   private shadow: ShadowRoot;
@@ -12,7 +13,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
   translation!: TranslationService;
   testId?: number;
 
-  e2eTree: unknown[] = [];
+  e2eTree: Array<DirectoryNode | FileNode> = [];
   selectedFile: unknown = null;
   saveButtonEnabled = false;
   selectedFileHandle: FileSystemFileHandle | null = null;
@@ -59,7 +60,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
     }
 
     // queryPermission does NOT require a user gesture
-    const perm = await (handle as any).queryPermission({ mode: 'readwrite' });
+    const perm = await (handle as unknown as FileSystemHandleWithPermission).queryPermission({ mode: 'readwrite' });
     this._dirHandle = handle;
     this.hasPermission = perm === 'granted';
     this.needsReauth  = perm === 'prompt';
@@ -72,8 +73,8 @@ export class AdvancedTestEditorElement extends HTMLElement {
   async getFoldersData(): Promise<void> {
     if (!this.hasPermission || !this._dirHandle) return;
     try {
-      for await (const entry of (this._dirHandle as any).values()) {
-        if ((entry as any).kind === 'directory' && (entry as any).name === 'e2e') {
+      for await (const entry of this._dirHandle.values()) {
+        if (entry.kind === 'directory' && entry.name === 'e2e') {
           const tree = await this.transformationService.scanDirectory(entry as FileSystemDirectoryHandle);
           this.e2eTree = tree.children ?? [];
           this.render();
@@ -103,7 +104,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
     this.saveButtonEnabled = true;
 
     if (!this._dirHandle) return;
-    const handle = await findFileHandleRecursive(this._dirHandle, (file as any).name);
+    const handle = await findFileHandleRecursive(this._dirHandle, (file as { name: string }).name);
     if (!handle) return;
     this.selectedFileHandle = handle;
     const fileObj = await handle.getFile();
@@ -137,7 +138,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
       detail: {
         handle: this.selectedFileHandle,
         content: this.selectedFileContent,
-        fileName: (this.selectedFile as any)?.name ?? '',
+        fileName: (this.selectedFile as { name?: string } | null)?.name ?? '',
         testId: this.testId,
         itBlock: this.testItBlock,
         interceptorsBlock: this.interceptorsBlock,
@@ -163,7 +164,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
 
       this.shadow.getElementById('btn-reauth')?.addEventListener('click', async () => {
         if (!this._dirHandle) return;
-        const perm = await (this._dirHandle as any).requestPermission({ mode: 'readwrite' });
+        const perm = await (this._dirHandle as unknown as FileSystemHandleWithPermission).requestPermission({ mode: 'readwrite' });
         if (perm === 'granted') {
           this.hasPermission = true;
           this.needsReauth   = false;
@@ -184,7 +185,10 @@ export class AdvancedTestEditorElement extends HTMLElement {
     }, this.t.bind(this))}`;
 
     this.shadow.querySelectorAll('[data-file]').forEach((el) => {
-      el.addEventListener('click', () => this.onFileClick(JSON.parse((el as HTMLElement).dataset['file']!)));
+      el.addEventListener('click', () => {
+        const data = (el as HTMLElement).dataset['file'];
+        if (data) this.onFileClick(JSON.parse(data));
+      });
     });
     this.shadow.getElementById('btn-save')
       ?.addEventListener('click', () => this.saveCommandsToFile());

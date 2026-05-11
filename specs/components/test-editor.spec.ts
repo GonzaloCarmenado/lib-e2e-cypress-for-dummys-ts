@@ -164,4 +164,107 @@ describe('Phase 8.3 — TestEditorElement', () => {
     expect(generated).toContain("describe('My Suite'");
     expect(generated).toContain("it('login flow'");
   });
+
+  it('generateDescribe() includes beforeEach when selected test has interceptors', async () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: writeMock }, configurable: true });
+    await persistence.insertTest('icp test', ["cy.get('#btn').click()"], ["cy.intercept('GET', '**/api')"]);
+    await el.loadTests();
+    el.toggleExpand(0);
+    el.toggleSelectTest(el.tests[0].id);
+    el.describeName = 'Suite';
+    el.generateDescribe();
+    const generated = writeMock.mock.calls[0][0] as string;
+    expect(generated).toContain('beforeEach');
+  });
+
+  // ── DOM event listener coverage ───────────────────────────────────────────
+
+  it('[data-filter-tag] click sets activeTag', async () => {
+    await persistence.insertTest('tagged', [], [], ['smoke']);
+    await el.loadTests();
+    const tagBtn = el.shadowRoot!.querySelector('[data-filter-tag]') as HTMLElement;
+    tagBtn.click();
+    expect(el.activeTag).toBe('smoke');
+  });
+
+  it('[data-filter-tag] click twice clears activeTag', async () => {
+    await persistence.insertTest('tagged', [], [], ['smoke']);
+    await el.loadTests();
+    (el.shadowRoot!.querySelector('[data-filter-tag]') as HTMLElement).click();
+    // After first click render() fires — re-query the button
+    (el.shadowRoot!.querySelector('[data-filter-tag]') as HTMLElement).click();
+    expect(el.activeTag).toBeNull();
+  });
+
+  it('[data-select] checkbox click toggles selection', async () => {
+    await persistence.insertTest('test A');
+    await el.loadTests();
+    el.toggleSelectMode();
+    const checkbox = el.shadowRoot!.querySelector('[data-select]') as HTMLElement;
+    checkbox.click();
+    expect(el.selectedIds.has(el.tests[0].id)).toBe(true);
+  });
+
+  it('[data-action="expand"] click in selectMode calls toggleSelectTest', async () => {
+    await persistence.insertTest('test A');
+    await el.loadTests();
+    el.toggleSelectMode();
+    const expandEl = el.shadowRoot!.querySelector('[data-action="expand"]') as HTMLElement;
+    expandEl.click();
+    expect(el.selectedIds.has(el.tests[0].id)).toBe(true);
+  });
+
+  it('[data-action="delete"] click removes the test', async () => {
+    await persistence.insertTest('to delete');
+    await el.loadTests();
+    const deleteBtn = el.shadowRoot!.querySelector('[data-action="delete"]') as HTMLElement;
+    deleteBtn.click();
+    await vi.waitFor(() => expect(el.tests).toHaveLength(0));
+  });
+
+  it('[data-action="copy-cmds"] click calls clipboard.writeText', async () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: writeMock }, configurable: true });
+    await persistence.insertTest('test', ["cy.get('#btn').click()"]);
+    await el.loadTests();
+    el.toggleExpand(0);
+    const copyBtn = el.shadowRoot!.querySelector('[data-action="copy-cmds"]') as HTMLElement;
+    copyBtn.click();
+    expect(writeMock).toHaveBeenCalled();
+  });
+
+  it('[data-action="copy-icps"] click calls clipboard.writeText', async () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: writeMock }, configurable: true });
+    await persistence.insertTest('test', ["cy.get('#btn').click()"], ["cy.intercept('GET', '**/api')"]);
+    await el.loadTests();
+    el.toggleExpand(0);
+    const copyBtn = el.shadowRoot!.querySelector('[data-action="copy-icps"]') as HTMLElement;
+    copyBtn.click();
+    expect(writeMock).toHaveBeenCalled();
+  });
+
+  it('input on #describe-name updates describeName', async () => {
+    await persistence.insertTest('test A');
+    await el.loadTests();
+    el.toggleSelectMode();
+    el.toggleSelectTest(el.tests[0].id);
+    const descInput = el.shadowRoot!.getElementById('describe-name') as HTMLInputElement;
+    descInput.value = 'My Suite';
+    descInput.dispatchEvent(new Event('input'));
+    expect(el.describeName).toBe('My Suite');
+  });
+
+  it('#btn-gen-describe click generates describe block', async () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: writeMock }, configurable: true });
+    await persistence.insertTest('test A');
+    await el.loadTests();
+    el.toggleSelectMode();
+    el.toggleSelectTest(el.tests[0].id);
+    const btn = el.shadowRoot!.getElementById('btn-gen-describe') as HTMLButtonElement;
+    btn.click();
+    expect(writeMock).toHaveBeenCalled();
+  });
 });

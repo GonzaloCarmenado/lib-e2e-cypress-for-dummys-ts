@@ -31,7 +31,9 @@
       "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
       "Bash(node -e \"const s=require\\('./src/utils/styles.utils.ts'\\); console.log\\('ts'\\)\")",
       "Bash(Get-ChildItem *)",
-      "PowerShell(Get-ChildItem -Path \"D:\\\\GIT\\\\IA\\\\omnissiah-spec-driven\\\\.specify\\\\templates\" | ForEach-Object { $_.Name })"
+      "PowerShell(Get-ChildItem -Path \"D:\\\\GIT\\\\IA\\\\omnissiah-spec-driven\\\\.specify\\\\templates\" | ForEach-Object { $_.Name })",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Select-String \"tsconfig\")"
     ]
   }
 }

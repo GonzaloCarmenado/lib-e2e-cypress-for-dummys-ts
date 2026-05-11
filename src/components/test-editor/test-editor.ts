@@ -100,8 +100,9 @@ export class TestEditorElement extends HTMLElement {
   }
 
   get visibleTests(): TestWithDetails[] {
-    if (!this.activeTag) return this.tests;
-    return this.tests.filter((t) => (t.tags ?? []).includes(this.activeTag!));
+    const tag = this.activeTag;
+    if (!tag) return this.tests;
+    return this.tests.filter((t) => (t.tags ?? []).includes(tag));
   }
 
   private t(key: string): string { return this.translation.translate(key); }
@@ -123,11 +124,12 @@ export class TestEditorElement extends HTMLElement {
       interceptorsByTest: this.interceptorsByTest,
     }, this.t.bind(this))}`;
 
-    this.shadow.getElementById('btn-select-mode')!.addEventListener('click', () => this.toggleSelectMode());
+    this.shadow.getElementById('btn-select-mode')?.addEventListener('click', () => this.toggleSelectMode());
 
     this.shadow.querySelectorAll('[data-filter-tag]').forEach((el) => {
       el.addEventListener('click', () => {
-        const tag = (el as HTMLElement).dataset['filterTag']!;
+        const tag = (el as HTMLElement).dataset['filterTag'] ?? '';
+        if (!tag) return;
         this.activeTag = this.activeTag === tag ? null : tag;
         this.render();
       });

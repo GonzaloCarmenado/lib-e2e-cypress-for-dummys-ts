@@ -80,14 +80,15 @@ export class FilePreviewElement extends HTMLElement {
 
     this.textarea = this.shadow.getElementById('editor') as HTMLTextAreaElement | null;
     if (this.textarea) {
+      const ta = this.textarea;
       this.textarea.addEventListener('input', () => {
-        this._fileContent = this.textarea!.value;
+        this._fileContent = ta.value;
       });
     }
-    this.shadow.getElementById('btn-save')!.addEventListener('click', () => this.saveFile());
-    this.shadow.getElementById('btn-close')!.addEventListener('click', () => this.onClose());
-    this.shadow.getElementById('btn-launch')!.addEventListener('click', () => this.launchTest());
-    this.shadow.getElementById('btn-copy')!.addEventListener('click', () => {
+    this.shadow.getElementById('btn-save')?.addEventListener('click', () => this.saveFile());
+    this.shadow.getElementById('btn-close')?.addEventListener('click', () => this.onClose());
+    this.shadow.getElementById('btn-launch')?.addEventListener('click', () => this.launchTest());
+    this.shadow.getElementById('btn-copy')?.addEventListener('click', () => {
       this.copyToClipboard(this.textarea?.value ?? this._fileContent ?? '');
     });
     this.shadow.getElementById('btn-diff')?.addEventListener('click', () => this.toggleDiff());

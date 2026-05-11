@@ -196,7 +196,7 @@ export class PersistenceService {
     if (!('showDirectoryPicker' in window)) {
       throw new Error('File System Access API not supported');
     }
-    const dirHandle = await (window as any).showDirectoryPicker();
+    const dirHandle = await window.showDirectoryPicker();
     await this.setConfigKey('cypressDirectoryHandle', dirHandle);
     await this.setConfigKey('allowReadWriteFiles', 'true');
   }

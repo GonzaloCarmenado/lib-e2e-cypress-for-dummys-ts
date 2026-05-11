@@ -50,6 +50,7 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   min-width: 400px;
   max-width: 90vw;
   min-height: 200px;
+  max-height: 90vh;
 }
 /* Override SweetAlert2 v11's display:grid on .swal2-popup.swal2-modal */
 .swal2-popup.swal2-modal {

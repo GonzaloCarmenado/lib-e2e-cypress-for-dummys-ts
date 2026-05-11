@@ -1,7 +1,8 @@
 import { escHtml } from '../../utils/html.utils';
+import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
 
 export interface AdvancedEditorState {
-  e2eTree: unknown[];
+  e2eTree: Array<DirectoryNode | FileNode>;
   selectedFile: unknown;
   selectedFileContent: string | null;
   testItBlock: string;
@@ -36,7 +37,7 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
     : `<div class="tree-item" style="color:#6c7a99">${t('ADVANCED_EDITOR.NO_FILES')}</div>`;
 
   const contentHtml = selectedFileContent
-    ? `<div class="file-name">📄 ${escHtml((selectedFile as any)?.name ?? '')}</div>
+    ? `<div class="file-name">📄 ${escHtml((selectedFile as { name?: string } | null)?.name ?? '')}</div>
        <pre>${escHtml(selectedFileContent.slice(0, 4000))}${selectedFileContent.length > 4000 ? '\n...' : ''}</pre>`
     : `<div class="placeholder">${t('ADVANCED_EDITOR.SELECT_FILE')}</div>`;
 
@@ -77,10 +78,10 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
     </div>`;
 }
 
-export function renderTree(nodes: unknown[], selected: unknown, indent = 0): string {
-  return (nodes as any[]).map((n) => {
+export function renderTree(nodes: Array<DirectoryNode | FileNode>, selected: unknown, indent = 0): string {
+  return nodes.map((n) => {
     const isFile = n.kind === 'file';
-    const isSel = selected === n || (selected as any)?.name === n.name;
+    const isSel = selected === n || (selected as { name?: string } | null)?.name === n.name;
     const cls = `tree-item${isFile ? '' : ' dir'}${isSel ? ' selected' : ''}`;
     const pad = `padding-left:${8 + indent * 14}px`;
     if (!isFile && n.children?.length) {
@@ -96,7 +97,7 @@ export async function findFileHandleRecursive(
   dir: FileSystemDirectoryHandle,
   name: string,
 ): Promise<FileSystemFileHandle | null> {
-  for await (const entry of (dir as any).values()) {
+  for await (const entry of dir.values()) {
     if (entry.kind === 'file' && entry.name === name) return entry as FileSystemFileHandle;
     if (entry.kind === 'directory') {
       const found = await findFileHandleRecursive(entry as FileSystemDirectoryHandle, name);

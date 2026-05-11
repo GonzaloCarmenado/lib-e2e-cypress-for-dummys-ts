@@ -50,8 +50,8 @@ export class SaveTestElement extends HTMLElement {
   private render(): void {
     if (this._step === 'ask') {
       this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestAsk(this.t.bind(this))}`;
-      this.shadow.getElementById('btn-yes')!.addEventListener('click', () => this.askSave());
-      this.shadow.getElementById('btn-no')!.addEventListener('click', () => this.cancel());
+      this.shadow.getElementById('btn-yes')?.addEventListener('click', () => this.askSave());
+      this.shadow.getElementById('btn-no')?.addEventListener('click', () => this.cancel());
     } else {
       this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestDesc(this.description, this.tags, this.t.bind(this))}`;
 
@@ -64,7 +64,7 @@ export class SaveTestElement extends HTMLElement {
         this.addTag(tagInput.value);
         tagInput.value = '';
       };
-      this.shadow.getElementById('btn-add-tag')!.addEventListener('click', tryAddTag);
+      this.shadow.getElementById('btn-add-tag')?.addEventListener('click', tryAddTag);
       tagInput.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); tryAddTag(); }
       });
@@ -73,9 +73,9 @@ export class SaveTestElement extends HTMLElement {
         btn.addEventListener('click', () => this.removeTag(btn.dataset['tag'] ?? ''));
       });
 
-      this.shadow.getElementById('btn-confirm')!.addEventListener('click', () => this.confirmSave());
-      this.shadow.getElementById('btn-export')!.addEventListener('click', () => this.confirmSaveAndExport());
-      this.shadow.getElementById('btn-cancel')!.addEventListener('click', () => this.cancel());
+      this.shadow.getElementById('btn-confirm')?.addEventListener('click', () => this.confirmSave());
+      this.shadow.getElementById('btn-export')?.addEventListener('click', () => this.confirmSaveAndExport());
+      this.shadow.getElementById('btn-cancel')?.addEventListener('click', () => this.cancel());
       setTimeout(() => descInput.focus(), 60);
     }
   }

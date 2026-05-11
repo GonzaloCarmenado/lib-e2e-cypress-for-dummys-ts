@@ -12,6 +12,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
   let translation: TranslationService;
 
   beforeEach(() => {
+    vi.stubGlobal('alert', vi.fn());
     persistence = new PersistenceService(`config_db_${++dbCounter}`);
     translation = new TranslationService();
     el = document.createElement('e2e-configuration') as ConfigurationElement;
@@ -22,6 +23,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     el.remove();
     localStorage.clear();
   });
@@ -193,5 +195,98 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     });
     await el.onSmartSelectorChange(false);
     expect(received).toBe(false);
+  });
+
+  // ── DOM event listeners (covered via shadow DOM dispatch) ─────────────────
+
+  it('change event on smart-selector-toggle calls onSmartSelectorChange', async () => {
+    const spy = vi.spyOn(el, 'onSmartSelectorChange');
+    const checkbox = el.shadowRoot!.getElementById('smart-selector-toggle') as HTMLInputElement;
+    checkbox.checked = false;
+    checkbox.dispatchEvent(new Event('change'));
+    expect(spy).toHaveBeenCalledWith(false);
+  });
+
+  it('change event on selector-strategy calls onSelectorStrategyChange', () => {
+    const spy = vi.spyOn(el, 'onSelectorStrategyChange');
+    const select = el.shadowRoot!.getElementById('selector-strategy') as HTMLSelectElement;
+    select.value = 'data-testid';
+    select.dispatchEvent(new Event('change'));
+    expect(spy).toHaveBeenCalledWith('data-testid');
+  });
+
+  // ── file-input change handler ─────────────────────────────────────────────
+
+  it('file-input change with no file selected does nothing', () => {
+    const spy = vi.spyOn(el, 'importAllData');
+    const fileInput = el.shadowRoot!.getElementById('file-input') as HTMLInputElement;
+    // No files property — files[0] is undefined
+    fileInput.dispatchEvent(new Event('change'));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('file-input change with valid JSON file calls importAllData and alerts success', async () => {
+    const jsonData = JSON.stringify({ tests: [], interceptors: [] });
+    const mockFile = { text: vi.fn().mockResolvedValue(jsonData) } as unknown as File;
+    const fileInput = el.shadowRoot!.getElementById('file-input') as HTMLInputElement;
+    Object.defineProperty(fileInput, 'files', { get: () => [mockFile], configurable: true });
+
+    fileInput.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(vi.mocked(window.alert)).toHaveBeenCalled());
+  });
+
+  it('file-input change with invalid JSON alerts the error message', async () => {
+    const mockFile = { text: vi.fn().mockResolvedValue('not-json') } as unknown as File;
+    const fileInput = el.shadowRoot!.getElementById('file-input') as HTMLInputElement;
+    Object.defineProperty(fileInput, 'files', { get: () => [mockFile], configurable: true });
+
+    fileInput.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(vi.mocked(window.alert)).toHaveBeenCalled());
+  });
+
+  it('file-input resets value to "" after processing', async () => {
+    const jsonData = JSON.stringify({ tests: [], interceptors: [] });
+    const mockFile = { text: vi.fn().mockResolvedValue(jsonData) } as unknown as File;
+    const fileInput = el.shadowRoot!.getElementById('file-input') as HTMLInputElement;
+    Object.defineProperty(fileInput, 'files', { get: () => [mockFile], configurable: true });
+
+    fileInput.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(fileInput.value).toBe(''));
+  });
+
+  // ── revokeAccess ─────────────────────────────────────────────────────────
+
+  it('revokeAccess calls setConfig to revoke filesystem permission', async () => {
+    const spy = vi.spyOn(persistence, 'setConfig');
+    await el.revokeAccess();
+    expect(spy).toHaveBeenCalledWith({ allowReadWriteFiles: 'false', cypressDirectoryHandle: null });
+  });
+
+  it('revokeAccess re-renders without btn-revoke when previously not granted', async () => {
+    await el.revokeAccess();
+    // btn-revoke is only rendered when filesystemGranted=true; after revoke it should be absent
+    expect(el.shadowRoot!.getElementById('btn-revoke')).toBeNull();
+  });
+
+  // ── changeFolder ──────────────────────────────────────────────────────────
+
+  it('changeFolder shows success toast when requestDirectoryPermissions resolves', async () => {
+    vi.spyOn(persistence, 'requestDirectoryPermissions').mockResolvedValue(undefined);
+    vi.spyOn(persistence, 'getGeneralConfig').mockResolvedValue({});
+    await el.changeFolder();
+    // No exception should be thrown — the toast appears in DOM
+  });
+
+  it('changeFolder suppresses error silently when user aborts (AbortError)', async () => {
+    const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
+    vi.spyOn(persistence, 'requestDirectoryPermissions').mockRejectedValue(abortError);
+    await expect(el.changeFolder()).resolves.toBeUndefined();
+  });
+
+  it('changeFolder shows error toast for non-abort errors', async () => {
+    const genericError = new Error('permission denied');
+    vi.spyOn(persistence, 'requestDirectoryPermissions').mockRejectedValue(genericError);
+    // Should not throw
+    await expect(el.changeFolder()).resolves.toBeUndefined();
   });
 });

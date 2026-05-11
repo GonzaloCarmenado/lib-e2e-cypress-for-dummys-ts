@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { getRecorderStyles } from './lib-e2e-recorder.styles';
 import { renderRecorderWidget } from './lib-e2e-recorder.template';
-import { RecordingService } from '../../services/recording.service';
+import { RecordingService, type SelectorStrategy } from '../../services/recording.service';
 import { PersistenceService } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import { HttpMonitor } from '../../services/http-monitor';
@@ -18,6 +18,37 @@ import {
 import type { Lang } from '../../models/lang.model';
 import { showToast } from '../../utils/toast.utils';
 
+/**
+ * Minimal property/event shapes for dynamically-created child custom elements.
+ * Not extending HTMLElement avoids conflicts with the strict EventListener signature;
+ * cast to Node/HTMLElement only for actual DOM insertion.
+ */
+interface PrevisualizerEl {
+  translation: TranslationService; commands: string[]; interceptors: string[]; editable: boolean;
+  addEventListener(type: string, listener: (e: CustomEvent) => void): void;
+}
+interface TestEditorEl { persistence: PersistenceService; translation: TranslationService }
+interface SaveTestEl {
+  translation: TranslationService;
+  addEventListener(type: string, listener: (e: CustomEvent) => void): void;
+}
+interface ConfigEl {
+  persistence: PersistenceService; translation: TranslationService;
+  addEventListener(type: string, listener: (e: CustomEvent) => void): void;
+}
+interface AdvancedEditorEl {
+  persistence: PersistenceService; translation: TranslationService; testId?: number;
+  addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
+}
+interface FilePreviewEl {
+  translation: TranslationService; fileContent: string | null; fileName: string | null;
+  closeLabel: string; itBlock: string; interceptorsBlock: string;
+  addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
+}
+interface SelectorPickerEl {
+  targetElement: HTMLElement; recording: RecordingService; translation: TranslationService;
+}
+
 export class LibE2eRecorderElement extends HTMLElement {
   private shadow: ShadowRoot;
   private keydownHandler!: (e: KeyboardEvent) => void;
@@ -27,7 +58,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   private pauseUnsub?: () => void;
   private selectorNotFoundUnsub?: () => void;
   private controlFirstTimeData = true;
-  private _previsualizerRef: any = null;
+  private _previsualizerRef: { commands: string[]; interceptors: string[] } | null = null;
   private httpMonitor?: HttpMonitor;
   private smartSelectorEnabled = true;
 
@@ -135,18 +166,18 @@ export class LibE2eRecorderElement extends HTMLElement {
       const existing = document.querySelector('selector-picker');
       if (existing) existing.remove();
 
-      const picker = document.createElement('selector-picker') as any;
+      const picker = document.createElement('selector-picker') as unknown as SelectorPickerEl;
       picker.targetElement = target;
       picker.recording = this.recording;
       picker.translation = this.translation;
-      document.body.appendChild(picker);
+      document.body.appendChild(picker as unknown as Node);
     });
   }
 
   private async initSelectorStrategy(): Promise<void> {
     const config = await this.persistence.getGeneralConfig();
     const strategy = config?.['selectorStrategy'] as string | undefined;
-    if (strategy) this.recording.selectorStrategy = strategy as any;
+    if (strategy) this.recording.selectorStrategy = strategy as SelectorStrategy;
     this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false';
   }
 
@@ -223,7 +254,8 @@ export class LibE2eRecorderElement extends HTMLElement {
       didOpen: () => {
         makeSwalDraggable();
         setSwal2DataCyAttribute();
-        const container = document.getElementById('fs-setup-content')!;
+        const container = document.getElementById('fs-setup-content');
+        if (!container) return;
         container.innerHTML = `
           <div style="padding:16px 20px 20px;color:#8b949e;font-size:13px;line-height:1.7">
             <p>${this.translation.translate('RECORDER.FS_INTRO_HTML')}</p>
@@ -253,12 +285,12 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
             </div>
           </div>`;
 
-        document.getElementById('fs-skip')!.addEventListener('click', async () => {
+        document.getElementById('fs-skip')?.addEventListener('click', async () => {
           await this.persistence.setConfigKey('allowReadWriteFiles', 'false');
           Swal.close();
         });
 
-        document.getElementById('fs-select')!.addEventListener('click', async () => {
+        document.getElementById('fs-select')?.addEventListener('click', async () => {
           try {
             await this.persistence.requestDirectoryPermissions();
             Swal.close();
@@ -300,12 +332,12 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           const container = document.getElementById('commands-modal-content');
           if (!container) return;
 
-          const child = document.createElement('test-previsualizer') as any;
+          const child = document.createElement('test-previsualizer') as unknown as PrevisualizerEl;
           child.translation = this.translation;
           child.commands = this.cypressCommands;
           child.interceptors = this.interceptors;
           child.editable = true;
-          container.appendChild(child);
+          container.appendChild(child as unknown as Node);
           this._previsualizerRef = child;
 
           child.addEventListener('deletecommand', (e: CustomEvent) => {
@@ -394,10 +426,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('saved-tests-modal-content');
           if (!container) return;
-          const child = document.createElement('test-editor') as any;
+          const child = document.createElement('test-editor') as unknown as TestEditorEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
-          container.appendChild(child);
+          container.appendChild(child as unknown as Node);
         },
         willClose: () => { this.isSavedTestsDialogOpen = false; },
       });
@@ -419,9 +451,9 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('save-test-modal-content');
           if (!container) return;
-          const child = document.createElement('save-test') as any;
+          const child = document.createElement('save-test') as unknown as SaveTestEl;
           child.translation = this.translation;
-          container.appendChild(child);
+          container.appendChild(child as unknown as Node);
           child.addEventListener('savetest', (e: CustomEvent) => {
             const { description, tags } = e.detail ?? {};
             this.onSaveTest(description ?? null, tags ?? []);
@@ -452,10 +484,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('settings-modal-content');
           if (!container) return;
-          const child = document.createElement('e2e-configuration') as any;
+          const child = document.createElement('e2e-configuration') as unknown as ConfigEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
-          container.appendChild(child);
+          container.appendChild(child as unknown as Node);
           child.addEventListener('smartselectorchange', (e: CustomEvent) => {
             this.smartSelectorEnabled = e.detail;
           });
@@ -481,11 +513,11 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('advanced-editor-modal-content');
           if (!container) return;
-          const child = document.createElement('advanced-test-editor') as any;
+          const child = document.createElement('advanced-test-editor') as unknown as AdvancedEditorEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
           if (testId !== undefined) child.testId = testId;
-          container.appendChild(child);
+          container.appendChild(child as unknown as Node);
           child.addEventListener('selectorstrategychange', (e: CustomEvent) => {
             this.recording.selectorStrategy = e.detail;
           });
@@ -525,21 +557,21 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         setSwal2DataCyAttribute();
         const container = document.getElementById('file-editor-modal-content');
         if (!container) return;
-        const child = document.createElement('file-preview') as any;
+        const child = document.createElement('file-preview') as unknown as FilePreviewEl;
         child.translation = this.translation;
         child.fileContent = content;
         child.fileName = fileName;
         child.closeLabel = this.translation.translate('FILE_PREVIEW.BACK_TO_EDITOR');
         child.itBlock = itBlock;
         child.interceptorsBlock = interceptorsBlock;
-        container.appendChild(child);
+        container.appendChild(child as unknown as Node);
         child.addEventListener('close', () => {
           Swal.close();
           setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
         });
         child.addEventListener('save', async (e: CustomEvent) => {
           try {
-            const writable = await (handle as any).createWritable();
+            const writable = await handle.createWritable();
             await writable.write(e.detail);
             await writable.close();
             showToast(this.translation.translate('RECORDER.FILE_SAVED_TOAST'));
@@ -600,18 +632,18 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     const rec    = this.isRecording;
     const paused = this.isPaused;
     this.shadow.innerHTML = `<style>${getRecorderStyles(rec, paused)}</style>${renderRecorderWidget(rec, paused, this.translation.translate.bind(this.translation))}`;
-    this.shadow.querySelector('[data-action="toggle"]')!
-      .addEventListener('click', () => this.toggle());
+    this.shadow.querySelector('[data-action="toggle"]')
+      ?.addEventListener('click', () => this.toggle());
     this.shadow.querySelector('[data-action="pause"]')
       ?.addEventListener('click', () => this.togglePause());
-    this.shadow.querySelector('[data-action="tests"]')!
-      .addEventListener('click', () => this.showSavedTestsDialog());
-    this.shadow.querySelector('[data-action="commands"]')!
-      .addEventListener('click', () => this.showCommandsDialog());
-    this.shadow.querySelector('[data-action="config"]')!
-      .addEventListener('click', () => this.showSettingsDialog());
-    this.shadow.querySelector('[data-action="browse"]')!
-      .addEventListener('click', () => this.showAdvancedEditorDialog());
+    this.shadow.querySelector('[data-action="tests"]')
+      ?.addEventListener('click', () => this.showSavedTestsDialog());
+    this.shadow.querySelector('[data-action="commands"]')
+      ?.addEventListener('click', () => this.showCommandsDialog());
+    this.shadow.querySelector('[data-action="config"]')
+      ?.addEventListener('click', () => this.showSettingsDialog());
+    this.shadow.querySelector('[data-action="browse"]')
+      ?.addEventListener('click', () => this.showAdvancedEditorDialog());
   }
 }
 

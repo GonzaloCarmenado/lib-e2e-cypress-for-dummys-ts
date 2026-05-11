@@ -142,9 +142,9 @@ export class ConfigurationElement extends HTMLElement {
       this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),
     )
 
-    this.shadow.getElementById("btn-change-folder")!.addEventListener("click", () => this.changeFolder())
+    this.shadow.getElementById("btn-change-folder")?.addEventListener("click", () => this.changeFolder())
     this.shadow.getElementById("btn-revoke")?.addEventListener("click", () => this.revokeAccess())
-    this.shadow.getElementById("btn-export")!.addEventListener("click", () => this.exportAllData())
+    this.shadow.getElementById("btn-export")?.addEventListener("click", () => this.exportAllData())
     ;(this.shadow.getElementById("file-input") as HTMLInputElement).addEventListener("change", async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
@@ -154,7 +154,8 @@ export class ConfigurationElement extends HTMLElement {
       } catch (err: unknown) {
         alert((err as Error).message ?? this.t('CONFIG.IMPORT_ERROR'))
       }
-      ;(e.target as HTMLInputElement).value = ""
+      const target = e.target as HTMLInputElement | null
+      if (target) target.value = ''
     })
   }
 }
