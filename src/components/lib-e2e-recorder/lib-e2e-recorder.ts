@@ -502,7 +502,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     this.toggleModal('isAdvancedEditorDialogOpen', () => {
       Swal.fire({
         title: this.translation.translate('MAIN_FRAME.SHOW_ADVANCED_EDITOR'),
-        html: '<div id="advanced-editor-modal-content" style="min-height:300px;padding:0"></div>',
+        html: '<div id="advanced-editor-modal-content" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:0"></div>',
         showCloseButton: true,
         showConfirmButton: false,
         allowOutsideClick: false,
@@ -511,6 +511,20 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
+          const popup = Swal.getPopup();
+          if (popup) {
+            popup.style.height = '600px';
+            const htmlContainer = popup.querySelector('.swal2-html-container') as HTMLElement | null;
+            if (htmlContainer) {
+              htmlContainer.style.flex = '1';
+              htmlContainer.style.minHeight = '0';
+              htmlContainer.style.overflow = 'hidden';
+              htmlContainer.style.padding = '0';
+              htmlContainer.style.margin = '0';
+              htmlContainer.style.display = 'flex';
+              htmlContainer.style.flexDirection = 'column';
+            }
+          }
           const container = document.getElementById('advanced-editor-modal-content');
           if (!container) return;
           const child = document.createElement('advanced-test-editor') as unknown as AdvancedEditorEl;
@@ -532,7 +546,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         },
         willClose: () => { this.isAdvancedEditorDialogOpen = false; },
       });
-      this.resizePopup();
+      setTimeout(() => {
+        const popup = Swal.getPopup();
+        if (popup) makeModalResizable(popup, { minWidth: 400, minHeight: 0 });
+      }, 0);
     });
   }
 

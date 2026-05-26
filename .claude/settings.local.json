@@ -36,7 +36,9 @@
       "Bash(Select-String \"tsconfig\")",
       "Bash(npm view *)",
       "Bash(npm whoami *)",
-      "Bash(npm config *)"
+      "Bash(npm config *)",
+      "Bash(Select-Object -First 20)",
+      "PowerShell(Head *)"
     ]
   }
 }

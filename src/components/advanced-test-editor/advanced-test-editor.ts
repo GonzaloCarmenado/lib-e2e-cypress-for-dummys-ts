@@ -23,9 +23,13 @@ export class AdvancedTestEditorElement extends HTMLElement {
   isPreviewMode = false;
   previewFileName: string | null = null;
   previewFileContent: string | null = null;
+  isCreatingFile = false;
+  collapsedDirs: Set<string> = new Set();
+  sidebarWidth = 220;
   private hasPermission = false;
   private needsReauth = false;
   private _dirHandle: FileSystemDirectoryHandle | null = null;
+  private _e2eHandle: FileSystemDirectoryHandle | null = null;
 
   constructor() {
     super();
@@ -75,13 +79,34 @@ export class AdvancedTestEditorElement extends HTMLElement {
     try {
       for await (const entry of this._dirHandle.values()) {
         if (entry.kind === 'directory' && entry.name === 'e2e') {
-          const tree = await this.transformationService.scanDirectory(entry as FileSystemDirectoryHandle);
+          this._e2eHandle = entry as FileSystemDirectoryHandle;
+          const tree = await this.transformationService.scanDirectory(this._e2eHandle);
           this.e2eTree = tree.children ?? [];
           this.render();
           return;
         }
       }
     } catch { /* silently skip permission errors */ }
+  }
+
+  async createNewFile(rawName: string): Promise<void> {
+    if (!this._e2eHandle) return;
+    const name = rawName.trim().replace(/\.cy\.ts$/, '');
+    if (!name) return;
+    const fileName = `${name}.cy.ts`;
+    const template = `describe('${name}', () => {\n\n  it('should ', () => {\n\n  });\n\n});\n`;
+    try {
+      const fileHandle = await this._e2eHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(template);
+      await writable.close();
+    } catch { /* silently ignore if file already exists or permission denied */ }
+    this.isCreatingFile = false;
+    await this.getFoldersData();
+  }
+
+  async refreshTree(): Promise<void> {
+    await this.getFoldersData();
   }
 
   async saveCommandsToFile(): Promise<void> {
@@ -148,6 +173,50 @@ export class AdvancedTestEditorElement extends HTMLElement {
     }));
   }
 
+  toggleDir(path: string): void {
+    if (this.collapsedDirs.has(path)) {
+      this.collapsedDirs.delete(path);
+    } else {
+      this.collapsedDirs.add(path);
+    }
+    this.render();
+  }
+
+  private setupResizeHandle(): void {
+    const handle = this.shadow.getElementById('resize-handle');
+    const sidebar = this.shadow.querySelector('.sidebar') as HTMLElement | null;
+    if (!handle || !sidebar) return;
+
+    let startX = 0;
+    let startWidth = 0;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(140, Math.min(500, startWidth + delta));
+      this.sidebarWidth = newWidth;
+      sidebar.style.width = `${newWidth}px`;
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      handle.classList.remove('dragging');
+    };
+
+    handle.addEventListener('mousedown', (e: MouseEvent) => {
+      startX = e.clientX;
+      startWidth = sidebar.offsetWidth;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      handle.classList.add('dragging');
+      e.preventDefault();
+    });
+  }
+
   closePreview(): void {
     this.isPreviewMode = false;
     this.previewFileName = null;
@@ -182,6 +251,9 @@ export class AdvancedTestEditorElement extends HTMLElement {
       testItBlock: this.testItBlock,
       interceptorsBlock: this.interceptorsBlock,
       saveButtonEnabled: this.saveButtonEnabled,
+      isCreatingFile: this.isCreatingFile,
+      collapsedDirs: this.collapsedDirs,
+      sidebarWidth: this.sidebarWidth,
     }, this.t.bind(this))}`;
 
     this.shadow.querySelectorAll('[data-file]').forEach((el) => {
@@ -190,6 +262,13 @@ export class AdvancedTestEditorElement extends HTMLElement {
         if (data) this.onFileClick(JSON.parse(data));
       });
     });
+    this.shadow.querySelectorAll('[data-dir-path]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const path = (el as HTMLElement).dataset['dirPath'];
+        if (path) this.toggleDir(path);
+      });
+    });
+    this.setupResizeHandle();
     this.shadow.getElementById('btn-save')
       ?.addEventListener('click', () => this.saveCommandsToFile());
     this.shadow.getElementById('btn-edit')
@@ -200,6 +279,33 @@ export class AdvancedTestEditorElement extends HTMLElement {
       ?.addEventListener('click', () => this.copyToClipboard(this.interceptorsBlock));
     this.shadow.getElementById('btn-close')
       ?.addEventListener('click', () => this.closePreview());
+    this.shadow.getElementById('btn-new-file')
+      ?.addEventListener('click', () => {
+        this.isCreatingFile = !this.isCreatingFile;
+        this.render();
+        if (this.isCreatingFile) this.shadow.getElementById('input-new-file')?.focus();
+      });
+    this.shadow.getElementById('btn-refresh')
+      ?.addEventListener('click', () => this.refreshTree());
+    this.shadow.getElementById('btn-new-file-confirm')
+      ?.addEventListener('click', () => {
+        const input = this.shadow.getElementById('input-new-file') as HTMLInputElement | null;
+        this.createNewFile(input?.value ?? '');
+      });
+    this.shadow.getElementById('btn-new-file-cancel')
+      ?.addEventListener('click', () => {
+        this.isCreatingFile = false;
+        this.render();
+      });
+    const input = this.shadow.getElementById('input-new-file') as HTMLInputElement | null;
+    input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.createNewFile(input.value);
+      } else if (e.key === 'Escape') {
+        this.isCreatingFile = false;
+        this.render();
+      }
+    });
   }
 }
 

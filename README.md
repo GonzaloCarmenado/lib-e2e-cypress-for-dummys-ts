@@ -273,6 +273,13 @@ cypress/          ← select this folder
 4. Interceptors are automatically wrapped in a `beforeEach()`
 5. Alternatively, click **✏️ Editar manualmente** to open a full diff editor with save support
 
+**Sidebar toolbar:**
+
+| Button | Action |
+|---|---|
+| **+ Nuevo archivo** | Creates a new `.cy.ts` file with a basic `describe/it` scaffold in `cypress/e2e/`. Type the name (no extension needed) and press Enter or click **Crear**. |
+| **↻ Actualizar** | Rescans the `cypress/e2e/` directory. Useful after a `git pull`, a drag-and-drop into the folder, or any external file change. |
+
 > The File System Access API is supported in Chromium-based browsers (Chrome, Edge, Opera). Firefox and Safari do not support it.
 
 ---

@@ -1,4 +1,4 @@
-import { escHtml } from '../../utils/html.utils';
+import { escHtml, escAttr } from '../../utils/html.utils';
 import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
 
 export interface AdvancedEditorState {
@@ -8,6 +8,9 @@ export interface AdvancedEditorState {
   testItBlock: string;
   interceptorsBlock: string;
   saveButtonEnabled: boolean;
+  isCreatingFile: boolean;
+  collapsedDirs: Set<string>;
+  sidebarWidth: number;
 }
 
 export function renderNoPermission(needsReauth: boolean, t: (key: string) => string): string {
@@ -30,10 +33,10 @@ export function renderNoPermission(needsReauth: boolean, t: (key: string) => str
 }
 
 export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string) => string): string {
-  const { e2eTree, selectedFile, selectedFileContent, testItBlock, interceptorsBlock, saveButtonEnabled } = state;
+  const { e2eTree, selectedFile, selectedFileContent, testItBlock, interceptorsBlock, saveButtonEnabled, isCreatingFile, collapsedDirs, sidebarWidth } = state;
 
   const treeHtml = e2eTree.length
-    ? renderTree(e2eTree, selectedFile)
+    ? renderTree(e2eTree, selectedFile, collapsedDirs)
     : `<div class="tree-item" style="color:#6c7a99">${t('ADVANCED_EDITOR.NO_FILES')}</div>`;
 
   const contentHtml = selectedFileContent
@@ -59,9 +62,31 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
          <pre style="max-height:120px;font-size:10.5px;color:#3fb950">${escHtml(interceptorsBlock.slice(0, 500))}</pre>
        </div>` : '';
 
+  const newFileForm = isCreatingFile
+    ? `<div class="new-file-form">
+         <input id="input-new-file" type="text" placeholder="${escHtml(t('ADVANCED_EDITOR.NEW_FILE_PLACEHOLDER'))}" autocomplete="off" />
+         <span class="ext">.cy.ts</span>
+         <div class="new-file-actions">
+           <button id="btn-new-file-confirm" class="btn-confirm">${t('ADVANCED_EDITOR.NEW_FILE_CONFIRM')}</button>
+           <button id="btn-new-file-cancel" class="btn-cancel-form">${t('ADVANCED_EDITOR.NEW_FILE_CANCEL')}</button>
+         </div>
+       </div>`
+    : '';
+
+  const toolbar = `
+    <div class="sidebar-toolbar">
+      <button id="btn-new-file" class="btn-toolbar btn-new">${t('ADVANCED_EDITOR.NEW_FILE_BTN')}</button>
+      <button id="btn-refresh" class="btn-toolbar">${t('ADVANCED_EDITOR.REFRESH_BTN')}</button>
+    </div>`;
+
   return `
     <div class="layout">
-      <div class="sidebar">${treeHtml}</div>
+      <div class="sidebar" style="width:${sidebarWidth}px">
+        ${toolbar}
+        ${newFileForm}
+        <div class="tree-scroll">${treeHtml}</div>
+      </div>
+      <div id="resize-handle" class="resize-handle"></div>
       <div class="main">
         <div class="content-area">${contentHtml}${itHtml}${interceptorsHtml}</div>
         <div class="footer">
@@ -78,16 +103,32 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
     </div>`;
 }
 
-export function renderTree(nodes: Array<DirectoryNode | FileNode>, selected: unknown, indent = 0): string {
+export function renderTree(
+  nodes: Array<DirectoryNode | FileNode>,
+  selected: unknown,
+  collapsedDirs: Set<string>,
+  indent = 0,
+  parentPath = '',
+): string {
   return nodes.map((n) => {
+    const currentPath = parentPath ? `${parentPath}/${n.name}` : n.name;
     const isFile = n.kind === 'file';
-    const isSel = selected === n || (selected as { name?: string } | null)?.name === n.name;
-    const cls = `tree-item${isFile ? '' : ' dir'}${isSel ? ' selected' : ''}`;
-    const pad = `padding-left:${8 + indent * 14}px`;
-    if (!isFile && n.children?.length) {
-      return `<div class="${cls}" style="${pad}">📁 ${escHtml(n.name)}</div>
-              ${renderTree(n.children, selected, indent + 1)}`;
+    const pad = `padding-left:${6 + indent * 14}px`;
+
+    if (!isFile) {
+      const dir = n as DirectoryNode;
+      const hasChildren = (dir.children?.length ?? 0) > 0;
+      const isCollapsed = collapsedDirs.has(currentPath);
+      const arrow = hasChildren ? (isCollapsed ? '▶' : '▼') : '·';
+      const dirHtml = `<div class="tree-item dir" style="${pad}" data-dir-path="${escAttr(currentPath)}">
+        <span class="dir-arrow">${arrow}</span>📁 ${escHtml(n.name)}
+      </div>`;
+      if (!hasChildren || isCollapsed) return dirHtml;
+      return dirHtml + renderTree(dir.children, selected, collapsedDirs, indent + 1, currentPath);
     }
+
+    const isSel = (selected as { name?: string } | null)?.name === n.name;
+    const cls = `tree-item${isSel ? ' selected' : ''}`;
     const data = JSON.stringify({ kind: n.kind, name: n.name }).replace(/"/g, '&quot;');
     return `<div class="${cls}" style="${pad}" data-file="${data}">📄 ${escHtml(n.name)}</div>`;
   }).join('');

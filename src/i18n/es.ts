@@ -108,6 +108,11 @@ export const I18N_ES = {
     INSERT_BTN: '💾 Insertar en archivo',
     EDIT_MANUAL_BTN: '✏️ Editar manualmente',
     CLOSE_BTN: '✕ Cerrar',
+    NEW_FILE_BTN: '+ Nuevo archivo',
+    REFRESH_BTN: '↻ Actualizar',
+    NEW_FILE_PLACEHOLDER: 'nombre-del-test',
+    NEW_FILE_CONFIRM: 'Crear',
+    NEW_FILE_CANCEL: 'Cancelar',
   },
   FILE_PREVIEW: {
     NO_FILE: 'Sin archivo',
