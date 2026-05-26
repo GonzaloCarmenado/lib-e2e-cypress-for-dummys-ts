@@ -1,5 +1,5 @@
 {
-  "name": "lib-e2e-cypress-for-dummys",
+  "name": "lib-e2e-cypress-for-dummys-ts",
   "version": "0.1.0",
   "description": "Cypress E2E test recorder — pure TypeScript, zero Angular dependencies",
   "type": "module",
@@ -16,6 +16,26 @@
   "files": [
     "dist"
   ],
+  "author": "Gonzalo Carmenado <gonzalo.carmenado@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts.git"
+  },
+  "homepage": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts#readme",
+  "bugs": {
+    "url": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/issues"
+  },
+  "keywords": [
+    "cypress",
+    "e2e",
+    "testing",
+    "recorder",
+    "test-generator",
+    "typescript",
+    "custom-element",
+    "web-component"
+  ],
   "scripts": {
     "build": "tsup",
     "build:watch": "tsup --watch",
@@ -24,7 +44,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "npm run lint && npm test && npm run build"
   },
   "lint-staged": {
     "*.ts": "eslint --fix"

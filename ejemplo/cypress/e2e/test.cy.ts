@@ -2,6 +2,12 @@ describe('template spec', () => {
   beforeEach(() => {
   // Auto-generated Cypress interceptors
   cy.intercept('GET', '**/api/v1/clients').as('get-api-v1-clients')
+  cy.intercept('GET', '**/api/v1/clients/2').as('get-api-v1-clients-2')
+  })
+
+  beforeEach(() => {
+  // Auto-generated Cypress interceptors
+  cy.intercept('GET', '**/api/v1/clients').as('get-api-v1-clients')
   })
 
   beforeEach(() => {
@@ -129,5 +135,29 @@ it('fwefwerwfwefwfwe', () => {
   cy.get('[data-cy="login-button"]').click()
   cy.get('[data-cy="button-get-clients"]').click()
   cy.wait('@get-api-v1-clients').then((interception) => { })
+});
+
+it('fsd', () => {
+  cy.viewport(1900, 1200)
+  cy.visit('/')
+  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
+  cy.get('[data-cy="email-input"]').clear().type('fse')
+  cy.get('[data-cy="password-input"]').clear().type('fsdfs')
+  cy.get('.test-class').click()
+  cy.get('[data-cy="login-button"]').click()
+  cy.get('[data-cy="button-get-clients"]').click()
+  cy.wait('@get-api-v1-clients').then((interception) => { })
+  cy.get('[data-cy="button-get-client"]').click()
+  cy.wait('@get-api-v1-clients-2').then((interception) => {
+  if (interception.response) {
+expect(interception.response.body.createdAt).to.equal("2024-12-01T10:32:45Z");
+expect(interception.response.body.name).to.equal("Lucía Ortega");
+expect(interception.response.body.avatar).to.equal("https://i.pravatar.cc/150?img=1");
+expect(interception.response.body.lastname).to.equal("Ortega");
+expect(interception.response.body.secondLastname).to.equal("Fernández");
+expect(interception.response.body.phone).to.equal("+34 612 345 678");
+expect(interception.response.body.email).to.equal("lucia.ortega@example.com");
+  }
+})
 });
 });

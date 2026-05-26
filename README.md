@@ -26,17 +26,11 @@ Drop the widget into any web app. Press record. Click around. The widget watches
 
 ## Installation
 
-> **Note — npm package pending.** The library is not yet published to npm. In the meantime, build it from source and consume the `dist/` output.
-
 ```bash
-# Clone and build
-git clone https://github.com/your-org/lib-e2e-cypress-for-dummys-ts.git
-cd lib-e2e-cypress-for-dummys-ts
-npm install
-npm run build
+npm install lib-e2e-cypress-for-dummys-ts idb sweetalert2
 ```
 
-The `dist/` folder contains:
+The package ships three formats:
 
 | File | Format | Use |
 |---|---|---|
@@ -44,11 +38,7 @@ The `dist/` folder contains:
 | `dist/index.cjs` | CJS | CommonJS environments |
 | `dist/index.d.ts` | TypeScript declarations | Type-safe imports |
 
-Peer dependencies that must be present in the host project:
-
-```bash
-npm install idb sweetalert2
-```
+`idb` and `sweetalert2` are peer dependencies and must be installed alongside the library.
 
 ---
 
@@ -91,7 +81,7 @@ schemas: [CUSTOM_ELEMENTS_SCHEMA]
 **2. Import the library** in `main.ts` (or any file that is loaded before the widget is used):
 
 ```typescript
-import 'lib-e2e-cypress-for-dummys/dist/index.js';
+import 'lib-e2e-cypress-for-dummys-ts/dist/index.js';
 ```
 
 **3. Add the element** to any template (typically `AppComponent`):
@@ -106,7 +96,7 @@ import 'lib-e2e-cypress-for-dummys/dist/index.js';
 **4. Control it programmatically** (optional):
 
 ```typescript
-import type { LibE2eRecorderElement } from 'lib-e2e-cypress-for-dummys';
+import type { LibE2eRecorderElement } from 'lib-e2e-cypress-for-dummys-ts';
 
 const recorder = document.querySelector('lib-e2e-recorder') as LibE2eRecorderElement;
 

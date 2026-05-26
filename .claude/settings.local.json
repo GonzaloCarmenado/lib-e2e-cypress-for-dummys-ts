@@ -33,7 +33,10 @@
       "Bash(Get-ChildItem *)",
       "PowerShell(Get-ChildItem -Path \"D:\\\\GIT\\\\IA\\\\omnissiah-spec-driven\\\\.specify\\\\templates\" | ForEach-Object { $_.Name })",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Select-String \"tsconfig\")"
+      "Bash(Select-String \"tsconfig\")",
+      "Bash(npm view *)",
+      "Bash(npm whoami *)",
+      "Bash(npm config *)"
     ]
   }
 }
