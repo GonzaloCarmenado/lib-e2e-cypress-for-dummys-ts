@@ -51,6 +51,7 @@ interface SelectorPickerEl {
 
 export class LibE2eRecorderElement extends HTMLElement {
   private shadow: ShadowRoot;
+  private _isDisabled = false;
   private keydownHandler!: (e: KeyboardEvent) => void;
   private recordingUnsub?: () => void;
   private commandsUnsub?: () => void;
@@ -83,6 +84,10 @@ export class LibE2eRecorderElement extends HTMLElement {
   }
 
   connectedCallback(): void {
+    if ('Cypress' in window) {
+      this._isDisabled = true;
+      return;
+    }
     if (!this.getAttribute('data-cy')) {
       this.setAttribute('data-cy', 'lib-e2e-cypress-for-dummys');
     }
@@ -108,6 +113,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   }
 
   disconnectedCallback(): void {
+    if (this._isDisabled) return;
     window.removeEventListener('keydown', this.keydownHandler);
     this.recordingUnsub?.();
     this.commandsUnsub?.();
