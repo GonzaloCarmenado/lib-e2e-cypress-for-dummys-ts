@@ -69,6 +69,9 @@ export const I18N_ES = {
     SMART_SELECTOR_SECTION: '🔍 Selector inteligente',
     SMART_SELECTOR_TITLE: 'Selector inteligente',
     SMART_SELECTOR_SUB: 'Muestra un picker al hacer click en elementos sin selector válido.',
+    START_HIDDEN_SECTION: '👁 Visibilidad del widget',
+    START_HIDDEN_TITLE: 'Iniciar oculto',
+    START_HIDDEN_SUB: 'El widget arranca invisible. Usa Ctrl+Shift+E para mostrarlo u ocultarlo.',
   },
   SELECTOR_PICKER: {
     TITLE: 'Selecciona un elemento del DOM',

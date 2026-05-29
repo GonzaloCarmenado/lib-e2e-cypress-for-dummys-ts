@@ -77,11 +77,20 @@ export const TEST_EDITOR_STYLES = `
     background: #0d1117; padding: 10px 14px;
     border-top: 1px solid #21262d;
   }
-  .section-title { font-size: 10px; color: #484f58; text-transform: uppercase;
-                   letter-spacing: 0.8px; margin-bottom: 6px; font-weight: 600; }
-  .cmd-list { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-              font-size: 11px; color: #c9d1d9; line-height: 1.8; }
-  .icp-list { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-              font-size: 11px; color: #3fb950; line-height: 1.8; margin-top: 10px; }
-  .copy-row { display: flex; gap: 6px; margin-top: 10px; }
+  .code-preview {
+    margin: 0; padding: 10px 12px; background: #161b22;
+    border-radius: 6px; border: 1px solid #21262d;
+    font-size: 11px; color: #c9d1d9; line-height: 1.7;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    overflow-x: auto; white-space: pre;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
+  }
+  .code-preview::-webkit-scrollbar { height: 4px; }
+  .code-preview::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  .code-preview-icp { margin-top: 8px; }
+  .sh-kw  { color: #ff7b72; }
+  .sh-bi  { color: #d2a8ff; }
+  .sh-str { color: #a5d6ff; }
+  .sh-cmt { color: #8b949e; font-style: italic; }
+  .sh-num { color: #79c0ff; }
 `;

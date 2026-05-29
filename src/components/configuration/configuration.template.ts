@@ -13,10 +13,11 @@ export interface ConfigurationState {
   filesystemGranted: boolean;
   cypressFolderName: string | null;
   smartSelectorEnabled: boolean;
+  startHidden: boolean;
 }
 
 export function renderConfiguration(state: ConfigurationState, t: (key: string) => string): string {
-  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled } = state;
+  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden } = state;
 
   const langOptions = LANGS.map(
     (l) => `<option value="${l.value}" ${selectedLanguage === l.value ? 'selected' : ''}>${l.label}</option>`,
@@ -54,6 +55,18 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
           <div>
             <div class="check-title">${t('CONFIG.SMART_SELECTOR_TITLE')}</div>
             <div class="check-sub">${t('CONFIG.SMART_SELECTOR_SUB')}</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Start Hidden -->
+      <div class="card">
+        <div class="card-hd">${t('CONFIG.START_HIDDEN_SECTION')}</div>
+        <label class="check-row">
+          <input type="checkbox" id="start-hidden-toggle" ${startHidden ? 'checked' : ''} />
+          <div>
+            <div class="check-title">${t('CONFIG.START_HIDDEN_TITLE')}</div>
+            <div class="check-sub">${t('CONFIG.START_HIDDEN_SUB')}</div>
           </div>
         </label>
       </div>

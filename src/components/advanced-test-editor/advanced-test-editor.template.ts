@@ -1,4 +1,5 @@
 import { escHtml, escAttr } from '../../utils/html.utils';
+import { syntaxHighlight } from '../../utils/syntax-highlight.utils';
 import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
 
 export interface AdvancedEditorState {
@@ -41,7 +42,7 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
 
   const contentHtml = selectedFileContent
     ? `<div class="file-name">📄 ${escHtml((selectedFile as { name?: string } | null)?.name ?? '')}</div>
-       <pre>${escHtml(selectedFileContent.slice(0, 4000))}${selectedFileContent.length > 4000 ? '\n...' : ''}</pre>`
+       <pre class="pre-file">${syntaxHighlight(selectedFileContent.slice(0, 6000))}${selectedFileContent.length > 6000 ? '\n...' : ''}</pre>`
     : `<div class="placeholder">${t('ADVANCED_EDITOR.SELECT_FILE')}</div>`;
 
   const itHtml = testItBlock
@@ -50,7 +51,7 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
            <span>${t('ADVANCED_EDITOR.IT_LABEL')}</span>
            <button id="btn-copy-it" class="btn-copy">${t('ADVANCED_EDITOR.COPY_IT_BTN')}</button>
          </div>
-         <pre style="max-height:120px;font-size:10.5px">${escHtml(testItBlock.slice(0, 500))}</pre>
+         <pre class="pre-block">${syntaxHighlight(testItBlock.slice(0, 3000))}</pre>
        </div>` : '';
 
   const interceptorsHtml = interceptorsBlock
@@ -59,7 +60,7 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
            <span>${t('ADVANCED_EDITOR.BEFORE_EACH_LABEL')}</span>
            <button id="btn-copy-interceptors" class="btn-copy">${t('ADVANCED_EDITOR.COPY_ICP_BTN')}</button>
          </div>
-         <pre style="max-height:120px;font-size:10.5px;color:#3fb950">${escHtml(interceptorsBlock.slice(0, 500))}</pre>
+         <pre class="pre-block pre-icp">${syntaxHighlight(interceptorsBlock.slice(0, 3000))}</pre>
        </div>` : '';
 
   const newFileForm = isCreatingFile

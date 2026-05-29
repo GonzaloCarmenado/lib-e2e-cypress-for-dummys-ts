@@ -14,6 +14,7 @@ export class ConfigurationElement extends HTMLElement {
   advancedHttpConfig = false
   selectorStrategy: SelectorStrategy = 'data-cy'
   smartSelectorEnabled = true
+  startHidden = false
   private filesystemGranted = false
   private cypressFolderName: string | null = null
 
@@ -41,6 +42,7 @@ export class ConfigurationElement extends HTMLElement {
     this.advancedHttpConfig = localStorage.getItem("extendedHttpCommands") === "true"
     this.selectorStrategy = (config?.['selectorStrategy'] as SelectorStrategy) ?? 'data-cy'
     this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false'
+    this.startHidden = config?.['startHidden'] === 'true'
     this.filesystemGranted = config?.['allowReadWriteFiles'] === 'true'
     const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined
     this.cypressFolderName = handle?.name ?? null
@@ -58,6 +60,13 @@ export class ConfigurationElement extends HTMLElement {
     this.advancedHttpConfig = checked
     localStorage.setItem("extendedHttpCommands", checked ? "true" : "false")
     this.persistence.setConfig({ extendedHttpCommands: checked ? "true" : "false" })
+    this.render()
+  }
+
+  async onStartHiddenChange(checked: boolean): Promise<void> {
+    this.startHidden = checked
+    await this.persistence.setConfig({ startHidden: checked ? 'true' : 'false' })
+    this.dispatchEvent(new CustomEvent('starthiddenchange', { detail: checked, bubbles: true, composed: true }))
     this.render()
   }
 
@@ -128,6 +137,7 @@ export class ConfigurationElement extends HTMLElement {
       filesystemGranted: this.filesystemGranted,
       cypressFolderName: this.cypressFolderName,
       smartSelectorEnabled: this.smartSelectorEnabled,
+      startHidden: this.startHidden,
     }, this.t.bind(this))}`;
     ;(this.shadow.getElementById("lang-select") as HTMLSelectElement).addEventListener("change", (e) =>
       this.onLanguageChange((e.target as HTMLSelectElement).value),
@@ -137,6 +147,9 @@ export class ConfigurationElement extends HTMLElement {
     )
     ;(this.shadow.getElementById("smart-selector-toggle") as HTMLInputElement).addEventListener("change", (e) =>
       this.onSmartSelectorChange((e.target as HTMLInputElement).checked),
+    )
+    ;(this.shadow.getElementById("start-hidden-toggle") as HTMLInputElement).addEventListener("change", (e) =>
+      this.onStartHiddenChange((e.target as HTMLInputElement).checked),
     )
     ;(this.shadow.getElementById("selector-strategy") as HTMLSelectElement).addEventListener("change", (e) =>
       this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),

@@ -179,7 +179,7 @@ export class TestEditorElement extends HTMLElement {
         ev.stopPropagation();
         const idx = Number((el as HTMLElement).dataset['idx']);
         const t = visible[idx];
-        this.copyToClipboard((this.interceptorsByTest[t?.id] ?? []).join('\n'));
+        this.copyToClipboard((this.interceptorsByTest[t?.id] ?? t?.interceptors ?? []).join('\n'));
       });
     });
   }

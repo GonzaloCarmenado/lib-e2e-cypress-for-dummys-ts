@@ -66,7 +66,23 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(spy).toHaveBeenCalled();
   });
 
+  it('Ctrl+Shift+E toggles visibility regardless of current isVisible state', () => {
+    expect(el.isVisible).toBe(false);
+    window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'E', bubbles: true }));
+    expect(el.isVisible).toBe(true);
+    window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'E', bubbles: true }));
+    expect(el.isVisible).toBe(false);
+  });
+
+  it('other Ctrl shortcuts are blocked when isVisible is false', () => {
+    el.isVisible = false;
+    const spy = vi.spyOn(el, 'toggle');
+    window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'r', bubbles: true }));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it('Ctrl+R keyboard event calls toggle()', () => {
+    el.isVisible = true;
     const spy = vi.spyOn(el, 'toggle');
     const event = new KeyboardEvent('keydown', { ctrlKey: true, key: 'r', bubbles: true });
     window.dispatchEvent(event);
@@ -74,18 +90,21 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
   });
 
   it('Ctrl+1 opens saved tests panel', () => {
+    el.isVisible = true;
     const event = new KeyboardEvent('keydown', { ctrlKey: true, key: '1', bubbles: true });
     window.dispatchEvent(event);
     expect(el.isSavedTestsDialogOpen).toBe(true);
   });
 
   it('Ctrl+2 opens commands panel', () => {
+    el.isVisible = true;
     const event = new KeyboardEvent('keydown', { ctrlKey: true, key: '2', bubbles: true });
     window.dispatchEvent(event);
     expect(el.isCommandsDialogOpen).toBe(true);
   });
 
   it('Ctrl+3 opens settings panel', () => {
+    el.isVisible = true;
     const event = new KeyboardEvent('keydown', { ctrlKey: true, key: '3', bubbles: true });
     window.dispatchEvent(event);
     expect(el.isSettingsDialogOpen).toBe(true);
@@ -168,6 +187,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
   });
 
   it('Ctrl+P keyboard event calls togglePause()', () => {
+    el.isVisible = true;
     const spy = vi.spyOn(el, 'togglePause');
     const event = new KeyboardEvent('keydown', { ctrlKey: true, key: 'p', bubbles: true });
     window.dispatchEvent(event);

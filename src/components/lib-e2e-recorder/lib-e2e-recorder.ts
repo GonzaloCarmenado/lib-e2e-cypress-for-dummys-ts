@@ -67,6 +67,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   persistence!: PersistenceService;
   translation!: TranslationService;
 
+  isVisible = false;
   isRecording = false;
   isPaused = false;
   cypressCommands: string[] = [];
@@ -107,6 +108,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.initSelectorStrategy();
     this.initSubscriptions();
     this.render();
+    this.initVisibility();
 
     this.keydownHandler = (e: KeyboardEvent) => this.handleKeyboardEvent(e);
     window.addEventListener('keydown', this.keydownHandler);
@@ -180,6 +182,18 @@ export class LibE2eRecorderElement extends HTMLElement {
     });
   }
 
+  private async initVisibility(): Promise<void> {
+    if (this.hasAttribute('start-hidden')) {
+      // Attribute overrides DB: presence → hidden, explicit "false" → visible
+      this.isVisible = this.getAttribute('start-hidden') === 'false';
+      this.style.display = this.isVisible ? '' : 'none';
+      return;
+    }
+    const config = await this.persistence.getGeneralConfig();
+    this.isVisible = config?.['startHidden'] !== 'true';
+    this.style.display = this.isVisible ? '' : 'none';
+  }
+
   private async initSelectorStrategy(): Promise<void> {
     const config = await this.persistence.getGeneralConfig();
     const strategy = config?.['selectorStrategy'] as string | undefined;
@@ -203,11 +217,18 @@ export class LibE2eRecorderElement extends HTMLElement {
   handleKeyboardEvent(event: KeyboardEvent): void {
     if (!event.ctrlKey) return;
     const key = event.key.toLowerCase();
+    if (key === 'e' && event.shiftKey) { event.preventDefault(); this.toggleVisibility(); return; }
+    if (!this.isVisible) return;
     if (key === 'r')      { event.preventDefault(); this.toggle(); }
     else if (key === 'p') { event.preventDefault(); this.togglePause(); }
     else if (key === '1') { event.preventDefault(); this.showSavedTestsDialog(); }
     else if (key === '2') { event.preventDefault(); this.showCommandsDialog(); }
     else if (key === '3') { event.preventDefault(); this.showSettingsDialog(); }
+  }
+
+  toggleVisibility(): void {
+    this.isVisible = !this.isVisible;
+    this.style.display = this.isVisible ? '' : 'none';
   }
 
   // ── recording history (task 5) ────────────────────────────────────────────
@@ -497,6 +518,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           child.addEventListener('smartselectorchange', (e: CustomEvent) => {
             this.smartSelectorEnabled = e.detail;
           });
+          child.addEventListener('starthiddenchange', (e: CustomEvent) => {
+            this.isVisible = !e.detail;
+            this.style.display = this.isVisible ? '' : 'none';
+          });
         },
         willClose: () => { this.isSettingsDialogOpen = false; },
       });
@@ -654,6 +679,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
   private render(): void {
     const rec    = this.isRecording;
     const paused = this.isPaused;
+    this.style.display = this.isVisible ? '' : 'none';
     this.shadow.innerHTML = `<style>${getRecorderStyles(rec, paused)}</style>${renderRecorderWidget(rec, paused, this.translation.translate.bind(this.translation))}`;
     this.shadow.querySelector('[data-action="toggle"]')
       ?.addEventListener('click', () => this.toggle());

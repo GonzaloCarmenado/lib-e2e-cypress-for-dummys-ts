@@ -44,12 +44,21 @@ export const ADVANCED_TEST_EDITOR_STYLES = `
   .file-name { font-size: 11px; color: #484f58; margin-bottom: 8px; font-family: monospace; }
   pre {
     background: #0d1117; padding: 12px; border-radius: 8px;
-    font-size: 11px; color: #c9d1d9; overflow-x: auto;
-    white-space: pre-wrap; word-break: break-all; margin: 0;
+    font-size: 11px; color: #c9d1d9; margin: 0;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    line-height: 1.7; overflow-y: auto;
-    border: 1px solid #21262d;
+    line-height: 1.7; border: 1px solid #21262d;
+    white-space: pre; overflow-x: auto; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
   }
+  pre::-webkit-scrollbar { width: 4px; height: 4px; }
+  pre::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  .pre-block { font-size: 10.5px; }
+  .pre-icp .sh-str { color: #85e89d; }
+  .sh-kw  { color: #ff7b72; }
+  .sh-bi  { color: #d2a8ff; }
+  .sh-str { color: #a5d6ff; }
+  .sh-cmt { color: #8b949e; font-style: italic; }
+  .sh-num { color: #79c0ff; }
   .footer {
     padding: 10px 14px; border-top: 1px solid #21262d;
     display: flex; gap: 8px; justify-content: flex-end; background: #161b22;

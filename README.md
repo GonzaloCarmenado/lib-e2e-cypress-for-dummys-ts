@@ -89,9 +89,14 @@ import 'lib-e2e-cypress-for-dummys-ts/dist/index.js';
 ```html
 <!-- Only render in non-production environments -->
 @if (!isProduction) {
-  <lib-e2e-recorder></lib-e2e-recorder>
+  <!-- start-hidden: widget is invisible on load; press Ctrl+Shift+E to reveal it -->
+  <lib-e2e-recorder start-hidden></lib-e2e-recorder>
 }
 ```
+
+> The included **example project** (`ejemplo/`) uses `start-hidden` so the floating button does not interfere with the app UI during development. Remove the attribute if you prefer the widget to be visible immediately.
+>
+> The `start-hidden` attribute **overrides** the value stored in the settings panel. See [Start hidden](#start-hidden-invisible-mode) for the full precedence rules.
 
 **4. Control it programmatically** (optional):
 
@@ -294,11 +299,85 @@ The last **5 recordings** are automatically saved to `localStorage` so you never
 
 | Shortcut | Action |
 |---|---|
+| `Ctrl + Shift + E` | **Show / hide the widget** (works even when it is invisible) |
 | `Ctrl + R` | Start / stop recording |
 | `Ctrl + P` | Pause / resume recording |
 | `Ctrl + 1` | Open saved tests panel |
 | `Ctrl + 2` | Open command previewer |
 | `Ctrl + 3` | Open settings |
+
+> `Ctrl + R` / `Ctrl + P` and the panel shortcuts only fire when the widget is **visible**. `Ctrl + Shift + E` always works regardless of visibility state.
+
+---
+
+### Invisible mode — record in production, stay hidden from users
+
+Most test recorders force you to choose: use them in a safe dev environment, or ship to real users and lose the tool. **Not this one.**
+
+With `start-hidden`, you can deploy the recorder to **any environment — including production** — and it stays completely invisible to your users. No floating button, no visual clutter, no accidental clicks. When *you* need to record a test against the real app, with real data, real API responses, and real edge cases that are impossible to reproduce locally, just press the secret shortcut and the widget appears. Record, save, hide. Nobody saw a thing.
+
+```
+Ctrl + Shift + E   →   show / hide the widget (works even when invisible)
+```
+
+This means you can:
+- **Record against production data** — capture flows that only happen with real users and real back-ends.
+- **Debug flaky tests in the wild** — reproduce the exact sequence of events that broke your CI pipeline.
+- **Onboard QA teams without a local setup** — testers open the live app, hit the shortcut, and record directly.
+- **Keep staging clean** — no visible dev tooling leaked to clients or stakeholders reviewing the environment.
+
+#### Option A — HTML attribute (deploy-time, recommended)
+
+Add `start-hidden` to the element. This takes **precedence over the settings panel** and is the right choice for environment-level control:
+
+```html
+<!-- Production / staging: invisible by default -->
+<lib-e2e-recorder start-hidden></lib-e2e-recorder>
+
+<!-- Dev: always visible (or omit the attribute entirely) -->
+<lib-e2e-recorder start-hidden="false"></lib-e2e-recorder>
+```
+
+Works in every framework:
+
+```html
+<!-- Angular -->
+<lib-e2e-recorder start-hidden></lib-e2e-recorder>
+
+<!-- React (JSX) -->
+<lib-e2e-recorder start-hidden="true" />
+
+<!-- Vue -->
+<lib-e2e-recorder start-hidden />
+```
+
+A typical Angular setup driven by an environment variable:
+
+```typescript
+// app.component.ts
+get startHidden(): boolean {
+  return environment.production; // invisible in prod, visible in dev
+}
+```
+
+```html
+<!-- app.component.html -->
+<lib-e2e-recorder [attr.start-hidden]="startHidden ? '' : null"></lib-e2e-recorder>
+```
+
+#### Option B — Settings panel (runtime, per user)
+
+Enable **⚙️ Config → 👁 Widget visibility → Start hidden**. The preference is stored in IndexedDB and persists across sessions. Useful when individual team members want to tailor the behaviour without a redeployment.
+
+---
+
+**Either way, when the widget is hidden:**
+- Zero DOM rendered, zero event listeners added beyond the keyboard shortcut — it is truly invisible and inert.
+- Your Cypress selectors are never blocked by a floating element.
+- Press **`Ctrl + Shift + E`** to reveal it instantly, no page reload needed.
+- Hide it again with the same shortcut when you are done.
+
+> **Running under Cypress?** The widget auto-disables itself when `window.Cypress` is detected — it does not render at all, regardless of the `start-hidden` attribute or the settings panel value. No extra setup, no `beforeEach` cleanup, no risk of the widget covering a selector mid-test.
 
 ---
 

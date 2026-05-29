@@ -27,7 +27,6 @@ describe('template spec', () => {
 it('dth', () => {
   cy.viewport(1900, 1200)
   cy.visit('/navigation-window')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
   cy.get('[data-cy="button-get-clients"]').click()
   cy.wait('@get-api-v1-clients').then((interception) => { })
   cy.get('[data-cy="button-get-client"]').click()
@@ -47,8 +46,7 @@ expect(interception.response.body.email).to.equal("lucia.ortega@example.com");
   it('Completa', () => {
     cy.viewport(1900, 1200);
     cy.visit('/');
-    cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
-    cy.get('[data-cy="password-input"]').clear().type('1234567');
+      cy.get('[data-cy="password-input"]').clear().type('1234567');
     cy.get('[data-cy="user-role"]').select('user');
     cy.get('[data-cy="login-button"]').click();
     cy.get('[data-cy="button-get-clients"]').click();
@@ -78,7 +76,6 @@ expect(interception.response.body.email).to.equal("lucia.ortega@example.com");
 it('Para todos vosotros', () => {
   cy.viewport(1900, 1200)
   cy.visit('/')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
   cy.get('[data-cy="email-input"]').clear().type('gonzalo.carmenado')
   cy.get('[data-cy="password-input"]').clear().type('2143234324')
   cy.get('[data-cy="user-role"]').select('user')
@@ -103,31 +100,25 @@ expect(interception.response.body.email).to.equal("lucia.ortega@example.com");
 it('dsadas', () => {
   cy.viewport(1900, 1200)
   cy.visit('/navigation-window')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
 });
 
 it('dsa', () => {
   cy.viewport(1900, 1200)
   cy.visit('/navigation-window')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
   cy.viewport(1900, 1200)
   cy.visit('/navigation-window')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
 });
 
 it('dsa', () => {
   cy.viewport(1900, 1200)
   cy.visit('/navigation-window')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
   cy.viewport(1900, 1200)
   cy.visit('/navigation-window')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
 });
 
 it('fwefwerwfwefwfwe', () => {
   cy.viewport(1900, 1200)
   cy.visit('/')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
   cy.get('[data-cy="email-input"]').clear().type('gonzalo')
   cy.get('[data-cy="email-input"]').clear().type('gonzalo@a.es')
   cy.get('[data-cy="password-input"]').clear().type('12345678')
@@ -140,7 +131,6 @@ it('fwefwerwfwefwfwe', () => {
 it('fsd', () => {
   cy.viewport(1900, 1200)
   cy.visit('/')
-  cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');
   cy.get('[data-cy="email-input"]').clear().type('fse')
   cy.get('[data-cy="password-input"]').clear().type('fsdfs')
   cy.get('.test-class').click()

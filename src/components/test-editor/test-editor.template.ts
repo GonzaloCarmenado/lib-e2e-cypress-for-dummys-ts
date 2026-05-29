@@ -1,4 +1,6 @@
 import { escHtml, escAttr } from '../../utils/html.utils';
+import { syntaxHighlight } from '../../utils/syntax-highlight.utils';
+import { normalizeBlock } from '../../utils/code-format.utils';
 import type { TestWithDetails } from '../../services/persistence.service';
 
 export interface TestEditorState {
@@ -40,18 +42,13 @@ export function renderTestEditor(state: TestEditorState, t: (key: string) => str
     const checkbox = selectMode
       ? `<input type="checkbox" ${selectedIds.has(test.id) ? 'checked' : ''} data-select="${test.id}" />`
       : '';
+    const hasIcps = (test.interceptors ?? []).length > 0;
+    const itBlockCode = `it('${test.name}', () => {\n${(test.commands ?? []).map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
+    const icpBlockCode = icps.length ? `beforeEach(() => {\n  // Auto-generated Cypress interceptors\n${icps.map(c => normalizeBlock(c, '  ')).join('\n')}\n});` : '';
     const body = expanded ? `
       <div class="row-body">
-        <div class="section-title">${t('TEST_EDITOR.SECTION_COMMANDS')} (${(test.commands ?? []).length})</div>
-        <div class="cmd-list">${(test.commands ?? []).map(escHtml).join('<br>')}</div>
-        ${icps.length ? `<div class="icp-list">
-          <div class="section-title" style="margin-top:8px">${t('TEST_EDITOR.SECTION_INTERCEPTORS')}</div>
-          ${icps.map(escHtml).join('<br>')}
-        </div>` : ''}
-        <div class="copy-row">
-          <button class="btn-icon" data-action="copy-cmds" data-idx="${i}">${t('TEST_EDITOR.COPY_CMDS_BTN')}</button>
-          ${icps.length ? `<button class="btn-icon" data-action="copy-icps" data-idx="${i}">${t('TEST_EDITOR.COPY_ICPS_BTN')}</button>` : ''}
-        </div>
+        <pre class="code-preview">${syntaxHighlight(itBlockCode)}</pre>
+        ${icpBlockCode ? `<pre class="code-preview code-preview-icp">${syntaxHighlight(icpBlockCode)}</pre>` : ''}
       </div>` : '';
     return `
       <div class="row${selectedIds.has(test.id) ? ' selected-row' : ''}">
@@ -60,6 +57,8 @@ export function renderTestEditor(state: TestEditorState, t: (key: string) => str
           <span class="test-name">${escHtml(test.name)}</span>
           ${tagsHtml}
           <span class="test-date">${date}</span>
+          <button class="btn-icon" data-action="copy-cmds" data-idx="${i}" title="${t('TEST_EDITOR.COPY_CMDS_BTN')}">${t('TEST_EDITOR.COPY_CMDS_BTN')}</button>
+          ${hasIcps ? `<button class="btn-icon" data-action="copy-icps" data-idx="${i}" title="${t('TEST_EDITOR.COPY_ICPS_BTN')}">${t('TEST_EDITOR.COPY_ICPS_BTN')}</button>` : ''}
           <button class="btn-icon btn-del" data-action="delete" data-id="${test.id}" title="${t('TEST_EDITOR.DELETE_TITLE')}">🗑</button>
         </div>
         ${body}
