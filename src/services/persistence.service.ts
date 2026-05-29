@@ -1,5 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { DB_SCHEMA } from '../models/db-schema.model';
+import { normalizeBlock } from '../utils/code-format.utils';
 
 interface TestRecord        { id: number; name: string; createdAt: number; tags?: string[]; }
 interface CommandRecord     { id: number; command: string; testId: number; createdAt: number; }
@@ -74,10 +75,10 @@ export class PersistenceService {
 
     const commands     = await this.getCommandStrings(testId);
     const interceptors = await this.getInterceptorStrings(testId);
-    const itBlock = `it('${record.name}', () => {\n  ${commands.join('\n  ')}\n});`;
+    const itBlock = `it('${record.name}', () => {\n${commands.map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
     const interceptorsBlock = interceptors.length
       ? '  // Auto-generated Cypress interceptors\n' +
-        interceptors.map((i) => '  ' + i).join('\n') + '\n'
+        interceptors.map(i => normalizeBlock(i, '  ')).join('\n') + '\n'
       : '';
 
     return { ...record, commands, interceptors, cypressCommands: commands, itBlock, interceptorsBlock };
