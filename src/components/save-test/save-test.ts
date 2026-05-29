@@ -6,6 +6,7 @@ export class SaveTestElement extends HTMLElement {
   private shadow: ShadowRoot;
   private _step: 'ask' | 'desc' = 'ask';
   description = '';
+  notes = '';
   tags: string[] = [];
   translation: TranslationService = translationService;
 
@@ -20,13 +21,13 @@ export class SaveTestElement extends HTMLElement {
 
   askSave(): void { this._step = 'desc'; this.render(); }
 
-  confirmSave(): void { this.dispatch('savetest', { description: this.description.trim(), tags: [...this.tags] }); }
+  confirmSave(): void { this.dispatch('savetest', { description: this.description.trim(), notes: this.notes, tags: [...this.tags] }); }
 
-  confirmSaveAndExport(): void { this.dispatch('saveandexport', { description: this.description.trim(), tags: [...this.tags] }); }
+  confirmSaveAndExport(): void { this.dispatch('saveandexport', { description: this.description.trim(), notes: this.notes, tags: [...this.tags] }); }
 
-  cancel(): void { this.dispatch('savetest', { description: null, tags: [] }); }
+  cancel(): void { this.dispatch('savetest', { description: null, notes: '', tags: [] }); }
 
-  restartComponent(): void { this._step = 'ask'; this.description = ''; this.tags = []; this.render(); }
+  restartComponent(): void { this._step = 'ask'; this.description = ''; this.notes = ''; this.tags = []; this.render(); }
 
   addTag(tag: string): void {
     const t = tag.trim().replace(/[,;]/g, '');
@@ -43,7 +44,7 @@ export class SaveTestElement extends HTMLElement {
 
   private t(key: string): string { return this.translation.translate(key); }
 
-  private dispatch(type: string, detail: { description: string | null; tags: string[] }): void {
+  private dispatch(type: string, detail: { description: string | null; notes: string; tags: string[] }): void {
     this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
   }
 
@@ -53,12 +54,14 @@ export class SaveTestElement extends HTMLElement {
       this.shadow.getElementById('btn-yes')?.addEventListener('click', () => this.askSave());
       this.shadow.getElementById('btn-no')?.addEventListener('click', () => this.cancel());
     } else {
-      this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestDesc(this.description, this.tags, this.t.bind(this))}`;
+      this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestDesc(this.description, this.notes, this.tags, this.t.bind(this))}`;
 
-      const descInput = this.shadow.getElementById('desc-input') as HTMLInputElement;
-      const tagInput  = this.shadow.getElementById('tag-input')  as HTMLInputElement;
+      const descInput  = this.shadow.getElementById('desc-input')  as HTMLInputElement;
+      const notesInput = this.shadow.getElementById('notes-input') as HTMLTextAreaElement;
+      const tagInput   = this.shadow.getElementById('tag-input')   as HTMLInputElement;
 
       descInput.addEventListener('input', () => { this.description = descInput.value; });
+      notesInput.addEventListener('input', () => { this.notes = notesInput.value; });
 
       const tryAddTag = () => {
         this.addTag(tagInput.value);

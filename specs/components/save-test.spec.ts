@@ -26,6 +26,10 @@ describe('Phase 8.2 — SaveTestElement', () => {
     expect(el.description).toBe('');
   });
 
+  it('initial notes is empty string', () => {
+    expect(el.notes).toBe('');
+  });
+
   it('initial tags is empty array', () => {
     expect(el.tags).toEqual([]);
   });
@@ -42,6 +46,22 @@ describe('Phase 8.2 — SaveTestElement', () => {
     el.confirmSave();
     expect(received.description).toBe('my test');
     expect(received.tags).toEqual([]);
+  });
+
+  it('confirmSave() includes notes in event detail', () => {
+    let received: any;
+    el.addEventListener('savetest', (e: Event) => { received = (e as CustomEvent).detail; });
+    el.notes = 'Validates the login flow\nwith valid credentials.';
+    el.confirmSave();
+    expect(received.notes).toBe('Validates the login flow\nwith valid credentials.');
+  });
+
+  it('confirmSaveAndExport() includes notes in event detail', () => {
+    let received: any;
+    el.addEventListener('saveandexport', (e: Event) => { received = (e as CustomEvent).detail; });
+    el.notes = 'Export test notes';
+    el.confirmSaveAndExport();
+    expect(received.notes).toBe('Export test notes');
   });
 
   it('confirmSave() includes tags in event detail', () => {
@@ -109,5 +129,11 @@ describe('Phase 8.2 — SaveTestElement', () => {
     el.restartComponent();
     expect(el.description).toBe('');
     expect(el.tags).toEqual([]);
+  });
+
+  it('restartComponent() resets notes', () => {
+    el.notes = 'some notes';
+    el.restartComponent();
+    expect(el.notes).toBe('');
   });
 });

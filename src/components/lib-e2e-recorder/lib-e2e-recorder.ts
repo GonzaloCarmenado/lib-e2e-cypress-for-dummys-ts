@@ -482,13 +482,13 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           child.translation = this.translation;
           container.appendChild(child as unknown as Node);
           child.addEventListener('savetest', (e: CustomEvent) => {
-            const { description, tags } = e.detail ?? {};
-            this.onSaveTest(description ?? null, tags ?? []);
+            const { description, notes, tags } = e.detail ?? {};
+            this.onSaveTest(description ?? null, tags ?? [], notes ?? '');
             Swal.close();
           });
           child.addEventListener('saveandexport', (e: CustomEvent) => {
-            const { description, tags } = e.detail ?? {};
-            this.onSaveAndExportTest(description ?? null, tags ?? []);
+            const { description, notes, tags } = e.detail ?? {};
+            this.onSaveAndExportTest(description ?? null, tags ?? [], notes ?? '');
             Swal.close();
           });
         },
@@ -636,9 +636,9 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
 
   // ── save handlers ─────────────────────────────────────────────────────────
 
-  private async onSaveTest(description: string | null, tags: string[] = []): Promise<void> {
+  private async onSaveTest(description: string | null, tags: string[] = [], notes = ''): Promise<void> {
     if (description) {
-      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags);
+      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes);
       this.recording.clearCommands();
       this.clearRecordingHistory();
       this.cypressCommands = [];
@@ -646,9 +646,9 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     }
   }
 
-  private async onSaveAndExportTest(description: string | null, tags: string[] = []): Promise<void> {
+  private async onSaveAndExportTest(description: string | null, tags: string[] = [], notes = ''): Promise<void> {
     if (description) {
-      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags);
+      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes);
       this.recording.clearCommands();
       this.clearRecordingHistory();
       this.cypressCommands = [];

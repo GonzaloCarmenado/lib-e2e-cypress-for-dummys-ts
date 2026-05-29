@@ -20,6 +20,8 @@ export const I18N_EN = {
     SAVE_BTN: '💾 Save',
     SAVE_AND_EDIT: '📝 Save and edit',
     REMOVE_TAG_TITLE: 'Remove',
+    NOTES_LABEL: 'Description / Notes (optional):',
+    NOTES_PLACEHOLDER: 'What this test validates, preconditions, etc.',
   },
   TEST_EDITOR: {
     NO_TAGS: 'No tags',

@@ -11,7 +11,7 @@ export function renderSaveTestAsk(t: (key: string) => string): string {
     </div>`;
 }
 
-export function renderSaveTestDesc(description: string, tags: string[], t: (key: string) => string): string {
+export function renderSaveTestDesc(description: string, notes: string, tags: string[], t: (key: string) => string): string {
   const chipsHtml = tags.map((tag) =>
     `<span class="chip">${escHtml(tag)}<button class="chip-del" data-tag="${escAttr(tag)}" title="${t('SAVE_TEST.REMOVE_TAG_TITLE')}">✕</button></span>`
   ).join('');
@@ -21,6 +21,8 @@ export function renderSaveTestDesc(description: string, tags: string[], t: (key:
       <p>${t('SAVE_TEST.DESC_LABEL')} (<code>it()</code>):</p>
       <input id="desc-input" type="text" placeholder="${t('SAVE_TEST.DESC_PLACEHOLDER')}"
              value="${escAttr(description)}" autocomplete="off" />
+      <span class="tag-label">${t('SAVE_TEST.NOTES_LABEL')}</span>
+      <textarea id="notes-input" rows="3" placeholder="${escAttr(t('SAVE_TEST.NOTES_PLACEHOLDER'))}">${escHtml(notes)}</textarea>
       <span class="tag-label">${t('SAVE_TEST.TAGS_LABEL')}</span>
       <div class="tag-input-row">
         <input id="tag-input" type="text" placeholder="${t('SAVE_TEST.TAGS_PLACEHOLDER')}" autocomplete="off" />

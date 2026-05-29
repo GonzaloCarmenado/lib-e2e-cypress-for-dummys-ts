@@ -20,6 +20,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
   selectedFileContent: string | null = null;
   testItBlock = '';
   interceptorsBlock = '';
+  testNotes = '';
   isPreviewMode = false;
   previewFileName: string | null = null;
   previewFileContent: string | null = null;
@@ -115,7 +116,8 @@ export class AdvancedTestEditorElement extends HTMLElement {
     if (this.interceptorsBlock) {
       content = this.transformationService.insertBeforeEach(content, this.interceptorsBlock);
     }
-    content = this.transformationService.insertItBlock(content, this.testItBlock);
+    const comment = this.testNotes ? this.transformationService.buildBlockComment(this.testNotes) + '\n' : '';
+    content = this.transformationService.insertItBlock(content, comment + this.testItBlock);
     if (!content) return;
     const writable = await this.selectedFileHandle.createWritable();
     await writable.write(content);
@@ -146,9 +148,11 @@ export class AdvancedTestEditorElement extends HTMLElement {
     if (test) {
       this.testItBlock = test.itBlock ?? '';
       this.interceptorsBlock = test.interceptorsBlock ?? '';
+      this.testNotes = test.notes ?? '';
     } else {
       this.testItBlock = '';
       this.interceptorsBlock = '';
+      this.testNotes = '';
     }
     this.render();
   }
@@ -250,6 +254,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
       selectedFileContent: this.selectedFileContent,
       testItBlock: this.testItBlock,
       interceptorsBlock: this.interceptorsBlock,
+      testNotes: this.testNotes,
       saveButtonEnabled: this.saveButtonEnabled,
       isCreatingFile: this.isCreatingFile,
       collapsedDirs: this.collapsedDirs,

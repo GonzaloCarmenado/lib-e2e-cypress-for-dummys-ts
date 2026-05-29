@@ -197,6 +197,28 @@ describe('Phase 5 — PersistenceService', () => {
     });
   });
 
+  // ── notes ────────────────────────────────────────────────────────────────
+
+  describe('insertTest with notes', () => {
+    it('stores notes and returns it in getAllTests', async () => {
+      await service.insertTest('noted test', [], [], [], 'This test validates the login flow.');
+      const tests = await service.getAllTests();
+      expect(tests[0].notes).toBe('This test validates the login flow.');
+    });
+
+    it('stores notes and returns it in getTestById', async () => {
+      const id = await service.insertTest('noted test', [], [], [], 'Multi-line\nnotes here.');
+      const test = await service.getTestById(id);
+      expect(test!.notes).toBe('Multi-line\nnotes here.');
+    });
+
+    it('test without notes has undefined or absent notes', async () => {
+      await service.insertTest('no notes test');
+      const tests = await service.getAllTests();
+      expect(tests[0].notes == null).toBe(true);
+    });
+  });
+
   // ── tags ─────────────────────────────────────────────────────────────────
 
   describe('insertTest with tags', () => {

@@ -45,8 +45,12 @@ export function renderTestEditor(state: TestEditorState, t: (key: string) => str
     const hasIcps = (test.interceptors ?? []).length > 0;
     const itBlockCode = `it('${test.name}', () => {\n${(test.commands ?? []).map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
     const icpBlockCode = icps.length ? `beforeEach(() => {\n  // Auto-generated Cypress interceptors\n${icps.map(c => normalizeBlock(c, '  ')).join('\n')}\n});` : '';
+    const notesHtml = (expanded && test.notes)
+      ? `<p class="test-notes">${escHtml(test.notes)}</p>`
+      : '';
     const body = expanded ? `
       <div class="row-body">
+        ${notesHtml}
         <pre class="code-preview">${syntaxHighlight(itBlockCode)}</pre>
         ${icpBlockCode ? `<pre class="code-preview code-preview-icp">${syntaxHighlight(icpBlockCode)}</pre>` : ''}
       </div>` : '';

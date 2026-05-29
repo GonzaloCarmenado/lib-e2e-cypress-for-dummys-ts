@@ -137,6 +137,23 @@ describe('Phase 3 — AdvancedTestTransformationService', () => {
     });
   });
 
+  describe('buildBlockComment', () => {
+    it('wraps a single-line note in a /** ... */ comment', () => {
+      const result = service.buildBlockComment('Validates the login flow.');
+      expect(result).toBe('/**\n * Validates the login flow.\n */');
+    });
+
+    it('prefixes each line with " * "', () => {
+      const result = service.buildBlockComment('Line one\nLine two');
+      expect(result).toBe('/**\n * Line one\n * Line two\n */');
+    });
+
+    it('returns empty string for empty notes', () => {
+      expect(service.buildBlockComment('')).toBe('');
+      expect(service.buildBlockComment('   ')).toBe('');
+    });
+  });
+
   describe('scanDirectory', () => {
     it('returns a node with name and kind=directory', async () => {
       const handle = mockDirHandle('e2e', []);

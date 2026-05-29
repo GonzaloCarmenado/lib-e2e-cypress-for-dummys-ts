@@ -30,6 +30,12 @@ export class AdvancedTestTransformationService {
     return content.slice(0, idx) + '\n' + itBlock + '\n' + content.slice(idx);
   }
 
+  buildBlockComment(notes: string): string {
+    if (!notes.trim()) return '';
+    const lines = notes.split('\n').map(l => ` * ${l}`).join('\n');
+    return `/**\n${lines}\n */`;
+  }
+
   isFile(file: unknown): boolean {
     return !!file && (file as FileNode).kind === 'file';
   }

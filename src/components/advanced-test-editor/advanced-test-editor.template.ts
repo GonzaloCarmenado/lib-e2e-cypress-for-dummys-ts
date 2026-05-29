@@ -8,6 +8,7 @@ export interface AdvancedEditorState {
   selectedFileContent: string | null;
   testItBlock: string;
   interceptorsBlock: string;
+  testNotes: string;
   saveButtonEnabled: boolean;
   isCreatingFile: boolean;
   collapsedDirs: Set<string>;
@@ -34,7 +35,7 @@ export function renderNoPermission(needsReauth: boolean, t: (key: string) => str
 }
 
 export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string) => string): string {
-  const { e2eTree, selectedFile, selectedFileContent, testItBlock, interceptorsBlock, saveButtonEnabled, isCreatingFile, collapsedDirs, sidebarWidth } = state;
+  const { e2eTree, selectedFile, selectedFileContent, testItBlock, interceptorsBlock, testNotes, saveButtonEnabled, isCreatingFile, collapsedDirs, sidebarWidth } = state;
 
   const treeHtml = e2eTree.length
     ? renderTree(e2eTree, selectedFile, collapsedDirs)
@@ -44,6 +45,10 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
     ? `<div class="file-name">📄 ${escHtml((selectedFile as { name?: string } | null)?.name ?? '')}</div>
        <pre class="pre-file">${syntaxHighlight(selectedFileContent.slice(0, 6000))}${selectedFileContent.length > 6000 ? '\n...' : ''}</pre>`
     : `<div class="placeholder">${t('ADVANCED_EDITOR.SELECT_FILE')}</div>`;
+
+  const notesHtml = (testItBlock && testNotes)
+    ? `<p class="test-notes">${escHtml(testNotes)}</p>`
+    : '';
 
   const itHtml = testItBlock
     ? `<div style="margin-top:10px">
@@ -89,7 +94,7 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
       </div>
       <div id="resize-handle" class="resize-handle"></div>
       <div class="main">
-        <div class="content-area">${contentHtml}${itHtml}${interceptorsHtml}</div>
+        <div class="content-area">${contentHtml}${notesHtml}${itHtml}${interceptorsHtml}</div>
         <div class="footer">
           <button id="btn-save" class="btn-save"
             ${!saveButtonEnabled || !testItBlock ? 'disabled' : ''}>
