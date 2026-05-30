@@ -1,7 +1,8 @@
 export const SAVE_TEST_STYLES = `
   :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
-  .container { padding: 24px 28px; text-align: center; }
+  .container { padding: 24px 28px; text-align: left; }
+  .btn-row, p { text-align: center; }
   p { margin: 0 0 20px; font-size: 14px; color: #8b949e; line-height: 1.5; }
   .btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
   button {
@@ -23,6 +24,15 @@ export const SAVE_TEST_STYLES = `
   }
   input[type="text"]:focus { border-color: #2f81f7; box-shadow: 0 0 0 3px rgba(47,129,247,0.15); }
   input[type="text"]::placeholder { color: #484f58; }
+  textarea {
+    width: 100%; padding: 10px 14px; border: 1px solid #30363d;
+    border-radius: 8px; background: #0d1117; color: #e6edf3;
+    font-size: 14px; outline: none; margin-bottom: 4px;
+    font-family: inherit; resize: vertical; line-height: 1.5;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  textarea:focus { border-color: #2f81f7; box-shadow: 0 0 0 3px rgba(47,129,247,0.15); }
+  textarea::placeholder { color: #484f58; }
   .tag-label {
     font-size: 11px; color: #484f58; text-align: left; margin-bottom: 5px; display: block;
   }

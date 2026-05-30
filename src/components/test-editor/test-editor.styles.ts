@@ -77,6 +77,12 @@ export const TEST_EDITOR_STYLES = `
     background: #0d1117; padding: 10px 14px;
     border-top: 1px solid #21262d;
   }
+  .test-notes {
+    margin: 0 0 10px; padding: 8px 12px;
+    background: rgba(47,129,247,0.06); border-left: 3px solid rgba(47,129,247,0.4);
+    border-radius: 0 6px 6px 0; font-size: 12px; color: #8b949e;
+    line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+  }
   .code-preview {
     margin: 0; padding: 10px 12px; background: #161b22;
     border-radius: 6px; border: 1px solid #21262d;

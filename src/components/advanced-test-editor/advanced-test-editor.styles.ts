@@ -74,6 +74,12 @@ export const ADVANCED_TEST_EDITOR_STYLES = `
   .btn-save:hover { background: #1f6feb; border-color: #1f6feb; color: #fff; }
   .btn-save:disabled { background: #21262d; border-color: #30363d; color: #8b949e; }
   .placeholder { color: #484f58; font-size: 13px; padding: 28px; text-align: center; }
+  .test-notes {
+    margin: 0 0 10px; padding: 8px 12px;
+    background: rgba(47,129,247,0.06); border-left: 3px solid rgba(47,129,247,0.4);
+    border-radius: 0 6px 6px 0; font-size: 12px; color: #8b949e;
+    line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+  }
   .block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .btn-copy {
     padding: 3px 10px; border: 1px solid #30363d; border-radius: 5px; cursor: pointer;
