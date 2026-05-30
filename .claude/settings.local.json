@@ -38,7 +38,14 @@
       "Bash(npm whoami *)",
       "Bash(npm config *)",
       "Bash(Select-Object -First 20)",
-      "PowerShell(Head *)"
+      "PowerShell(Head *)",
+      "Bash(npm version *)",
+      "Bash(python -c ' *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const c=fs.readFileSync\\('README.md','utf8'\\);const s=c.indexOf\\('### Start hidden'\\);const e=c.indexOf\\('### Import'\\);console.log\\(JSON.stringify\\(c.slice\\(s,s+50\\)\\)\\)\")",
+      "Bash(npm start *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(p.version\\)\")",
+      "Bash(git log *)",
+      "Bash(git commit *)"
     ]
   }
 }
