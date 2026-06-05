@@ -254,12 +254,12 @@ The assertion builder at the bottom of the command panel lets you add `cy.get().
 
 ### Advanced editor (direct file insertion)
 
-The **📁 Files** panel uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) to browse your local Cypress folder and insert tests directly into `.cy.ts` files — no copy-paste needed.
+The **📁 Files** panel uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) to browse your local Cypress folder, insert generated tests, and manually edit your project files inside `cypress/e2e/` — no copy-paste needed.
 
 **Setup (one time):**
 
 1. Open **⚙️ Config → Carpeta Cypress**
-2. Click **📁 Seleccionar carpeta** and pick the folder that contains the `cypress/` directory
+2. Click **📁 Seleccionar carpeta** and select the `cypress/` folder itself (the one that contains `e2e/`)
 3. The browser stores the permission — you won't be asked again
 
 **Expected folder structure:**
@@ -270,13 +270,13 @@ cypress/          ← select this folder
     └── login.cy.ts
 ```
 
-**Using the editor:**
+**What you can do in `cypress/e2e/`:**
 
-1. Open **📁 Files** → select a `.cy.ts` file from the tree
-2. The `it()` block for the selected test appears in the panel
-3. Click **💾 Insertar en archivo** — the block is appended inside the last `})` of the describe
-4. Interceptors are automatically wrapped in a `beforeEach()`
-5. Alternatively, click **✏️ Editar manualmente** to open a full diff editor with save support
+1. Open **📁 Files** and select any file from the `cypress/e2e/` tree (including files inside nested folders)
+2. The recorder previews the selected file and the generated `it()` block for the saved test
+3. Click **💾 Insertar en archivo** to append the `it()` block before the last `})` in the current `describe()`
+4. Interceptors are inserted as `beforeEach()` when applicable
+5. Click **✏️ Editar manualmente** to open the full file editor, edit the file content directly, review the diff, and save changes back to disk
 
 **Sidebar toolbar:**
 
@@ -284,6 +284,12 @@ cypress/          ← select this folder
 |---|---|
 | **+ Nuevo archivo** | Creates a new `.cy.ts` file with a basic `describe/it` scaffold in `cypress/e2e/`. Type the name (no extension needed) and press Enter or click **Crear**. |
 | **↻ Actualizar** | Rescans the `cypress/e2e/` directory. Useful after a `git pull`, a drag-and-drop into the folder, or any external file change. |
+
+**Practical notes:**
+
+- Folder permission is browser-scoped and persisted locally; if access expires you can grant it again from the same dialog.
+- The file tree is read from `cypress/e2e/` recursively.
+- Automatic insertion expects the target spec file to contain a valid Cypress `describe(...)` block.
 
 > The File System Access API is supported in Chromium-based browsers (Chrome, Edge, Opera). Firefox and Safari do not support it.
 
