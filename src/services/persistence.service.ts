@@ -187,10 +187,23 @@ export class PersistenceService {
   }
 
   async ingestFileData(tests: Record<string, unknown>[], interceptors: Record<string, unknown>[]): Promise<void> {
-    await Promise.all([
-      this.bulkInsertWithoutId('tests', tests),
-      this.bulkInsertWithoutId('interceptors', interceptors),
-    ]);
+    if (Array.isArray(tests)) {
+      const db = await this.getDB();
+      for (const test of tests) {
+        // Split the nested commands/interceptors back into their own stores,
+        // keyed by the freshly-assigned testId — otherwise they would be stored
+        // as stray fields and silently lost on read (getAllTests reads them by
+        // testId from the commands/interceptors stores).
+        const { id: _id, commands, interceptors: testInterceptors, ...record } = test;
+        const newId = await db.add('tests', record) as number;
+        const cmds = Array.isArray(commands) ? commands as string[] : [];
+        const icps = Array.isArray(testInterceptors) ? testInterceptors as string[] : [];
+        if (cmds.length) await this.insertCommands(cmds, newId);
+        if (icps.length) await this.insertInterceptors(icps, newId);
+      }
+    }
+    // Back-compat: legacy files may carry top-level interceptors with their own testId.
+    await this.bulkInsertWithoutId('interceptors', interceptors);
   }
 
   async requestDirectoryPermissions(): Promise<void> {

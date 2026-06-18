@@ -195,6 +195,57 @@ describe('Phase 5 — PersistenceService', () => {
       const tests = await service.getAllTests();
       expect(tests[0].id).not.toBe(999);
     });
+
+    it('splits nested commands and interceptors into their own stores', async () => {
+      await service.ingestFileData(
+        [{
+          id: 5, name: 'login', createdAt: 111, tags: ['smoke'], notes: 'note',
+          commands: ["cy.visit('/')", "cy.get('#x').click()"],
+          interceptors: ["cy.intercept('GET', '*').as('a')"],
+        }],
+        []
+      );
+      const tests = await service.getAllTests();
+      expect(tests).toHaveLength(1);
+      expect(tests[0].commands).toEqual(["cy.visit('/')", "cy.get('#x').click()"]);
+      expect(tests[0].interceptors).toEqual(["cy.intercept('GET', '*').as('a')"]);
+      expect(tests[0].tags).toEqual(['smoke']);
+      expect(tests[0].notes).toBe('note');
+    });
+
+    it('does not store the nested arrays as stray fields on the test record', async () => {
+      await service.ingestFileData(
+        [{ id: 1, name: 't', createdAt: 1, commands: ["cy.visit('/')"], interceptors: [] }],
+        []
+      );
+      const tests = await service.getAllTests();
+      // getAllTests rebuilds commands/interceptors from their stores; the raw
+      // record must not carry a leftover nested array that shadows them.
+      const id = tests[0].id;
+      expect(await service.getCommandsByTestId(id)).toHaveLength(1);
+    });
+
+    it('preserves the original createdAt of imported tests', async () => {
+      await service.ingestFileData(
+        [{ id: 1, name: 't', createdAt: 999, commands: [], interceptors: [] }],
+        []
+      );
+      const tests = await service.getAllTests();
+      expect(tests[0].createdAt).toBe(999);
+    });
+
+    it('round-trips a full export back through getAllTests', async () => {
+      const original = await service.insertTest('flow', ["cy.visit('/')"], ["cy.intercept('GET', '*').as('a')"], ['smoke'], 'notes');
+      const exported = await service.getAllTests();
+      await service.clearAllData();
+      await service.ingestFileData(exported as unknown as Record<string, unknown>[], []);
+      const restored = await service.getAllTests();
+      expect(restored).toHaveLength(1);
+      expect(restored[0].name).toBe('flow');
+      expect(restored[0].commands).toEqual(["cy.visit('/')"]);
+      expect(restored[0].interceptors).toEqual(["cy.intercept('GET', '*').as('a')"]);
+      expect(original).toBeGreaterThan(0);
+    });
   });
 
   // ── notes ────────────────────────────────────────────────────────────────
