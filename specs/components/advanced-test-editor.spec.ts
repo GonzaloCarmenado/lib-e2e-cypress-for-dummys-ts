@@ -316,6 +316,113 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
     expect(el.interceptorsBlock).toBe('');
   });
 
+  // ── createNewFolder ───────────────────────────────────────────────────────
+
+  describe('createNewFolder', () => {
+    it('does nothing when _e2eHandle is null', async () => {
+      (el as any)._e2eHandle = null;
+      await expect(el.createNewFolder('whatever')).resolves.toBeUndefined();
+    });
+
+    it('does nothing when the name is empty', async () => {
+      const getDir = vi.fn();
+      (el as any)._e2eHandle = { getDirectoryHandle: getDir };
+      await el.createNewFolder('   ');
+      expect(getDir).not.toHaveBeenCalled();
+    });
+
+    it('creates a directory with the trimmed name', async () => {
+      const getDir = vi.fn().mockResolvedValue({});
+      (el as any)._e2eHandle = { getDirectoryHandle: getDir };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await el.createNewFolder('  my-folder  ');
+      expect(getDir).toHaveBeenCalledWith('my-folder', { create: true });
+    });
+
+    it('strips path separators from the folder name', async () => {
+      const getDir = vi.fn().mockResolvedValue({});
+      (el as any)._e2eHandle = { getDirectoryHandle: getDir };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await el.createNewFolder('a/b\\c');
+      expect(getDir).toHaveBeenCalledWith('abc', { create: true });
+    });
+
+    it('refreshes the tree and resets isCreatingFolder after creating', async () => {
+      const getDir = vi.fn().mockResolvedValue({});
+      (el as any)._e2eHandle = { getDirectoryHandle: getDir };
+      const refresh = vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      el.isCreatingFolder = true;
+      await el.createNewFolder('folder');
+      expect(el.isCreatingFolder).toBe(false);
+      expect(refresh).toHaveBeenCalled();
+    });
+
+    it('does not throw when getDirectoryHandle rejects', async () => {
+      const getDir = vi.fn().mockRejectedValue(new Error('denied'));
+      (el as any)._e2eHandle = { getDirectoryHandle: getDir };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await expect(el.createNewFolder('folder')).resolves.toBeUndefined();
+    });
+
+    it('btn-new-folder toggles the folder form open', () => {
+      (el as any).hasPermission = true;
+      (el as any).render();
+      const btn = el.shadowRoot!.getElementById('btn-new-folder') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+      expect(el.isCreatingFolder).toBe(true);
+      expect(el.shadowRoot!.getElementById('input-new-folder')).not.toBeNull();
+    });
+
+    it('opening the folder form closes the file form', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFile = true;
+      (el as any).render();
+      (el.shadowRoot!.getElementById('btn-new-folder') as HTMLElement).click();
+      expect(el.isCreatingFile).toBe(false);
+      expect(el.isCreatingFolder).toBe(true);
+    });
+
+    it('btn-new-folder-confirm calls createNewFolder with the input value', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFolder = true;
+      (el as any).render();
+      const input = el.shadowRoot!.getElementById('input-new-folder') as HTMLInputElement;
+      input.value = 'my-folder';
+      const spy = vi.spyOn(el, 'createNewFolder').mockResolvedValue(undefined);
+      (el.shadowRoot!.getElementById('btn-new-folder-confirm') as HTMLElement).click();
+      expect(spy).toHaveBeenCalledWith('my-folder');
+    });
+
+    it('btn-new-folder-cancel closes the folder form', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFolder = true;
+      (el as any).render();
+      (el.shadowRoot!.getElementById('btn-new-folder-cancel') as HTMLElement).click();
+      expect(el.isCreatingFolder).toBe(false);
+    });
+
+    it('pressing Enter in the folder input calls createNewFolder', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFolder = true;
+      (el as any).render();
+      const input = el.shadowRoot!.getElementById('input-new-folder') as HTMLInputElement;
+      input.value = 'typed-folder';
+      const spy = vi.spyOn(el, 'createNewFolder').mockResolvedValue(undefined);
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(spy).toHaveBeenCalledWith('typed-folder');
+    });
+
+    it('pressing Escape in the folder input closes the folder form', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFolder = true;
+      (el as any).render();
+      const input = el.shadowRoot!.getElementById('input-new-folder') as HTMLInputElement;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      expect(el.isCreatingFolder).toBe(false);
+    });
+  });
+
   // ── no-permission render variations ──────────────────────────────────────
 
   describe('no-permission render', () => {

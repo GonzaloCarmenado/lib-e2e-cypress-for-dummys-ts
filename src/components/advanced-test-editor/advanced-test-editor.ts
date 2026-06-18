@@ -25,6 +25,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
   previewFileName: string | null = null;
   previewFileContent: string | null = null;
   isCreatingFile = false;
+  isCreatingFolder = false;
   collapsedDirs: Set<string> = new Set();
   sidebarWidth = 220;
   private hasPermission = false;
@@ -103,6 +104,17 @@ export class AdvancedTestEditorElement extends HTMLElement {
       await writable.close();
     } catch { /* silently ignore if file already exists or permission denied */ }
     this.isCreatingFile = false;
+    await this.getFoldersData();
+  }
+
+  async createNewFolder(rawName: string): Promise<void> {
+    if (!this._e2eHandle) return;
+    const name = rawName.trim().replace(/[/\\]/g, '');
+    if (!name) return;
+    try {
+      await this._e2eHandle.getDirectoryHandle(name, { create: true });
+    } catch { /* silently ignore if folder already exists or permission denied */ }
+    this.isCreatingFolder = false;
     await this.getFoldersData();
   }
 
@@ -258,6 +270,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
       testNotes: this.testNotes,
       saveButtonEnabled: this.saveButtonEnabled,
       isCreatingFile: this.isCreatingFile,
+      isCreatingFolder: this.isCreatingFolder,
       collapsedDirs: this.collapsedDirs,
       sidebarWidth: this.sidebarWidth,
     }, this.t.bind(this))}`;
@@ -288,8 +301,16 @@ export class AdvancedTestEditorElement extends HTMLElement {
     this.shadow.getElementById('btn-new-file')
       ?.addEventListener('click', () => {
         this.isCreatingFile = !this.isCreatingFile;
+        this.isCreatingFolder = false;
         this.render();
         if (this.isCreatingFile) this.shadow.getElementById('input-new-file')?.focus();
+      });
+    this.shadow.getElementById('btn-new-folder')
+      ?.addEventListener('click', () => {
+        this.isCreatingFolder = !this.isCreatingFolder;
+        this.isCreatingFile = false;
+        this.render();
+        if (this.isCreatingFolder) this.shadow.getElementById('input-new-folder')?.focus();
       });
     this.shadow.getElementById('btn-refresh')
       ?.addEventListener('click', () => this.refreshTree());
@@ -309,6 +330,25 @@ export class AdvancedTestEditorElement extends HTMLElement {
         this.createNewFile(input.value);
       } else if (e.key === 'Escape') {
         this.isCreatingFile = false;
+        this.render();
+      }
+    });
+    this.shadow.getElementById('btn-new-folder-confirm')
+      ?.addEventListener('click', () => {
+        const folderInput = this.shadow.getElementById('input-new-folder') as HTMLInputElement | null;
+        this.createNewFolder(folderInput?.value ?? '');
+      });
+    this.shadow.getElementById('btn-new-folder-cancel')
+      ?.addEventListener('click', () => {
+        this.isCreatingFolder = false;
+        this.render();
+      });
+    const folderInput = this.shadow.getElementById('input-new-folder') as HTMLInputElement | null;
+    folderInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.createNewFolder(folderInput.value);
+      } else if (e.key === 'Escape') {
+        this.isCreatingFolder = false;
         this.render();
       }
     });

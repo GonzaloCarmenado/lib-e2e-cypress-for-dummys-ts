@@ -88,18 +88,21 @@ export const ADVANCED_TEST_EDITOR_STYLES = `
   }
   .btn-copy:hover { background: #30363d; color: #e6edf3; }
   .sidebar-toolbar {
-    display: flex; gap: 4px; padding: 6px 6px 4px;
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 6px 4px;
     border-bottom: 1px solid #21262d; flex-shrink: 0; background: #0d1117;
   }
   .btn-toolbar {
-    flex: 1; padding: 4px 6px; border: 1px solid #30363d; border-radius: 5px; cursor: pointer;
+    flex: 1 1 calc(50% - 2px); padding: 4px 6px; border: 1px solid #30363d; border-radius: 5px; cursor: pointer;
     font-size: 10px; font-weight: 500; background: #161b22; color: #8b949e;
     transition: background 0.12s, color 0.12s; white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis;
   }
+  .btn-toolbar.btn-full { flex: 1 1 100%; }
   .btn-toolbar:hover { background: #30363d; color: #e6edf3; }
   .btn-toolbar.btn-new { color: #3fb950; border-color: #238636; }
   .btn-toolbar.btn-new:hover { background: #238636; color: #fff; }
+  .btn-toolbar.btn-new-folder { color: #d29922; border-color: #9e6a03; }
+  .btn-toolbar.btn-new-folder:hover { background: #9e6a03; color: #fff; }
   .new-file-form {
     padding: 6px; border-bottom: 1px solid #21262d; display: flex; flex-direction: column; gap: 4px;
   }

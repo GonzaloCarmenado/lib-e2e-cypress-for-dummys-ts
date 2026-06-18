@@ -11,6 +11,7 @@ export interface AdvancedEditorState {
   testNotes: string;
   saveButtonEnabled: boolean;
   isCreatingFile: boolean;
+  isCreatingFolder: boolean;
   collapsedDirs: Set<string>;
   sidebarWidth: number;
 }
@@ -35,7 +36,7 @@ export function renderNoPermission(needsReauth: boolean, t: (key: string) => str
 }
 
 export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string) => string): string {
-  const { e2eTree, selectedFile, selectedFileContent, testItBlock, interceptorsBlock, testNotes, saveButtonEnabled, isCreatingFile, collapsedDirs, sidebarWidth } = state;
+  const { e2eTree, selectedFile, selectedFileContent, testItBlock, interceptorsBlock, testNotes, saveButtonEnabled, isCreatingFile, isCreatingFolder, collapsedDirs, sidebarWidth } = state;
 
   const treeHtml = e2eTree.length
     ? renderTree(e2eTree, selectedFile, collapsedDirs)
@@ -79,10 +80,21 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
        </div>`
     : '';
 
+  const newFolderForm = isCreatingFolder
+    ? `<div class="new-file-form">
+         <input id="input-new-folder" type="text" placeholder="${escHtml(t('ADVANCED_EDITOR.NEW_FOLDER_PLACEHOLDER'))}" autocomplete="off" />
+         <div class="new-file-actions">
+           <button id="btn-new-folder-confirm" class="btn-confirm">${t('ADVANCED_EDITOR.NEW_FILE_CONFIRM')}</button>
+           <button id="btn-new-folder-cancel" class="btn-cancel-form">${t('ADVANCED_EDITOR.NEW_FILE_CANCEL')}</button>
+         </div>
+       </div>`
+    : '';
+
   const toolbar = `
     <div class="sidebar-toolbar">
       <button id="btn-new-file" class="btn-toolbar btn-new">${t('ADVANCED_EDITOR.NEW_FILE_BTN')}</button>
-      <button id="btn-refresh" class="btn-toolbar">${t('ADVANCED_EDITOR.REFRESH_BTN')}</button>
+      <button id="btn-new-folder" class="btn-toolbar btn-new-folder">${t('ADVANCED_EDITOR.NEW_FOLDER_BTN')}</button>
+      <button id="btn-refresh" class="btn-toolbar btn-full">${t('ADVANCED_EDITOR.REFRESH_BTN')}</button>
     </div>`;
 
   return `
@@ -90,6 +102,7 @@ export function renderAdvancedEditor(state: AdvancedEditorState, t: (key: string
       <div class="sidebar" style="width:${sidebarWidth}px">
         ${toolbar}
         ${newFileForm}
+        ${newFolderForm}
         <div class="tree-scroll">${treeHtml}</div>
       </div>
       <div id="resize-handle" class="resize-handle"></div>
