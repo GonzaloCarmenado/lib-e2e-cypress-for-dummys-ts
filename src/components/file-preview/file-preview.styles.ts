@@ -76,5 +76,7 @@ export const FILE_PREVIEW_STYLES = `
   .btn-save:hover { background: #2ea043; border-color: #2ea043; }
   .btn-launch { background: transparent; border-color: #e3b341; color: #e3b341; }
   .btn-launch:hover { background: rgba(227,179,65,0.1); }
+  .btn-insert { background: transparent; border-color: #a371f7; color: #a371f7; }
+  .btn-insert:hover { background: rgba(163,113,247,0.12); color: #c8a8ff; }
   .btn-diff-active { background: rgba(47,129,247,0.15); border-color: rgba(47,129,247,0.4); color: #2f81f7; }
 `;

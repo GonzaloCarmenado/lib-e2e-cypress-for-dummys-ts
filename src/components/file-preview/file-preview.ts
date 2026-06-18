@@ -1,4 +1,6 @@
 import { translationService, type TranslationService } from '../../services/translation.service';
+import { advancedTestTransformationService } from '../../services/advanced-test.transformation.service';
+import { showToast } from '../../utils/toast.utils';
 import { FILE_PREVIEW_STYLES } from './file-preview.styles';
 import { renderFilePreview } from './file-preview.template';
 
@@ -66,6 +68,32 @@ export class FilePreviewElement extends HTMLElement {
     this.render();
   }
 
+  /**
+   * Merges the it() and beforeEach() blocks into the current editor content
+   * using the same logic as the automatic "Insert into file" action, so the
+   * user does not have to copy/paste manually. Leaves the content untouched
+   * (and warns) when the file has no valid describe() block to insert into.
+   */
+  insertBlocks(): void {
+    const base = this.textarea?.value ?? this._fileContent ?? '';
+    let content = base;
+    if (this.interceptorsBlock) {
+      const merged = advancedTestTransformationService.insertBeforeEach(content, this.interceptorsBlock);
+      if (merged) content = merged;
+    }
+    if (this.itBlock) {
+      const merged = advancedTestTransformationService.insertItBlock(content, this.itBlock);
+      if (merged) content = merged;
+    }
+    if (content === base) {
+      showToast(this.t('FILE_PREVIEW.INSERT_ERROR'), false);
+      return;
+    }
+    this._fileContent = content;
+    this.render();
+    showToast(this.t('FILE_PREVIEW.INSERT_DONE'));
+  }
+
   private render(): void {
     this.shadow.innerHTML = `<style>${FILE_PREVIEW_STYLES}</style>${renderFilePreview({
       fileName: this.fileName,
@@ -92,6 +120,7 @@ export class FilePreviewElement extends HTMLElement {
       this.copyToClipboard(this.textarea?.value ?? this._fileContent ?? '');
     });
     this.shadow.getElementById('btn-diff')?.addEventListener('click', () => this.toggleDiff());
+    this.shadow.getElementById('btn-insert')?.addEventListener('click', () => this.insertBlocks());
     this.shadow.getElementById('btn-copy-it')?.addEventListener('click', () => {
       this.copyToClipboard(this.itBlock);
     });

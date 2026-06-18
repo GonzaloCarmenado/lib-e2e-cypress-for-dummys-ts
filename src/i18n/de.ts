@@ -132,6 +132,10 @@ export const I18N_DE = {
     SAVE_BTN: '💾 Speichern',
     CLOSE_BTN: '✕ Schließen',
     BACK_TO_EDITOR: '← Zurück zum Editor',
+    INSERT_BTN: '🪄 Blöcke einfügen',
+    INSERT_TITLE: 'it() und beforeEach() in den Editor-Inhalt einfügen',
+    INSERT_DONE: 'Blöcke in den Editor eingefügt',
+    INSERT_ERROR: 'Kein gültiger describe()-Block in der Datei gefunden',
   },
   RECORDER: {
     FS_TITLE: '📁 Dateizugriff',

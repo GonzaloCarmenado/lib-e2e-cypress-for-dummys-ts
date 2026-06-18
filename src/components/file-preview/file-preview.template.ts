@@ -96,6 +96,7 @@ export function renderFilePreview(state: FilePreviewState, t: (key: string) => s
     </div>` : '';
 
   const hasChanges = originalContent !== null && originalContent !== (fileContent ?? '');
+  const hasBlocks = !!(itBlock || interceptorsBlock);
 
   return `
     <div class="container">
@@ -112,6 +113,7 @@ export function renderFilePreview(state: FilePreviewState, t: (key: string) => s
       <div class="footer">
         <button id="btn-launch" class="btn-launch">${t('FILE_PREVIEW.LAUNCH_BTN')}</button>
         ${hasChanges ? `<button id="btn-diff" class="${showDiff ? 'btn-diff-active' : ''}">${t('FILE_PREVIEW.DIFF_BTN')}</button>` : ''}
+        ${hasBlocks && !showDiff ? `<button id="btn-insert" class="btn-insert" title="${t('FILE_PREVIEW.INSERT_TITLE')}">${t('FILE_PREVIEW.INSERT_BTN')}</button>` : ''}
         <button id="btn-save" class="btn-save">${t('FILE_PREVIEW.SAVE_BTN')}</button>
         <button id="btn-close">${escHtml(closeLabel || t('FILE_PREVIEW.CLOSE_BTN'))}</button>
       </div>

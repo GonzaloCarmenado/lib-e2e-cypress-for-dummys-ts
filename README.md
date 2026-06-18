@@ -277,6 +277,7 @@ cypress/          ← select this folder
 3. Click **💾 Insertar en archivo** — the block is appended inside the last `})` of the describe
 4. Interceptors are automatically wrapped in a `beforeEach()`
 5. Alternatively, click **✏️ Editar manualmente** to open a full diff editor with save support
+   - Inside the manual editor, click **🪄 Insertar bloques** to auto-merge the `it()` and `beforeEach()` blocks into the editor content (same placement as the automatic insert), then review the diff before saving — no copy/paste needed. The 📋 copy buttons remain available if you prefer to paste manually.
 
 **Sidebar toolbar:**
 

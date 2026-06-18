@@ -238,4 +238,94 @@ describe('Phase 8.6 — FilePreviewElement', () => {
     const btn = el.shadowRoot!.querySelector('#btn-diff');
     expect(btn?.classList.contains('btn-diff-active')).toBe(false);
   });
+
+  // ── insert blocks into editor ──────────────────────────────────────────────
+
+  it('insert button is absent when both blocks are empty', () => {
+    el.fileContent = "describe('s', () => {\n});\n";
+    expect(el.shadowRoot!.querySelector('#btn-insert')).toBeNull();
+  });
+
+  it('insert button appears when itBlock is set', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('a', () => {});";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('#btn-insert')).not.toBeNull();
+    fresh.remove();
+  });
+
+  it('insert button appears when only interceptorsBlock is set', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.interceptorsBlock = "    cy.intercept('GET', '*').as('x');\n";
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('#btn-insert')).not.toBeNull();
+    fresh.remove();
+  });
+
+  it('insert button is hidden in diff mode', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('a', () => {});";
+    document.body.appendChild(fresh);
+    fresh.toggleDiff();
+    expect(fresh.shadowRoot!.querySelector('#btn-insert')).toBeNull();
+    fresh.remove();
+  });
+
+  it('insertBlocks() injects the it() block inside the describe body', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('does a thing', () => { cy.visit('/'); });";
+    document.body.appendChild(fresh);
+    fresh.fileContent = "describe('suite', () => {\n});\n";
+    fresh.insertBlocks();
+    const value = fresh.shadowRoot!.querySelector('textarea')!.value;
+    expect(value).toContain("it('does a thing'");
+    expect(value).toContain("describe('suite'");
+    fresh.remove();
+  });
+
+  it('insertBlocks() wraps interceptors in a beforeEach() after describe', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.interceptorsBlock = "    cy.intercept('GET', '*').as('get-x');\n";
+    document.body.appendChild(fresh);
+    fresh.fileContent = "describe('suite', () => {\n});\n";
+    fresh.insertBlocks();
+    const value = fresh.shadowRoot!.querySelector('textarea')!.value;
+    expect(value).toContain('beforeEach(() =>');
+    expect(value).toContain("cy.intercept('GET', '*').as('get-x')");
+    fresh.remove();
+  });
+
+  it('insertBlocks() injects both blocks at once', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('combined', () => {});";
+    fresh.interceptorsBlock = "    cy.intercept('GET', '*').as('get-x');\n";
+    document.body.appendChild(fresh);
+    fresh.fileContent = "describe('suite', () => {\n});\n";
+    fresh.insertBlocks();
+    const value = fresh.shadowRoot!.querySelector('textarea')!.value;
+    expect(value).toContain("it('combined'");
+    expect(value).toContain('beforeEach(() =>');
+    fresh.remove();
+  });
+
+  it('insertBlocks() leaves content untouched when there is no describe block', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('a', () => {});";
+    document.body.appendChild(fresh);
+    fresh.fileContent = 'const noDescribe = 1;\n';
+    fresh.insertBlocks();
+    const value = fresh.shadowRoot!.querySelector('textarea')!.value;
+    expect(value).toBe('const noDescribe = 1;\n');
+    fresh.remove();
+  });
+
+  it('clicking the insert button merges the blocks into the editor', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('clicked', () => {});";
+    document.body.appendChild(fresh);
+    fresh.fileContent = "describe('suite', () => {\n});\n";
+    (fresh.shadowRoot!.querySelector('#btn-insert') as HTMLButtonElement).click();
+    expect(fresh.shadowRoot!.querySelector('textarea')!.value).toContain("it('clicked'");
+    fresh.remove();
+  });
 });

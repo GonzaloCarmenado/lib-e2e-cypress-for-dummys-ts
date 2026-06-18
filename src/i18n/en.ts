@@ -132,6 +132,10 @@ export const I18N_EN = {
     SAVE_BTN: '💾 Save',
     CLOSE_BTN: '✕ Close',
     BACK_TO_EDITOR: '← Back to editor',
+    INSERT_BTN: '🪄 Insert blocks',
+    INSERT_TITLE: 'Insert it() and beforeEach() into the editor content',
+    INSERT_DONE: 'Blocks inserted into the editor',
+    INSERT_ERROR: 'No valid describe() block found in the file',
   },
   RECORDER: {
     FS_TITLE: '📁 File access',
