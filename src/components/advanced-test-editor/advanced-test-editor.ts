@@ -171,6 +171,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
         testId: this.testId,
         itBlock: this.testItBlock,
         interceptorsBlock: this.interceptorsBlock,
+        notes: this.testNotes,
       },
       bubbles: true,
       composed: true,

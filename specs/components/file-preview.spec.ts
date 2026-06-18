@@ -295,6 +295,39 @@ describe('Phase 8.6 — FilePreviewElement', () => {
     fresh.remove();
   });
 
+  it('insertBlocks() places the notes as a block comment directly above the it()', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('noted test', () => {});";
+    fresh.notes = 'Validates the login flow.';
+    document.body.appendChild(fresh);
+    fresh.fileContent = "describe('suite', () => {\n});\n";
+    fresh.insertBlocks();
+    const value = fresh.shadowRoot!.querySelector('textarea')!.value;
+    expect(value).toContain('Validates the login flow.');
+    // the comment must sit immediately before the it()
+    const commentIdx = value.indexOf('Validates the login flow.');
+    const itIdx = value.indexOf("it('noted test'");
+    expect(commentIdx).toBeGreaterThan(-1);
+    expect(commentIdx).toBeLessThan(itIdx);
+    expect(value).toContain('/**');
+    fresh.remove();
+  });
+
+  it('insertBlocks() omits the comment when there are no notes', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.itBlock = "it('no notes', () => {});";
+    document.body.appendChild(fresh);
+    fresh.fileContent = "describe('suite', () => {\n});\n";
+    fresh.insertBlocks();
+    const value = fresh.shadowRoot!.querySelector('textarea')!.value;
+    expect(value).not.toContain('/**');
+    fresh.remove();
+  });
+
+  it('notes defaults to empty string', () => {
+    expect(el.notes).toBe('');
+  });
+
   it('insertBlocks() injects both blocks at once', () => {
     const fresh = document.createElement('file-preview') as FilePreviewElement;
     fresh.itBlock = "it('combined', () => {});";

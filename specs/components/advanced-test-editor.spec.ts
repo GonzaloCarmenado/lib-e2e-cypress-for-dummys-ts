@@ -115,6 +115,7 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
     el.selectedFile = { kind: 'file', name: 'login.cy.ts' };
     el.saveButtonEnabled = true;
     el.testId = 42;
+    el.testNotes = 'Validates the login flow.';
 
     let detail: any = null;
     el.addEventListener('openfileeditor', (e) => { detail = (e as CustomEvent).detail; });
@@ -125,6 +126,7 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
       content: 'describe("suite", () => {});',
       fileName: 'login.cy.ts',
       testId: 42,
+      notes: 'Validates the login flow.',
     });
   });
 

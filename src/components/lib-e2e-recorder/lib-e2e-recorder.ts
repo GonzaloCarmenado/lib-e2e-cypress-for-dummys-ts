@@ -42,7 +42,7 @@ interface AdvancedEditorEl {
 }
 interface FilePreviewEl {
   translation: TranslationService; fileContent: string | null; fileName: string | null;
-  closeLabel: string; itBlock: string; interceptorsBlock: string;
+  closeLabel: string; itBlock: string; interceptorsBlock: string; notes: string;
   addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
 }
 interface SelectorPickerEl {
@@ -571,7 +571,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
             Swal.close();
             setTimeout(() => this.showFileEditorDialog(
               e.detail.handle, e.detail.content, e.detail.fileName, e.detail.testId,
-              e.detail.itBlock, e.detail.interceptorsBlock,
+              e.detail.itBlock, e.detail.interceptorsBlock, e.detail.notes,
             ), 150);
           });
         },
@@ -591,6 +591,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     testId?: number,
     itBlock = '',
     interceptorsBlock = '',
+    notes = '',
   ): void {
     Swal.fire({
       title: this.translation.translate('RECORDER.FILE_EDITOR_TITLE'),
@@ -612,6 +613,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         child.closeLabel = this.translation.translate('FILE_PREVIEW.BACK_TO_EDITOR');
         child.itBlock = itBlock;
         child.interceptorsBlock = interceptorsBlock;
+        child.notes = notes;
         container.appendChild(child as unknown as Node);
         child.addEventListener('close', () => {
           Swal.close();

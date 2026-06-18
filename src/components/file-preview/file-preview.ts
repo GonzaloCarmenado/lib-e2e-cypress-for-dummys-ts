@@ -13,6 +13,7 @@ export class FilePreviewElement extends HTMLElement {
   translation: TranslationService = translationService;
   itBlock = '';
   interceptorsBlock = '';
+  notes = '';
   commands: string[] = [];
   interceptors: string[] = [];
   private _fileContent: string | null = null;
@@ -82,7 +83,8 @@ export class FilePreviewElement extends HTMLElement {
       if (merged) content = merged;
     }
     if (this.itBlock) {
-      const merged = advancedTestTransformationService.insertItBlock(content, this.itBlock);
+      const comment = this.notes ? advancedTestTransformationService.buildBlockComment(this.notes) + '\n' : '';
+      const merged = advancedTestTransformationService.insertItBlock(content, comment + this.itBlock);
       if (merged) content = merged;
     }
     if (content === base) {
