@@ -27,6 +27,7 @@ export * from './services/http-monitor';
 export * from './utils/styles.utils';
 export * from './utils/modal.utils';
 export * from './utils/toast.utils';
+export * from './utils/export-selection.utils';
 
 // Phase 8 — Web Components
 export * from './components/test-previsualizer/test-previsualizer';

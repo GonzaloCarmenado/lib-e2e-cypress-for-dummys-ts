@@ -385,10 +385,17 @@ Enable **⚙️ Config → 👁 Widget visibility → Start hidden**. The prefer
 
 ### Import / Export
 
-Back up all tests to a JSON file or restore from a previous backup via **⚙️ Config → Datos**:
+Back up tests to a JSON file or restore from a previous backup via **⚙️ Config → Datos**:
 
-- **⬆️ Export tests** — downloads `e2e-cypress-export.json`
-- **⬇️ Import tests** — uploads a JSON file and merges it into the current database
+- **⬆️ Export tests** — opens a dialog to choose **what** to export, then downloads `e2e-cypress-export.json`:
+  - **Todo** — every saved test.
+  - **Selección manual** — tick individual tests (multiple allowed); only the checked ones are exported.
+  - **Por tags** — pick one or more tags; exports every test carrying **at least one** of them (OR).
+
+  A live count shows how many tests the current selection will export, and the export button is disabled when that count is `0`.
+- **⬇️ Import tests** — uploads a JSON file and replaces the current database with its contents.
+
+The output format and filename are identical in every mode, so any exported file (full or partial) can be re-imported.
 
 JSON format:
 

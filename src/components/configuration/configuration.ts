@@ -1,8 +1,10 @@
 import { PersistenceService } from "../../services/persistence.service"
+import type { TestWithDetails } from "../../services/persistence.service"
 import { TranslationService } from "../../services/translation.service"
 import type { Lang } from "../../models/lang.model"
 import type { SelectorStrategy } from "../../services/recording.service"
 import { showToast } from "../../utils/toast.utils"
+import { selectTestsForExport, type ExportMode } from "../../utils/export-selection.utils"
 import { CONFIGURATION_STYLES } from './configuration.styles';
 import { renderConfiguration } from './configuration.template';
 
@@ -15,6 +17,11 @@ export class ConfigurationElement extends HTMLElement {
   selectorStrategy: SelectorStrategy = 'data-cy'
   smartSelectorEnabled = true
   startHidden = false
+  isExporting = false
+  exportMode: ExportMode = 'all'
+  exportTests: TestWithDetails[] = []
+  exportSelectedIds: Set<number> = new Set()
+  exportSelectedTags: Set<string> = new Set()
   private filesystemGranted = false
   private cypressFolderName: string | null = null
 
@@ -103,8 +110,7 @@ export class ConfigurationElement extends HTMLElement {
     this.render()
   }
 
-  async exportAllData(): Promise<void> {
-    const tests = await this.persistence.getAllTests()
+  private downloadTests(tests: TestWithDetails[]): void {
     const blob = new Blob([JSON.stringify({ tests, interceptors: [] }, null, 2)], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -112,6 +118,60 @@ export class ConfigurationElement extends HTMLElement {
     a.download = "e2e-cypress-export.json"
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  /** Downloads every saved test (used by the "Todo" mode and as a direct API). */
+  async exportAllData(): Promise<void> {
+    const tests = await this.persistence.getAllTests()
+    this.downloadTests(tests)
+  }
+
+  /** Opens the export selection dialog, loading the current tests. */
+  async openExportDialog(): Promise<void> {
+    this.exportTests = await this.persistence.getAllTests()
+    this.exportMode = 'all'
+    this.exportSelectedIds = new Set()
+    this.exportSelectedTags = new Set()
+    this.isExporting = true
+    this.render()
+  }
+
+  cancelExport(): void {
+    this.isExporting = false
+    this.exportSelectedIds.clear()
+    this.exportSelectedTags.clear()
+    this.render()
+  }
+
+  setExportMode(mode: ExportMode): void {
+    this.exportMode = mode
+    this.render()
+  }
+
+  toggleExportTest(id: number): void {
+    if (this.exportSelectedIds.has(id)) this.exportSelectedIds.delete(id)
+    else this.exportSelectedIds.add(id)
+    this.render()
+  }
+
+  toggleExportTag(tag: string): void {
+    if (this.exportSelectedTags.has(tag)) this.exportSelectedTags.delete(tag)
+    else this.exportSelectedTags.add(tag)
+    this.render()
+  }
+
+  /** Downloads the tests resolved by the current mode + selection. No-op if empty. */
+  confirmExport(): void {
+    const subset = selectTestsForExport(this.exportTests, this.exportMode, {
+      ids: this.exportSelectedIds,
+      tags: this.exportSelectedTags,
+    })
+    if (!subset.length) return
+    this.downloadTests(subset)
+    this.isExporting = false
+    this.exportSelectedIds.clear()
+    this.exportSelectedTags.clear()
+    this.render()
   }
 
   async importAllData(file: File): Promise<void> {
@@ -138,6 +198,11 @@ export class ConfigurationElement extends HTMLElement {
       cypressFolderName: this.cypressFolderName,
       smartSelectorEnabled: this.smartSelectorEnabled,
       startHidden: this.startHidden,
+      isExporting: this.isExporting,
+      exportMode: this.exportMode,
+      exportTests: this.exportTests,
+      exportSelectedIds: this.exportSelectedIds,
+      exportSelectedTags: this.exportSelectedTags,
     }, this.t.bind(this))}`;
     ;(this.shadow.getElementById("lang-select") as HTMLSelectElement).addEventListener("change", (e) =>
       this.onLanguageChange((e.target as HTMLSelectElement).value),
@@ -157,7 +222,19 @@ export class ConfigurationElement extends HTMLElement {
 
     this.shadow.getElementById("btn-change-folder")?.addEventListener("click", () => this.changeFolder())
     this.shadow.getElementById("btn-revoke")?.addEventListener("click", () => this.revokeAccess())
-    this.shadow.getElementById("btn-export")?.addEventListener("click", () => this.exportAllData())
+    this.shadow.getElementById("btn-export")?.addEventListener("click", () => this.openExportDialog())
+
+    this.shadow.getElementById("btn-export-confirm")?.addEventListener("click", () => this.confirmExport())
+    this.shadow.getElementById("btn-export-cancel")?.addEventListener("click", () => this.cancelExport())
+    this.shadow.querySelectorAll("[data-export-mode]").forEach((el) =>
+      el.addEventListener("click", () => this.setExportMode((el as HTMLElement).dataset["exportMode"] as ExportMode)),
+    )
+    this.shadow.querySelectorAll("[data-export-test]").forEach((el) =>
+      el.addEventListener("change", () => this.toggleExportTest(Number((el as HTMLElement).dataset["exportTest"]))),
+    )
+    this.shadow.querySelectorAll("[data-export-tag]").forEach((el) =>
+      el.addEventListener("click", () => this.toggleExportTag((el as HTMLElement).dataset["exportTag"] ?? "")),
+    )
     ;(this.shadow.getElementById("file-input") as HTMLInputElement).addEventListener("change", async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return

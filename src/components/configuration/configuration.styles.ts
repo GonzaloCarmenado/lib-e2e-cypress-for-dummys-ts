@@ -90,4 +90,62 @@ export const CONFIGURATION_STYLES = `
 
   /* ── Data section desc ────────────────────────────────── */
   .data-desc { font-size: 11px; color: #484f58; margin-bottom: 10px; line-height: 1.5; }
+
+  /* ── Export overlay (modal) ───────────────────────────── */
+  .export-overlay {
+    position: fixed; inset: 0; z-index: 100000;
+    background: rgba(1,4,9,0.7);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .export-modal {
+    width: 460px; max-width: 100%; max-height: 80vh;
+    display: flex; flex-direction: column;
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5); overflow: hidden;
+  }
+  .export-hd {
+    padding: 14px 18px; font-size: 13px; font-weight: 700;
+    border-bottom: 1px solid #21262d; color: #e6edf3;
+  }
+  .export-modes { display: flex; gap: 6px; padding: 12px 18px 0; }
+  .export-mode {
+    flex: 1; padding: 7px 10px; font-size: 11px; border-radius: 6px;
+    background: #0d1117; border: 1px solid #30363d; color: #8b949e;
+  }
+  .export-mode:hover { background: #21262d; color: #e6edf3; }
+  .export-mode.active { background: rgba(47,129,247,0.15); border-color: #2f81f7; color: #2f81f7; }
+  .export-body {
+    padding: 14px 18px; overflow-y: auto; flex: 1; min-height: 80px;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
+  }
+  .export-all-desc { font-size: 12px; color: #8b949e; }
+  .export-empty { font-size: 12px; color: #484f58; text-align: center; padding: 20px; }
+  .export-list { display: flex; flex-direction: column; gap: 4px; }
+  .export-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: #c9d1d9;
+  }
+  .export-row:hover { background: #0d1117; }
+  .export-row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .export-row-tag {
+    font-size: 9px; color: #8b949e; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 10px; padding: 1px 7px; flex-shrink: 0;
+  }
+  .export-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .export-tag {
+    padding: 4px 10px; font-size: 11px; border-radius: 12px;
+    background: #0d1117; border: 1px solid #30363d; color: #8b949e;
+  }
+  .export-tag:hover { background: #21262d; color: #e6edf3; }
+  .export-tag.active { background: rgba(47,129,247,0.15); border-color: #2f81f7; color: #2f81f7; }
+  .export-ft {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 18px; border-top: 1px solid #21262d;
+  }
+  .export-count { font-size: 11px; color: #8b949e; }
+  .export-count b { color: #e6edf3; }
+  .export-ft-actions { display: flex; gap: 8px; }
+  .btn-export-confirm { background: #238636; border-color: #238636; color: #fff; }
+  .btn-export-confirm:hover:not(:disabled) { background: #2ea043; border-color: #2ea043; }
+  .btn-export-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
 `;

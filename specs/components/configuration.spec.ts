@@ -113,6 +113,142 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     await expect(el.importAllData(mockFile)).rejects.toThrow();
   });
 
+  // ── export selection dialog ───────────────────────────────────────────────
+
+  describe('export selection dialog', () => {
+    it('openExportDialog() loads tests, defaults to "all" mode and shows the overlay', async () => {
+      await persistence.insertTest('t1');
+      await el.openExportDialog();
+      expect(el.isExporting).toBe(true);
+      expect(el.exportMode).toBe('all');
+      expect(el.shadowRoot!.getElementById('export-overlay')).not.toBeNull();
+      expect(el.shadowRoot!.querySelectorAll('[data-export-mode]')).toHaveLength(3);
+    });
+
+    it('#btn-export opens the dialog instead of downloading directly', () => {
+      const spy = vi.spyOn(el, 'openExportDialog').mockResolvedValue(undefined);
+      (el.shadowRoot!.getElementById('btn-export') as HTMLElement).click();
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('"all" mode counts every test and enables export', async () => {
+      await persistence.insertTest('a');
+      await persistence.insertTest('b');
+      await el.openExportDialog();
+      const confirm = el.shadowRoot!.getElementById('btn-export-confirm') as HTMLButtonElement;
+      expect(confirm.disabled).toBe(false);
+      expect(el.shadowRoot!.querySelector('.export-count b')?.textContent).toBe('2');
+    });
+
+    it('"manual" mode lists every test with a checkbox', async () => {
+      await persistence.insertTest('a');
+      await persistence.insertTest('b');
+      await el.openExportDialog();
+      el.setExportMode('manual');
+      expect(el.shadowRoot!.querySelectorAll('[data-export-test]')).toHaveLength(2);
+    });
+
+    it('"manual" mode with no selection disables export', async () => {
+      await persistence.insertTest('a');
+      await el.openExportDialog();
+      el.setExportMode('manual');
+      const confirm = el.shadowRoot!.getElementById('btn-export-confirm') as HTMLButtonElement;
+      expect(confirm.disabled).toBe(true);
+    });
+
+    it('toggling a test in manual mode selects it and updates the count', async () => {
+      const id = await persistence.insertTest('a');
+      await el.openExportDialog();
+      el.setExportMode('manual');
+      el.toggleExportTest(id);
+      expect(el.exportSelectedIds.has(id)).toBe(true);
+      expect(el.shadowRoot!.querySelector('.export-count b')?.textContent).toBe('1');
+    });
+
+    it('"tags" mode lists the distinct tags', async () => {
+      await persistence.insertTest('a', [], [], ['smoke']);
+      await persistence.insertTest('b', [], [], ['login']);
+      await el.openExportDialog();
+      el.setExportMode('tags');
+      expect(el.shadowRoot!.querySelectorAll('[data-export-tag]')).toHaveLength(2);
+    });
+
+    it('"tags" mode shows an empty message when no tags exist', async () => {
+      await persistence.insertTest('a');
+      await el.openExportDialog();
+      el.setExportMode('tags');
+      expect(el.shadowRoot!.querySelector('.export-empty')).not.toBeNull();
+    });
+
+    it('toggling a tag selects the tests carrying it (OR)', async () => {
+      await persistence.insertTest('a', [], [], ['smoke']);
+      await persistence.insertTest('b', [], [], ['login']);
+      await el.openExportDialog();
+      el.setExportMode('tags');
+      el.toggleExportTag('smoke');
+      expect(el.exportSelectedTags.has('smoke')).toBe(true);
+      expect(el.shadowRoot!.querySelector('.export-count b')?.textContent).toBe('1');
+    });
+
+    it('clicking a [data-export-mode] button switches the mode', async () => {
+      await persistence.insertTest('a');
+      await el.openExportDialog();
+      (el.shadowRoot!.querySelector('[data-export-mode="manual"]') as HTMLElement).click();
+      expect(el.exportMode).toBe('manual');
+    });
+
+    it('confirmExport in "all" mode downloads every test and closes', async () => {
+      await persistence.insertTest('a');
+      await persistence.insertTest('b');
+      await el.openExportDialog();
+      const dl = vi.spyOn(el as unknown as { downloadTests: () => void }, 'downloadTests').mockImplementation(() => {});
+      el.confirmExport();
+      expect(dl).toHaveBeenCalled();
+      expect((dl.mock.calls[0][0] as unknown as unknown[])).toHaveLength(2);
+      expect(el.isExporting).toBe(false);
+    });
+
+    it('confirmExport in "manual" mode downloads only the selected tests', async () => {
+      const id1 = await persistence.insertTest('a');
+      await persistence.insertTest('b');
+      await el.openExportDialog();
+      el.setExportMode('manual');
+      el.toggleExportTest(id1);
+      const dl = vi.spyOn(el as unknown as { downloadTests: () => void }, 'downloadTests').mockImplementation(() => {});
+      el.confirmExport();
+      const exported = dl.mock.calls[0][0] as unknown as Array<{ id: number }>;
+      expect(exported.map((t) => t.id)).toEqual([id1]);
+    });
+
+    it('confirmExport does nothing when the selection is empty', async () => {
+      await persistence.insertTest('a');
+      await el.openExportDialog();
+      el.setExportMode('manual'); // nothing selected
+      const dl = vi.spyOn(el as unknown as { downloadTests: () => void }, 'downloadTests').mockImplementation(() => {});
+      el.confirmExport();
+      expect(dl).not.toHaveBeenCalled();
+      expect(el.isExporting).toBe(true);
+    });
+
+    it('cancelExport closes the dialog and clears the selection', async () => {
+      const id = await persistence.insertTest('a');
+      await el.openExportDialog();
+      el.setExportMode('manual');
+      el.toggleExportTest(id);
+      el.cancelExport();
+      expect(el.isExporting).toBe(false);
+      expect(el.exportSelectedIds.size).toBe(0);
+      expect(el.shadowRoot!.getElementById('export-overlay')).toBeNull();
+    });
+
+    it('shows an empty message and disables export when there are no tests', async () => {
+      await el.openExportDialog();
+      expect(el.shadowRoot!.querySelector('.export-empty')).not.toBeNull();
+      const confirm = el.shadowRoot!.getElementById('btn-export-confirm') as HTMLButtonElement;
+      expect(confirm.disabled).toBe(true);
+    });
+  });
+
   // ── selector strategy ────────────────────────────────────────────────────
 
   it('selectorStrategy defaults to "data-cy"', () => {

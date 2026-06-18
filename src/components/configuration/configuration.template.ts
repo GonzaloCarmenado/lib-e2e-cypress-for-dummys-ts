@@ -1,3 +1,7 @@
+import { escHtml, escAttr } from '../../utils/html.utils';
+import { selectTestsForExport, type ExportMode } from '../../utils/export-selection.utils';
+import type { TestWithDetails } from '../../services/persistence.service';
+
 export const LANGS = [
   { value: 'es', label: 'Español' },
   { value: 'en', label: 'English' },
@@ -14,6 +18,64 @@ export interface ConfigurationState {
   cypressFolderName: string | null;
   smartSelectorEnabled: boolean;
   startHidden: boolean;
+  isExporting: boolean;
+  exportMode: ExportMode;
+  exportTests: TestWithDetails[];
+  exportSelectedIds: Set<number>;
+  exportSelectedTags: Set<string>;
+}
+
+export function renderExportOverlay(state: ConfigurationState, t: (key: string) => string): string {
+  const { isExporting, exportMode, exportTests, exportSelectedIds, exportSelectedTags } = state;
+  if (!isExporting) return '';
+
+  const count = selectTestsForExport(exportTests, exportMode, {
+    ids: exportSelectedIds,
+    tags: exportSelectedTags,
+  }).length;
+
+  const modeBtn = (mode: ExportMode, key: string) =>
+    `<button class="export-mode ${exportMode === mode ? 'active' : ''}" data-export-mode="${mode}">${t(key)}</button>`;
+
+  let body: string;
+  if (exportTests.length === 0) {
+    body = `<div class="export-empty">${t('CONFIG.EXPORT_EMPTY')}</div>`;
+  } else if (exportMode === 'all') {
+    body = `<div class="export-all-desc">${t('CONFIG.EXPORT_ALL_DESC')}</div>`;
+  } else if (exportMode === 'manual') {
+    body = `<div class="export-list">${exportTests.map((test) => `
+        <label class="export-row">
+          <input type="checkbox" data-export-test="${test.id}" ${exportSelectedIds.has(test.id) ? 'checked' : ''} />
+          <span class="export-row-name">${escHtml(test.name)}</span>
+          ${(test.tags ?? []).map((tag) => `<span class="export-row-tag">${escHtml(tag)}</span>`).join('')}
+        </label>`).join('')}</div>`;
+  } else {
+    const allTags = [...new Set(exportTests.flatMap((test) => test.tags ?? []))].sort();
+    body = allTags.length
+      ? `<div class="export-tags">${allTags.map((tag) =>
+          `<button class="export-tag ${exportSelectedTags.has(tag) ? 'active' : ''}" data-export-tag="${escAttr(tag)}">${escHtml(tag)}</button>`).join('')}</div>`
+      : `<div class="export-empty">${t('CONFIG.EXPORT_NO_TAGS')}</div>`;
+  }
+
+  return `
+    <div class="export-overlay" id="export-overlay">
+      <div class="export-modal">
+        <div class="export-hd">${t('CONFIG.EXPORT_DIALOG_TITLE')}</div>
+        ${exportTests.length ? `<div class="export-modes">
+          ${modeBtn('all', 'CONFIG.EXPORT_MODE_ALL')}
+          ${modeBtn('manual', 'CONFIG.EXPORT_MODE_MANUAL')}
+          ${modeBtn('tags', 'CONFIG.EXPORT_MODE_TAGS')}
+        </div>` : ''}
+        <div class="export-body">${body}</div>
+        <div class="export-ft">
+          <span class="export-count">${t('CONFIG.EXPORT_COUNT')} <b>${count}</b></span>
+          <span class="export-ft-actions">
+            <button id="btn-export-confirm" class="btn-export-confirm" ${count === 0 ? 'disabled' : ''}>${t('CONFIG.EXPORT_CONFIRM')}</button>
+            <button id="btn-export-cancel">${t('CONFIG.EXPORT_CANCEL')}</button>
+          </span>
+        </div>
+      </div>
+    </div>`;
 }
 
 export function renderConfiguration(state: ConfigurationState, t: (key: string) => string): string {
@@ -125,5 +187,5 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
         </div>
       </div>
 
-    </div>`;
+    </div>${renderExportOverlay(state, t)}`;
 }
