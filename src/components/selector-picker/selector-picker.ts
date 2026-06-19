@@ -1,6 +1,6 @@
 import type { RecordingService } from '../../services/recording.service';
 import type { TranslationService } from '../../services/translation.service';
-import { getSelectorQuality, buildPickerSelector } from '../../utils/selector-quality.utils';
+import { describePickerRow, type PickerRow } from '../../utils/selector-quality.utils';
 import { SELECTOR_PICKER_STYLES } from './selector-picker.styles';
 import { renderPicker } from './selector-picker.template';
 
@@ -14,6 +14,7 @@ export class SelectorPickerElement extends HTMLElement {
 
   private shadow: ShadowRoot;
   private ancestors: HTMLElement[] = [];
+  private rows: PickerRow[] = [];
   private selectedIndex = 0;
   private keyHandler: ((e: KeyboardEvent) => void) | null = null;
   private unsubRecording: (() => void) | null = null;
@@ -27,6 +28,7 @@ export class SelectorPickerElement extends HTMLElement {
   connectedCallback(): void {
     this.setAttribute('data-cy', 'lib-e2e-cypress-for-dummys');
     this.ancestors = this.buildAncestors();
+    this.rows = this.ancestors.map(describePickerRow);
     this.selectedIndex = this.findBestIndex();
     this.render();
     this.attachKeyListener();
@@ -63,8 +65,8 @@ export class SelectorPickerElement extends HTMLElement {
   }
 
   private findBestIndex(): number {
-    for (let i = 0; i < this.ancestors.length; i++) {
-      const q = getSelectorQuality(this.ancestors[i]);
+    for (let i = 0; i < this.rows.length; i++) {
+      const q = this.rows[i].quality;
       if (q === 'excellent' || q === 'good' || q === 'acceptable') return i;
     }
     return 0;
@@ -74,7 +76,7 @@ export class SelectorPickerElement extends HTMLElement {
 
   private render(): void {
     this.shadow.innerHTML = `<style>${SELECTOR_PICKER_STYLES}</style>${renderPicker(
-      this.ancestors,
+      this.rows,
       this.selectedIndex,
       this.t.bind(this),
     )}`;
@@ -139,17 +141,16 @@ export class SelectorPickerElement extends HTMLElement {
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   private confirm(index: number): void {
-    const el = this.ancestors[index];
-    if (!el) return;
-    const selector = buildPickerSelector(el);
-    const command = `cy.get('${selector}').click()`;
+    const row = this.rows[index];
+    if (!row) return;
+    const command = `cy.get('${row.selector}').click()`;
     this.recording.appendCommand(command);
-    this.dispatchEvent(new CustomEvent('selectorchosen', { detail: command, bubbles: true }));
+    this.dispatchEvent(new CustomEvent('selectorchosen', { detail: command, bubbles: true, composed: true }));
     this.closeSilently();
   }
 
   private cancel(): void {
-    this.dispatchEvent(new CustomEvent('pickercancelled', { bubbles: true }));
+    this.dispatchEvent(new CustomEvent('pickercancelled', { bubbles: true, composed: true }));
     this.closeSilently();
   }
 

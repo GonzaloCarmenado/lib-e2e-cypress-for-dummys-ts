@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getSelectorQuality, buildPickerSelector } from '../../src/utils/selector-quality.utils';
+import { getSelectorQuality, buildPickerSelector, keyAttrDisplay, describePickerRow } from '../../src/utils/selector-quality.utils';
 
 function el(tag: string, attrs: Record<string, string> = {}, cls = ''): HTMLElement {
   const e = document.createElement(tag);
@@ -128,6 +128,51 @@ describe('selector-quality.utils', () => {
 
     it('returns tag selector for poor element', () => {
       expect(buildPickerSelector(el('span'))).toBe('span');
+    });
+  });
+
+  // ── keyAttrDisplay ─────────────────────────────────────────────────────────
+
+  describe('keyAttrDisplay', () => {
+    it('prefers data-cy and shows it as attr="value"', () => {
+      expect(keyAttrDisplay(el('div', { 'data-cy': 'btn' }))).toBe('data-cy="btn"');
+    });
+
+    it('falls back to data-testid then aria-label', () => {
+      expect(keyAttrDisplay(el('div', { 'data-testid': 'x' }))).toBe('data-testid="x"');
+      expect(keyAttrDisplay(el('div', { 'aria-label': 'Close' }))).toBe('aria-label="Close"');
+    });
+
+    it('shows the id when there is no test attribute', () => {
+      const e = el('div');
+      e.id = 'myId';
+      expect(keyAttrDisplay(e)).toBe('id="myId"');
+    });
+
+    it('shows a dotted class list when only classes are present', () => {
+      expect(keyAttrDisplay(el('div', {}, 'btn primary'))).toBe('.btn.primary');
+    });
+
+    it('returns empty string for a plain element', () => {
+      expect(keyAttrDisplay(el('span'))).toBe('');
+    });
+  });
+
+  // ── describePickerRow ──────────────────────────────────────────────────────
+
+  describe('describePickerRow', () => {
+    it('builds a plain row view-model holding no DOM reference', () => {
+      const row = describePickerRow(el('button', { 'data-cy': 'submit' }));
+      expect(row).toEqual({
+        quality: 'excellent',
+        selector: '[data-cy="submit"]',
+        tag: 'button',
+        attr: 'data-cy="submit"',
+      });
+    });
+
+    it('lowercases the tag name', () => {
+      expect(describePickerRow(el('SECTION')).tag).toBe('section');
     });
   });
 });

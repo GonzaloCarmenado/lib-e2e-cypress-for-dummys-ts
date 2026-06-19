@@ -61,3 +61,34 @@ export function buildPickerSelector(el: HTMLElement): string {
 
   return el.tagName.toLowerCase();
 }
+
+/** Human-readable key attribute/selector preview for a picker row (raw, unescaped). */
+export function keyAttrDisplay(el: HTMLElement): string {
+  for (const attr of ['data-cy', 'data-testid', 'aria-label']) {
+    const v = el.getAttribute(attr);
+    if (v) return `${attr}="${v}"`;
+  }
+  if (el.id) return `id="${el.id}"`;
+  if (el.className && el.className.trim()) {
+    return el.className.trim().split(/\s+/).map((c) => `.${c}`).join('');
+  }
+  return '';
+}
+
+/** Plain, serializable view-model for one picker row — no DOM held. */
+export interface PickerRow {
+  quality: SelectorQuality;
+  selector: string;
+  tag: string;
+  attr: string;
+}
+
+/** Reads an element once and returns the plain data a picker row needs to render. */
+export function describePickerRow(el: HTMLElement): PickerRow {
+  return {
+    quality: getSelectorQuality(el),
+    selector: buildPickerSelector(el),
+    tag: el.tagName.toLowerCase(),
+    attr: keyAttrDisplay(el),
+  };
+}
