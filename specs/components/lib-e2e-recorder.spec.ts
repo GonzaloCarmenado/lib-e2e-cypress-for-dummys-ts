@@ -701,4 +701,10 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }));
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('re-renders the widget when the UI language changes', () => {
+    const renderSpy = vi.spyOn(el as any, 'render');
+    translation.setLang('de');
+    expect(renderSpy).toHaveBeenCalled();
+  });
 });

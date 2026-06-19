@@ -40,6 +40,25 @@ describe('Phase 2 — TranslationService', () => {
     });
   });
 
+  describe('onLangChange', () => {
+    it('notifies subscribers each time the language changes', () => {
+      const seen: string[] = [];
+      service.onLangChange((l) => seen.push(l));
+      service.setLang('de');
+      service.setLang('fr');
+      expect(seen).toEqual(['de', 'fr']);
+    });
+
+    it('returns an unsubscribe function that stops notifications', () => {
+      let count = 0;
+      const off = service.onLangChange(() => { count++; });
+      service.setLang('en');
+      off();
+      service.setLang('de');
+      expect(count).toBe(1);
+    });
+  });
+
   describe('translate', () => {
     it('translates a nested key in Spanish', () => {
       service.setLang('es');

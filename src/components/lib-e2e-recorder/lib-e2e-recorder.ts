@@ -58,6 +58,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   private interceptorsUnsub?: () => void;
   private pauseUnsub?: () => void;
   private selectorNotFoundUnsub?: () => void;
+  private langUnsub?: () => void;
   private controlFirstTimeData = true;
   private _previsualizerRef: { commands: string[]; interceptors: string[] } | null = null;
   private httpMonitor?: HttpMonitor;
@@ -122,6 +123,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.interceptorsUnsub?.();
     this.pauseUnsub?.();
     this.selectorNotFoundUnsub?.();
+    this.langUnsub?.();
     this.httpMonitor?.uninstall();
     this.recording.destroy();
   }
@@ -167,6 +169,8 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.selectorNotFoundUnsub = this.recording.onSelectorNotFound((target) => {
       if (this.smartSelectorEnabled) this.showSelectorPicker(target);
     });
+    // Re-render the widget chrome when the UI language changes so labels update live.
+    this.langUnsub = this.translation.onLangChange(() => this.render());
   }
 
   private showSelectorPicker(target: HTMLElement): void {
