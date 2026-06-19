@@ -1,8 +1,9 @@
 import { translationService, type TranslationService } from '../../services/translation.service';
 import { advancedTestTransformationService } from '../../services/advanced-test.transformation.service';
 import { showToast } from '../../utils/toast.utils';
+import { isLocalHost } from '../../utils/host.utils';
 import { FILE_PREVIEW_STYLES } from './file-preview.styles';
-import { renderFilePreview } from './file-preview.template';
+import { renderFilePreview, type RunState } from './file-preview.template';
 
 export class FilePreviewElement extends HTMLElement {
   private shadow: ShadowRoot;
@@ -16,9 +17,15 @@ export class FilePreviewElement extends HTMLElement {
   notes = '';
   commands: string[] = [];
   interceptors: string[] = [];
+  /** Endpoint of the local Cypress runner. Configurable; defaults to the bundled runner's port. */
+  runnerUrl = 'http://localhost:8123/run-test';
+  /** Whether the app is served locally — gates the launch button. Overridable for tests. */
+  isLocal = isLocalHost(window.location.hostname);
   private _fileContent: string | null = null;
   private _originalContent: string | null = null;
   private _showDiff = false;
+  private _runState: RunState = 'idle';
+  private _runOutput = '';
 
   constructor() {
     super();
@@ -49,15 +56,36 @@ export class FilePreviewElement extends HTMLElement {
     this.dispatchEvent(new CustomEvent('close', { bubbles: true, composed: true }));
   }
 
+  /**
+   * Runs the current spec headless via the local runner and shows the result.
+   * No-op off localhost. Never throws — connection failures surface as an
+   * "error" state + toast instead of an unhandled rejection.
+   */
   async launchTest(specPath?: string): Promise<void> {
-    const path = specPath ?? (this.fileName ? `cypress/e2e/${this.fileName}` : '');
+    if (!this.isLocal) return;
+    const path = specPath ?? this.fileName ?? '';
     if (!path) return;
-    const response = await fetch('http://localhost:8123/run-test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ specPath: path }),
-    });
-    await response.json();
+
+    this._runState = 'running';
+    this._runOutput = '';
+    this.render();
+
+    try {
+      const response = await fetch(this.runnerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ specPath: path }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json() as { success?: boolean; output?: string };
+      this._runOutput = result.output ?? '';
+      this._runState = result.success ? 'passed' : 'failed';
+    } catch {
+      this._runState = 'error';
+      this._runOutput = '';
+      showToast(this.t('FILE_PREVIEW.LAUNCH_NO_RUNNER'), false);
+    }
+    this.render();
   }
 
   copyToClipboard(text: string): void {
@@ -106,6 +134,9 @@ export class FilePreviewElement extends HTMLElement {
       itBlock: this.itBlock,
       interceptorsBlock: this.interceptorsBlock,
       closeLabel: this.closeLabel,
+      isLocal: this.isLocal,
+      runState: this._runState,
+      runOutput: this._runOutput,
     }, this.t.bind(this))}`;
 
     this.textarea = this.shadow.getElementById('editor') as HTMLTextAreaElement | null;

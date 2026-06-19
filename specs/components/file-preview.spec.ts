@@ -45,8 +45,10 @@ describe('Phase 8.6 — FilePreviewElement', () => {
     expect(fired).toBe(true);
   });
 
-  it('launchTest() sends POST to localhost:8123/run-test', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ json: vi.fn().mockResolvedValue({ ok: true }) });
+  const okResponse = (body: unknown) => ({ ok: true, json: vi.fn().mockResolvedValue(body) });
+
+  it('launchTest() sends POST to the configured runner URL', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(okResponse({ success: true, output: '' }));
     vi.stubGlobal('fetch', mockFetch);
     el.fileName = 'test.cy.ts';
     await el.launchTest();
@@ -57,13 +59,94 @@ describe('Phase 8.6 — FilePreviewElement', () => {
     vi.unstubAllGlobals();
   });
 
+  it('launchTest() posts the file name as specPath by default', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(okResponse({ success: true }));
+    vi.stubGlobal('fetch', mockFetch);
+    el.fileName = 'login.cy.ts';
+    await el.launchTest();
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body).specPath).toBe('login.cy.ts');
+    vi.unstubAllGlobals();
+  });
+
   it('launchTest() uses provided specPath when given', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ json: vi.fn().mockResolvedValue({ ok: true }) });
+    const mockFetch = vi.fn().mockResolvedValue(okResponse({ success: true }));
     vi.stubGlobal('fetch', mockFetch);
     await el.launchTest('cypress/e2e/custom.cy.ts');
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.specPath).toBe('cypress/e2e/custom.cy.ts');
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body).specPath).toBe('cypress/e2e/custom.cy.ts');
     vi.unstubAllGlobals();
+  });
+
+  it('launchTest() uses a custom runnerUrl when configured', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(okResponse({ success: true }));
+    vi.stubGlobal('fetch', mockFetch);
+    el.runnerUrl = 'http://localhost:9999/x';
+    el.fileName = 'a.cy.ts';
+    await el.launchTest();
+    expect(mockFetch.mock.calls[0][0]).toBe('http://localhost:9999/x');
+    vi.unstubAllGlobals();
+  });
+
+  it('launchTest() shows a passed result when the run succeeds', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(okResponse({ success: true, output: 'All specs passed' }));
+    vi.stubGlobal('fetch', mockFetch);
+    el.fileName = 'a.cy.ts';
+    await el.launchTest();
+    expect(el.shadowRoot!.querySelector('.run-result.run-passed')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('.run-output')?.textContent).toContain('All specs passed');
+    vi.unstubAllGlobals();
+  });
+
+  it('launchTest() shows a failed result when the run fails', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(okResponse({ success: false, output: '1 failing' }));
+    vi.stubGlobal('fetch', mockFetch);
+    el.fileName = 'a.cy.ts';
+    await el.launchTest();
+    expect(el.shadowRoot!.querySelector('.run-result.run-failed')).not.toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('launchTest() shows an error state when the runner is unreachable', async () => {
+    const mockFetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+    vi.stubGlobal('fetch', mockFetch);
+    el.fileName = 'a.cy.ts';
+    await expect(el.launchTest()).resolves.toBeUndefined();
+    expect(el.shadowRoot!.querySelector('.run-result.run-error')).not.toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('launchTest() treats a non-OK response as an error', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: vi.fn() });
+    vi.stubGlobal('fetch', mockFetch);
+    el.fileName = 'a.cy.ts';
+    await el.launchTest();
+    expect(el.shadowRoot!.querySelector('.run-result.run-error')).not.toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('launchTest() does nothing when not on localhost', async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+    el.isLocal = false;
+    el.fileName = 'a.cy.ts';
+    await el.launchTest();
+    expect(mockFetch).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('launch button is enabled on localhost', () => {
+    const btn = el.shadowRoot!.querySelector('#btn-launch') as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    expect(btn.disabled).toBe(false);
+  });
+
+  it('launch button is disabled with a hint when not on localhost', () => {
+    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    fresh.isLocal = false;
+    document.body.appendChild(fresh);
+    expect(fresh.shadowRoot!.querySelector('#btn-launch')).toBeNull();
+    expect(fresh.shadowRoot!.querySelector('.btn-launch[disabled]')).not.toBeNull();
+    expect(fresh.shadowRoot!.querySelector('.launch-hint')).not.toBeNull();
+    fresh.remove();
   });
 
   it('copyToClipboard calls navigator.clipboard.writeText', () => {

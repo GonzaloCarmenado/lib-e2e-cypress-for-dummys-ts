@@ -76,7 +76,28 @@ export const FILE_PREVIEW_STYLES = `
   .btn-save:hover { background: #2ea043; border-color: #2ea043; }
   .btn-launch { background: transparent; border-color: #e3b341; color: #e3b341; }
   .btn-launch:hover { background: rgba(227,179,65,0.1); }
+  .btn-launch:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-launch:disabled:hover { background: transparent; }
+  .launch-hint { font-size: 10px; color: #8b6d3b; align-self: center; }
   .btn-insert { background: transparent; border-color: #a371f7; color: #a371f7; }
   .btn-insert:hover { background: rgba(163,113,247,0.12); color: #c8a8ff; }
   .btn-diff-active { background: rgba(47,129,247,0.15); border-color: rgba(47,129,247,0.4); color: #2f81f7; }
+
+  /* ── Run result panel ─────────────────────────────────── */
+  .run-result {
+    border-top: 1px solid #21262d; padding: 8px 12px; background: #0d1117;
+    max-height: 220px; overflow-y: auto; flex-shrink: 0;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
+  }
+  .run-status { font-size: 12px; font-weight: 600; }
+  .run-passed  .run-status { color: #3fb950; }
+  .run-failed  .run-status { color: #f85149; }
+  .run-running .run-status { color: #e3b341; }
+  .run-error   .run-status { color: #f85149; }
+  .run-output {
+    margin: 6px 0 0; padding: 8px 10px; background: #161b22; border: 1px solid #21262d;
+    border-radius: 5px; font-size: 10px; color: #c9d1d9; line-height: 1.5;
+    font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+    white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow-y: auto;
+  }
 `;

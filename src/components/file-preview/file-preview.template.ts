@@ -61,6 +61,8 @@ export function buildDiffHtml(original: string, current: string, t: (key: string
   }).join('');
 }
 
+export type RunState = 'idle' | 'running' | 'passed' | 'failed' | 'error';
+
 export interface FilePreviewState {
   fileName: string | null;
   showDiff: boolean;
@@ -70,10 +72,20 @@ export interface FilePreviewState {
   itBlock: string;
   interceptorsBlock: string;
   closeLabel: string;
+  isLocal: boolean;
+  runState: RunState;
+  runOutput: string;
 }
 
+const RUN_STATUS_KEY: Record<Exclude<RunState, 'idle'>, string> = {
+  running: 'FILE_PREVIEW.LAUNCH_RUNNING',
+  passed: 'FILE_PREVIEW.LAUNCH_PASSED',
+  failed: 'FILE_PREVIEW.LAUNCH_FAILED',
+  error: 'FILE_PREVIEW.LAUNCH_NO_RUNNER',
+};
+
 export function renderFilePreview(state: FilePreviewState, t: (key: string) => string): string {
-  const { fileName, showDiff, fileContent, originalContent, currentContent, itBlock, interceptorsBlock, closeLabel } = state;
+  const { fileName, showDiff, fileContent, originalContent, currentContent, itBlock, interceptorsBlock, closeLabel, isLocal, runState, runOutput } = state;
 
   const blocksPanelHtml = (itBlock || interceptorsBlock) ? `
     <div class="blocks-panel">
@@ -98,6 +110,18 @@ export function renderFilePreview(state: FilePreviewState, t: (key: string) => s
   const hasChanges = originalContent !== null && originalContent !== (fileContent ?? '');
   const hasBlocks = !!(itBlock || interceptorsBlock);
 
+  const launchBtnHtml = isLocal
+    ? `<button id="btn-launch" class="btn-launch" ${runState === 'running' ? 'disabled' : ''}>${runState === 'running' ? t('FILE_PREVIEW.LAUNCH_RUNNING') : t('FILE_PREVIEW.LAUNCH_BTN')}</button>`
+    : `<button class="btn-launch" disabled title="${t('FILE_PREVIEW.LAUNCH_LOCAL_ONLY')}">${t('FILE_PREVIEW.LAUNCH_BTN')}</button>
+       <span class="launch-hint">${t('FILE_PREVIEW.LAUNCH_LOCAL_ONLY')}</span>`;
+
+  const runResultHtml = runState !== 'idle'
+    ? `<div class="run-result run-${runState}">
+         <span class="run-status">${t(RUN_STATUS_KEY[runState])}</span>
+         ${runOutput ? `<pre class="run-output">${escHtml(runOutput.slice(0, 8000))}</pre>` : ''}
+       </div>`
+    : '';
+
   return `
     <div class="container">
       <div class="header">
@@ -110,8 +134,9 @@ export function renderFilePreview(state: FilePreviewState, t: (key: string) => s
           : `<textarea class="editor" id="editor" spellcheck="false">${escHtml(fileContent ?? '')}</textarea>`}
         ${blocksPanelHtml}
       </div>
+      ${runResultHtml}
       <div class="footer">
-        <button id="btn-launch" class="btn-launch">${t('FILE_PREVIEW.LAUNCH_BTN')}</button>
+        ${launchBtnHtml}
         ${hasChanges ? `<button id="btn-diff" class="${showDiff ? 'btn-diff-active' : ''}">${t('FILE_PREVIEW.DIFF_BTN')}</button>` : ''}
         ${hasBlocks && !showDiff ? `<button id="btn-insert" class="btn-insert" title="${t('FILE_PREVIEW.INSERT_TITLE')}">${t('FILE_PREVIEW.INSERT_BTN')}</button>` : ''}
         <button id="btn-save" class="btn-save">${t('FILE_PREVIEW.SAVE_BTN')}</button>
