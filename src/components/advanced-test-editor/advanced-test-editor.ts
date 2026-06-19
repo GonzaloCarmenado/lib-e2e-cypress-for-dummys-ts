@@ -1,6 +1,7 @@
 import { PersistenceService } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import { AdvancedTestTransformationService } from '../../services/advanced-test.transformation.service';
+import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { ADVANCED_TEST_EDITOR_STYLES } from './advanced-test-editor.styles';
 import { renderNoPermission, renderAdvancedEditor, findFileHandleRecursive } from './advanced-test-editor.template';
 import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
@@ -96,7 +97,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
     const name = rawName.trim().replace(/\.cy\.ts$/, '');
     if (!name) return;
     const fileName = `${name}.cy.ts`;
-    const template = `describe('${name}', () => {\n\n  it('should ', () => {\n\n  });\n\n});\n`;
+    const template = `describe('${escapeSingleQuotes(name)}', () => {\n\n  it('should ', () => {\n\n  });\n\n});\n`;
     try {
       const fileHandle = await this._e2eHandle.getFileHandle(fileName, { create: true });
       const writable = await fileHandle.createWritable();

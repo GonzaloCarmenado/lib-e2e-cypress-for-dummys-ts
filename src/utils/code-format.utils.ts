@@ -4,6 +4,15 @@ function gcd(a: number, b: number): number {
 }
 
 /**
+ * Escapes backslashes and single quotes so a value can be safely embedded inside
+ * a single-quoted JavaScript string literal — e.g. an `it('…')` / `describe('…')`
+ * name. Without this, a test named `User's login` produces broken generated JS.
+ */
+export function escapeSingleQuotes(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/**
  * Normalizes indentation in a code block and prefixes every line with baseIndent.
  *
  * Algorithm:

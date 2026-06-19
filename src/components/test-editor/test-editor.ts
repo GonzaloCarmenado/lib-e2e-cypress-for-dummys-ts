@@ -1,6 +1,7 @@
 import { PersistenceService } from '../../services/persistence.service';
 import type { TestWithDetails } from '../../services/persistence.service';
 import { translationService, type TranslationService } from '../../services/translation.service';
+import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { TEST_EDITOR_STYLES } from './test-editor.styles';
 import { renderTestEditor } from './test-editor.template';
 
@@ -81,11 +82,11 @@ export class TestEditorElement extends HTMLElement {
     const itBlocks = selected
       .map((t) => {
         const cmds = (t.commands ?? []).map((c) => `    ${c}`).join('\n');
-        return `  it('${(t.name ?? '').replace(/'/g, "\\'")}', () => {\n${cmds}\n  });`;
+        return `  it('${escapeSingleQuotes(t.name ?? '')}', () => {\n${cmds}\n  });`;
       })
       .join('\n\n');
 
-    const block = `describe('${name.replace(/'/g, "\\'")}', () => {\n${beforeEach}${itBlocks}\n});`;
+    const block = `describe('${escapeSingleQuotes(name)}', () => {\n${beforeEach}${itBlocks}\n});`;
     navigator.clipboard?.writeText(block);
   }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeBlock } from '../../src/utils/code-format.utils';
+import { normalizeBlock, escapeSingleQuotes } from '../../src/utils/code-format.utils';
 
 describe('normalizeBlock', () => {
   it('adds base indent to a single-line zero-indent command', () => {
@@ -67,5 +67,27 @@ describe('normalizeBlock', () => {
 
   it('trims trailing whitespace from lines', () => {
     expect(normalizeBlock('cy.click()   ', '  ')).toBe('  cy.click()');
+  });
+});
+
+describe('escapeSingleQuotes', () => {
+  it('leaves a string without single quotes unchanged', () => {
+    expect(escapeSingleQuotes('login flow')).toBe('login flow');
+  });
+
+  it('escapes a single quote', () => {
+    expect(escapeSingleQuotes("User's login")).toBe("User\\'s login");
+  });
+
+  it('escapes multiple single quotes', () => {
+    expect(escapeSingleQuotes("a 'b' c")).toBe("a \\'b\\' c");
+  });
+
+  it('escapes backslashes before quotes so the result is a valid literal', () => {
+    expect(escapeSingleQuotes('a\\b')).toBe('a\\\\b');
+  });
+
+  it('returns an empty string for empty input', () => {
+    expect(escapeSingleQuotes('')).toBe('');
   });
 });

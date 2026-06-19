@@ -69,6 +69,12 @@ describe('Phase 5 — PersistenceService', () => {
       expect(test.itBlock).toContain("  cy.visit('/')");
     });
 
+    it('escapes single quotes in the test name so the itBlock is valid JS', async () => {
+      const id = await service.insertTest("User's login", ["cy.visit('/')"]);
+      const test = await service.getTestById(id);
+      expect(test!.itBlock).toContain("it('User\\'s login', () => {");
+    });
+
     it('returns a non-empty interceptorsBlock when interceptors exist', async () => {
       const id = await service.insertTest('with ints', [], ["cy.intercept('GET', '**/api').as('api')"]);
       const test = await service.getTestById(id);

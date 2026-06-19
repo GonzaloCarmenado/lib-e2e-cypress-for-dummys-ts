@@ -69,6 +69,11 @@ describe('Phase 3 — TransformationService', () => {
       expect(result).toContain("it('empty test', () => {");
       expect(result).toContain('});');
     });
+
+    it('escapes single quotes in the description so the generated JS is valid', () => {
+      const result = service.generateItDescription("User's login", []);
+      expect(result).toContain("it('User\\'s login', () => {");
+    });
   });
 });
 
