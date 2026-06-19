@@ -393,7 +393,7 @@ Back up tests to a JSON file or restore from a previous backup via **⚙️ Conf
   - **Por tags** — pick one or more tags; exports every test carrying **at least one** of them (OR).
 
   A live count shows how many tests the current selection will export, and the export button is disabled when that count is `0`.
-- **⬇️ Import tests** — uploads a JSON file and replaces the current database with its contents.
+- **⬇️ Import tests** — uploads a JSON file and **merges** its tests into the current database (existing tests are kept, never wiped).
 
 The output format and filename are identical in every mode, so any exported file (full or partial) can be re-imported.
 

@@ -103,6 +103,17 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     expect(tests[0].name).toBe('imported');
   });
 
+  it('importAllData merges into existing tests instead of clearing them', async () => {
+    await persistence.insertTest('existing');
+    const jsonData = JSON.stringify({ tests: [{ name: 'imported', createdAt: Date.now() }], interceptors: [] });
+    const mockFile = { text: vi.fn().mockResolvedValue(jsonData) } as unknown as File;
+    await el.importAllData(mockFile);
+    const names = (await persistence.getAllTests()).map((t) => t.name);
+    expect(names).toContain('existing');
+    expect(names).toContain('imported');
+    expect(names).toHaveLength(2);
+  });
+
   it('importAllData rejects invalid JSON', async () => {
     const mockFile = { text: vi.fn().mockResolvedValue('not json') } as unknown as File;
     await expect(el.importAllData(mockFile)).rejects.toThrow();

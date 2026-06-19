@@ -185,7 +185,8 @@ export class ConfigurationElement extends HTMLElement {
     if (!data || !Array.isArray(data.tests) || !Array.isArray(data.interceptors)) {
       throw new Error(this.t('CONFIG.JSON_BAD_FORMAT'));
     }
-    await this.persistence.clearAllData();
+    // Merge: append the imported tests to whatever is already stored — never wipe
+    // existing data (see docs/specs/004-merge-on-import.md).
     await this.persistence.ingestFileData(data.tests, data.interceptors);
   }
 
