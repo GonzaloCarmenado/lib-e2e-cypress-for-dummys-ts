@@ -109,6 +109,10 @@ describe('Phase 9 — Public API & Build', () => {
     it('exports FilePreviewElement class', () => {
       expect(typeof (publicApi as any).FilePreviewElement).toBe('function');
     });
+
+    it('exports SelectorPickerElement class', () => {
+      expect(typeof (publicApi as any).SelectorPickerElement).toBe('function');
+    });
   });
 
   // ── Custom Elements ──────────────────────────────────────────────────────
@@ -144,6 +148,10 @@ describe('Phase 9 — Public API & Build', () => {
 
     it('<file-preview> is registered in customElements registry', () => {
       expect(customElements.get('file-preview')).toBeDefined();
+    });
+
+    it('<selector-picker> is registered in customElements registry', () => {
+      expect(customElements.get('selector-picker')).toBeDefined();
     });
   });
 

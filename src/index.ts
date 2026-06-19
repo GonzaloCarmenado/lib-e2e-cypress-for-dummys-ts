@@ -31,6 +31,7 @@ export * from './utils/toast.utils';
 export * from './utils/export-selection.utils';
 
 // Phase 8 — Web Components
+export * from './components/selector-picker/selector-picker';
 export * from './components/test-previsualizer/test-previsualizer';
 export * from './components/save-test/save-test';
 export * from './components/test-editor/test-editor';

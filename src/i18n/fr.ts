@@ -31,8 +31,6 @@ export const I18N_FR = {
     COPY_DESCRIBE: '🗂 Copier describe()',
     MULTI_SELECT: '🗂 Multi-sélection',
     CANCEL_SELECT: '✕ Annuler',
-    SECTION_COMMANDS: 'Commandes',
-    SECTION_INTERCEPTORS: 'Intercepteurs',
     COPY_CMDS_BTN: '📋 Copier les commandes',
     COPY_ICPS_BTN: '📋 Copier les intercepteurs',
     DEFAULT_DESCRIBE: 'Suite de tests',
