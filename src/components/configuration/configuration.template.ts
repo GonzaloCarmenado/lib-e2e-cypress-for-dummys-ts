@@ -152,14 +152,14 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
       <div class="card card-wide">
         <div class="card-hd">${t('CONFIG.FOLDER_SECTION')}</div>
         <div class="fs-layout">
-          <pre class="fs-tree">cypress/  <span style="color:#484f58">← selecciona</span>
+          <pre class="fs-tree">cypress/  <span style="color:#484f58">${t('RECORDER.FS_TREE_PICK_HINT')}</span>
 └── e2e/
     └── *.cy.ts</pre>
           <div class="fs-right">
             <div class="fs-status">
               <span class="fs-dot ${filesystemGranted ? 'on' : 'off'}"></span>
               ${filesystemGranted && cypressFolderName
-                ? `<span>${t('CONFIG.FOLDER_CONNECTED')}</span>&nbsp;<span class="fs-folder">📁 ${cypressFolderName}</span>`
+                ? `<span>${t('CONFIG.FOLDER_CONNECTED')}</span>&nbsp;<span class="fs-folder">📁 ${escHtml(cypressFolderName)}</span>`
                 : `<span>${t('CONFIG.FOLDER_NOT_SET')}</span>`}
             </div>
             <div class="btn-row">
