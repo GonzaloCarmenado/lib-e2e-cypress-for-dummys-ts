@@ -533,6 +533,29 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
     });
   });
 
+  // ── sidebar interactions ─────────────────────────────────────────────────
+
+  describe('sidebar interactions', () => {
+    it('toggleDir collapses then expands a directory path', () => {
+      el.toggleDir('e2e/sub');
+      expect((el as any).collapsedDirs.has('e2e/sub')).toBe(true);
+      el.toggleDir('e2e/sub');
+      expect((el as any).collapsedDirs.has('e2e/sub')).toBe(false);
+    });
+
+    it('dragging the resize handle updates the sidebar width within bounds', () => {
+      (el as any).hasPermission = true;
+      (el as any).render();
+      const handle = el.shadowRoot!.getElementById('resize-handle') as HTMLElement;
+      expect(handle).not.toBeNull();
+      handle.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, bubbles: true }));
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: 260 }));
+      document.dispatchEvent(new MouseEvent('mouseup'));
+      expect(el.sidebarWidth).toBeGreaterThanOrEqual(140);
+      expect(el.sidebarWidth).toBeLessThanOrEqual(500);
+    });
+  });
+
   // ── no-permission render variations ──────────────────────────────────────
 
   describe('no-permission render', () => {
