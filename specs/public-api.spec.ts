@@ -29,8 +29,9 @@ describe('Phase 9 — Public API & Build', () => {
   // ── public API surface ───────────────────────────────────────────────────
 
   describe('Public API exports from src/index.ts', () => {
-    it('exports VERSION', () => {
-      expect((publicApi as any).VERSION).toBe('0.1.0');
+    it('exports VERSION matching package.json', () => {
+      const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
+      expect((publicApi as any).VERSION).toBe(pkg.version);
     });
 
     it('exports RecordingService class', () => {
