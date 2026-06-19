@@ -69,6 +69,8 @@ export const I18N_EN = {
     EXPORT_CANCEL: 'Cancel',
     EXPORT_EMPTY: 'No tests to export.',
     EXPORT_NO_TAGS: 'No tags available.',
+    EXPORT_TAGS_HINT: 'Select one or more tags to preview which tests will be exported.',
+    EXPORT_RESULT_LABEL: 'Tests that will be exported:',
     IMPORT_BTN: '⬇️ Import tests',
     FOLDER_UPDATED_TOAST: '✓ Cypress folder updated',
     FOLDER_ERROR_TOAST: 'Error accessing the folder',

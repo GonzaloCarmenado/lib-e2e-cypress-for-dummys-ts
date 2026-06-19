@@ -201,6 +201,26 @@ describe('Phase 8.4 — ConfigurationElement', () => {
       expect(el.shadowRoot!.querySelector('.export-count b')?.textContent).toBe('1');
     });
 
+    it('"tags" mode shows a hint before any tag is selected', async () => {
+      await persistence.insertTest('a', [], [], ['smoke']);
+      await el.openExportDialog();
+      el.setExportMode('tags');
+      expect(el.shadowRoot!.querySelector('.export-tag-hint')).not.toBeNull();
+      expect(el.shadowRoot!.querySelector('.export-row-static')).toBeNull();
+    });
+
+    it('"tags" mode previews the matching tests once a tag is selected', async () => {
+      await persistence.insertTest('login test', [], [], ['login']);
+      await persistence.insertTest('smoke test', [], [], ['smoke']);
+      await el.openExportDialog();
+      el.setExportMode('tags');
+      el.toggleExportTag('login');
+      const names = [...el.shadowRoot!.querySelectorAll('.export-row-static .export-row-name')]
+        .map((n) => n.textContent);
+      expect(names).toContain('login test');
+      expect(names).not.toContain('smoke test');
+    });
+
     it('clicking a [data-export-mode] button switches the mode', async () => {
       await persistence.insertTest('a');
       await el.openExportDialog();

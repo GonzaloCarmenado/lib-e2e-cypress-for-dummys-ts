@@ -51,10 +51,24 @@ export function renderExportOverlay(state: ConfigurationState, t: (key: string) 
         </label>`).join('')}</div>`;
   } else {
     const allTags = [...new Set(exportTests.flatMap((test) => test.tags ?? []))].sort();
-    body = allTags.length
-      ? `<div class="export-tags">${allTags.map((tag) =>
-          `<button class="export-tag ${exportSelectedTags.has(tag) ? 'active' : ''}" data-export-tag="${escAttr(tag)}">${escHtml(tag)}</button>`).join('')}</div>`
-      : `<div class="export-empty">${t('CONFIG.EXPORT_NO_TAGS')}</div>`;
+    if (!allTags.length) {
+      body = `<div class="export-empty">${t('CONFIG.EXPORT_NO_TAGS')}</div>`;
+    } else {
+      const chips = `<div class="export-tags">${allTags.map((tag) =>
+        `<button class="export-tag ${exportSelectedTags.has(tag) ? 'active' : ''}" data-export-tag="${escAttr(tag)}">${escHtml(tag)}</button>`).join('')}</div>`;
+      // Preview the tests that the selected tags resolve to, so QA sees exactly
+      // what will be exported.
+      const matched = selectTestsForExport(exportTests, 'tags', { tags: exportSelectedTags });
+      const preview = exportSelectedTags.size === 0
+        ? `<div class="export-tag-hint">${t('CONFIG.EXPORT_TAGS_HINT')}</div>`
+        : `<div class="export-result-label">${t('CONFIG.EXPORT_RESULT_LABEL')}</div>
+           <div class="export-list">${matched.map((test) => `
+             <div class="export-row export-row-static">
+               <span class="export-row-name">${escHtml(test.name)}</span>
+               ${(test.tags ?? []).map((tag) => `<span class="export-row-tag">${escHtml(tag)}</span>`).join('')}
+             </div>`).join('')}</div>`;
+      body = chips + preview;
+    }
   }
 
   return `

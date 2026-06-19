@@ -69,6 +69,8 @@ export const I18N_IT = {
     EXPORT_CANCEL: 'Annulla',
     EXPORT_EMPTY: 'Nessun test da esportare.',
     EXPORT_NO_TAGS: 'Nessun tag disponibile.',
+    EXPORT_TAGS_HINT: 'Seleziona uno o più tag per vedere quali test verranno esportati.',
+    EXPORT_RESULT_LABEL: 'Test che verranno esportati:',
     IMPORT_BTN: '⬇️ Importa test',
     FOLDER_UPDATED_TOAST: '✓ Cartella Cypress aggiornata',
     FOLDER_ERROR_TOAST: "Errore durante l'accesso alla cartella",

@@ -69,6 +69,8 @@ export const I18N_DE = {
     EXPORT_CANCEL: 'Abbrechen',
     EXPORT_EMPTY: 'Keine Tests zum Exportieren.',
     EXPORT_NO_TAGS: 'Keine Tags verfügbar.',
+    EXPORT_TAGS_HINT: 'Wähle ein oder mehrere Tags, um zu sehen, welche Tests exportiert werden.',
+    EXPORT_RESULT_LABEL: 'Diese Tests werden exportiert:',
     IMPORT_BTN: '⬇️ Tests importieren',
     FOLDER_UPDATED_TOAST: '✓ Cypress-Ordner aktualisiert',
     FOLDER_ERROR_TOAST: 'Fehler beim Zugriff auf den Ordner',

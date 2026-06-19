@@ -98,7 +98,7 @@ export const CONFIGURATION_STYLES = `
     display: flex; align-items: center; justify-content: center; padding: 20px;
   }
   .export-modal {
-    width: 460px; max-width: 100%; max-height: 80vh;
+    width: 640px; max-width: 100%; max-height: 86vh;
     display: flex; flex-direction: column;
     background: #161b22; border: 1px solid #30363d; border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.5); overflow: hidden;
@@ -115,9 +115,16 @@ export const CONFIGURATION_STYLES = `
   .export-mode:hover { background: #21262d; color: #e6edf3; }
   .export-mode.active { background: rgba(47,129,247,0.15); border-color: #2f81f7; color: #2f81f7; }
   .export-body {
-    padding: 14px 18px; overflow-y: auto; flex: 1; min-height: 80px;
+    padding: 14px 18px; overflow-y: auto; flex: 1; min-height: 160px;
     scrollbar-width: thin; scrollbar-color: #30363d transparent;
   }
+  .export-tag-hint { font-size: 12px; color: #484f58; margin-top: 12px; }
+  .export-result-label {
+    font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.6px;
+    font-weight: 600; margin: 14px 0 6px;
+  }
+  .export-row-static { cursor: default; }
+  .export-row-static:hover { background: transparent; }
   .export-all-desc { font-size: 12px; color: #8b949e; }
   .export-empty { font-size: 12px; color: #484f58; text-align: center; padding: 20px; }
   .export-list { display: flex; flex-direction: column; gap: 4px; }
