@@ -555,7 +555,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       });
     });
 
-    afterEach(() => { container.remove(); });
+    afterEach(() => { container.remove(); vi.mocked(Swal.getPopup).mockReturnValue(null); });
 
     it('appends an advanced-test-editor child element', () => {
       el.showAdvancedEditorDialog();
@@ -574,6 +574,76 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       const child = container.querySelector('advanced-test-editor')!;
       child.dispatchEvent(new CustomEvent('selectorstrategychange', { detail: 'aria-label' }));
       expect(recording.selectorStrategy).toBe('aria-label');
+    });
+
+    it('styles the popup when Swal.getPopup returns an element', () => {
+      const htmlContainer = document.createElement('div');
+      htmlContainer.className = 'swal2-html-container';
+      const popup = document.createElement('div');
+      popup.appendChild(htmlContainer);
+      vi.mocked(Swal.getPopup).mockReturnValue(popup as unknown as HTMLElement);
+      el.showAdvancedEditorDialog();
+      expect(popup.style.height).toBe('600px');
+    });
+
+    it('openfileeditor event on child closes Swal (reopens the file editor)', () => {
+      el.showAdvancedEditorDialog();
+      const child = container.querySelector('advanced-test-editor')!;
+      child.dispatchEvent(new CustomEvent('openfileeditor', {
+        detail: { handle: {}, content: 'x', fileName: 'f.cy.ts', testId: 1, itBlock: '', interceptorsBlock: '', notes: '' },
+      }));
+      expect(Swal.close).toHaveBeenCalled();
+    });
+  });
+
+  describe('showFileEditorDialog didOpen', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'file-editor-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => { container.remove(); });
+
+    it('appends a file-preview child element', () => {
+      (el as any).showFileEditorDialog({}, 'content', 'f.cy.ts', 1, 'it', 'icp', 'notes');
+      expect(container.querySelector('file-preview')).not.toBeNull();
+    });
+
+    it('close event on child calls Swal.close', () => {
+      (el as any).showFileEditorDialog({}, 'content', 'f.cy.ts', 1);
+      const child = container.querySelector('file-preview')!;
+      child.dispatchEvent(new CustomEvent('close'));
+      expect(Swal.close).toHaveBeenCalled();
+    });
+
+    it('save event writes the file content via the handle', async () => {
+      const write = vi.fn();
+      const close = vi.fn();
+      const handle = { createWritable: vi.fn().mockResolvedValue({ write, close }) };
+      (el as any).showFileEditorDialog(handle, 'content', 'f.cy.ts', 1);
+      const child = container.querySelector('file-preview')!;
+      child.dispatchEvent(new CustomEvent('save', { detail: 'new content' }));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(write).toHaveBeenCalledWith('new content');
+      expect(close).toHaveBeenCalled();
+    });
+
+    it('save event does not throw when writing fails', async () => {
+      const handle = { createWritable: vi.fn().mockRejectedValue(new Error('denied')) };
+      (el as any).showFileEditorDialog(handle, 'content', 'f.cy.ts', 1);
+      const child = container.querySelector('file-preview')!;
+      child.dispatchEvent(new CustomEvent('save', { detail: 'x' }));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(Swal.close).toHaveBeenCalled();
     });
   });
 

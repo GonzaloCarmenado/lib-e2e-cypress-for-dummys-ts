@@ -68,6 +68,16 @@ describe('Phase 8.3 — TestEditorElement', () => {
     expect(el.expandedIndex).toBeNull();
   });
 
+  it('clicking a row in select mode toggles its selection instead of expanding', async () => {
+    const id = await persistence.insertTest('selectable');
+    await el.loadTests();
+    el.toggleSelectMode();
+    const row = el.shadowRoot!.querySelector('[data-action="expand"]') as HTMLElement;
+    row.click();
+    expect(el.selectedIds.has(id)).toBe(true);
+    expect(el.expandedIndex).toBeNull();
+  });
+
   it('hasInterceptors returns false when no interceptors loaded', async () => {
     const id = await persistence.insertTest('no interceptors');
     await el.loadTests();
