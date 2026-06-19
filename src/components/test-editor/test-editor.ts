@@ -1,6 +1,7 @@
 import { PersistenceService } from '../../services/persistence.service';
 import type { TestWithDetails } from '../../services/persistence.service';
 import { translationService, type TranslationService } from '../../services/translation.service';
+import { localeForLang } from '../../models/lang.model';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { TEST_EDITOR_STYLES } from './test-editor.styles';
 import { renderTestEditor } from './test-editor.template';
@@ -123,6 +124,7 @@ export class TestEditorElement extends HTMLElement {
       describeName: this.describeName,
       expandedIndex: this.expandedIndex,
       interceptorsByTest: this.interceptorsByTest,
+      locale: localeForLang(this.translation.getLang()),
     }, this.t.bind(this))}`;
 
     this.shadow.getElementById('btn-select-mode')?.addEventListener('click', () => this.toggleSelectMode());

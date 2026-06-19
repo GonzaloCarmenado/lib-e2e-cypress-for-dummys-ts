@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SUPPORTED_LANGS, isLang } from '../src/models/lang.model';
+import { SUPPORTED_LANGS, isLang, localeForLang } from '../src/models/lang.model';
 import { INPUT_TYPES } from '../src/models/input-types.model';
 import { DB_SCHEMA, DB_STORE_NAMES } from '../src/models/db-schema.model';
 
@@ -25,6 +25,18 @@ describe('Phase 1 — Models', () => {
       expect(isLang('')).toBe(false);
       expect(isLang('ES')).toBe(false);
       expect(isLang('english')).toBe(false);
+    });
+
+    it('localeForLang maps each language to its BCP-47 locale', () => {
+      expect(localeForLang('es')).toBe('es-ES');
+      expect(localeForLang('en')).toBe('en-GB');
+      expect(localeForLang('fr')).toBe('fr-FR');
+      expect(localeForLang('it')).toBe('it-IT');
+      expect(localeForLang('de')).toBe('de-DE');
+    });
+
+    it('localeForLang falls back to es-ES for an unknown code', () => {
+      expect(localeForLang('xx')).toBe('es-ES');
     });
   });
 

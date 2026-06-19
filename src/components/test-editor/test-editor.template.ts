@@ -1,6 +1,6 @@
 import { escHtml, escAttr } from '../../utils/html.utils';
 import { syntaxHighlight } from '../../utils/syntax-highlight.utils';
-import { normalizeBlock } from '../../utils/code-format.utils';
+import { normalizeBlock, escapeSingleQuotes } from '../../utils/code-format.utils';
 import type { TestWithDetails } from '../../services/persistence.service';
 
 export interface TestEditorState {
@@ -13,10 +13,11 @@ export interface TestEditorState {
   describeName: string;
   expandedIndex: number | null;
   interceptorsByTest: Record<number, string[]>;
+  locale: string;
 }
 
 export function renderTestEditor(state: TestEditorState, t: (key: string) => string): string {
-  const { tags, visible, selectedVisible, activeTag, selectMode, selectedIds, describeName, expandedIndex, interceptorsByTest } = state;
+  const { tags, visible, selectedVisible, activeTag, selectMode, selectedIds, describeName, expandedIndex, interceptorsByTest, locale } = state;
 
   const tagFilterHtml = tags.length
     ? `<div class="tag-filter">
@@ -34,7 +35,7 @@ export function renderTestEditor(state: TestEditorState, t: (key: string) => str
 
   const rows = visible.map((test, i) => {
     const expanded = expandedIndex === i;
-    const date = new Date(test.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const date = new Date(test.createdAt).toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     const icps = interceptorsByTest[test.id] ?? test.interceptors ?? [];
     const tagsHtml = (test.tags ?? []).length
       ? `<span class="test-tags">${(test.tags ?? []).map((tag) => `<span class="test-tag">${escHtml(tag)}</span>`).join('')}</span>`
@@ -43,7 +44,7 @@ export function renderTestEditor(state: TestEditorState, t: (key: string) => str
       ? `<input type="checkbox" ${selectedIds.has(test.id) ? 'checked' : ''} data-select="${test.id}" />`
       : '';
     const hasIcps = (test.interceptors ?? []).length > 0;
-    const itBlockCode = `it('${test.name}', () => {\n${(test.commands ?? []).map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
+    const itBlockCode = `it('${escapeSingleQuotes(test.name)}', () => {\n${(test.commands ?? []).map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
     const icpBlockCode = icps.length ? `beforeEach(() => {\n  // Auto-generated Cypress interceptors\n${icps.map(c => normalizeBlock(c, '  ')).join('\n')}\n});` : '';
     const notesHtml = (expanded && test.notes)
       ? `<p class="test-notes">${escHtml(test.notes)}</p>`
