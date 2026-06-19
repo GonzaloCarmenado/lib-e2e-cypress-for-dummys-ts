@@ -146,7 +146,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
 
   it('it() copy button is absent when only interceptorsBlock is set', () => {
     const fresh = document.createElement('file-preview') as FilePreviewElement;
-    fresh.interceptorsBlock = "beforeEach(() => {});";
+    fresh.interceptorsBlock = 'beforeEach(() => {});';
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('#btn-copy-it')).toBeNull();
     fresh.remove();

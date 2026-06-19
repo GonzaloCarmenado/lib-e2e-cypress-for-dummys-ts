@@ -299,7 +299,7 @@ describe('Phase 4 — RecordingService', () => {
       expect(service.getCommandsSnapshot().length).toBe(before + 1);
     });
 
-    it("escapes single quotes in the typed value", () => {
+    it('escapes single quotes in the typed value', () => {
       const inp = makeElement('input', { 'data-cy': 'name', type: 'text' }) as HTMLInputElement;
       input(inp, "O'Brien");
       vi.advanceTimersByTime(1000);

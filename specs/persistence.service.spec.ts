@@ -78,7 +78,7 @@ describe('Phase 5 — PersistenceService', () => {
     it('returns a non-empty interceptorsBlock when interceptors exist', async () => {
       const id = await service.insertTest('with ints', [], ["cy.intercept('GET', '**/api').as('api')"]);
       const test = await service.getTestById(id);
-      expect(test.interceptorsBlock).toContain("cy.intercept");
+      expect(test.interceptorsBlock).toContain('cy.intercept');
     });
 
     it('returns an empty interceptorsBlock when no interceptors', async () => {

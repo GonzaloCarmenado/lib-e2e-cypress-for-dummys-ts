@@ -44,6 +44,12 @@ export default tseslint.config(
 
       // console.log no debería quedarse en producción
       'no-console': 'warn',
+
+      // ── Estilo (house style: comillas simples + punto y coma) ─────────────
+      // avoidEscape permite comillas dobles cuando la cadena contiene comillas
+      // simples (p. ej. selectores "cy.get('[data-cy]')"), y se permiten plantillas.
+      'quotes': ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
+      'semi': ['error', 'always'],
     },
   },
 

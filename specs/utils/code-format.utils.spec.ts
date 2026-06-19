@@ -43,13 +43,13 @@ describe('normalizeBlock', () => {
 
   it('detects indent step via GCD and fixes pathological indentation', () => {
     // Original: before at col 0, body at col 8, close at col 4 → step=GCD(8,4)=4
-    const input = "before(() => {\n        cy.intercept()\n    });";
+    const input = 'before(() => {\n        cy.intercept()\n    });';
     // indents [0,8,4], minIndent=0, relIndents=[8,4], GCD=4, step=4
     // before→level 0 → '  before'
     // cy.intercept→level 2 → '      cy.intercept'
     // });→level 1 → '    });'
     expect(normalizeBlock(input, '  ')).toBe(
-      "  before(() => {\n      cy.intercept()\n    });"
+      '  before(() => {\n      cy.intercept()\n    });'
     );
   });
 

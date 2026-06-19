@@ -51,7 +51,7 @@ export const I18N_IT = {
     SELECTOR_OPT_TESTID: 'data-testid',
     SELECTOR_OPT_ARIA: 'aria-label',
     SELECTOR_OPT_ID: 'id (#elemento)',
-    SELECTOR_HINT: "Il registratore cercherà prima questo attributo. Se assente, proverà gli altri.",
+    SELECTOR_HINT: 'Il registratore cercherà prima questo attributo. Se assente, proverà gli altri.',
     FOLDER_SECTION: '📁 Cartella Cypress',
     FOLDER_CONNECTED: 'connesso —',
     FOLDER_NOT_SET: 'non configurato',
