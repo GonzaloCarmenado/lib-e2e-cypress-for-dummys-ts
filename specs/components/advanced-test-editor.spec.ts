@@ -318,6 +318,116 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
 
   // ── createNewFolder ───────────────────────────────────────────────────────
 
+  describe('createNewFile', () => {
+    it('does nothing when _e2eHandle is null', async () => {
+      (el as any)._e2eHandle = null;
+      await expect(el.createNewFile('whatever')).resolves.toBeUndefined();
+    });
+
+    it('does nothing when the name is empty', async () => {
+      const getFileHandle = vi.fn();
+      (el as any)._e2eHandle = { getFileHandle };
+      await el.createNewFile('   ');
+      expect(getFileHandle).not.toHaveBeenCalled();
+    });
+
+    it('creates a <name>.cy.ts file with a describe/it scaffold', async () => {
+      const write = vi.fn();
+      const close = vi.fn();
+      const getFileHandle = vi.fn().mockResolvedValue({ createWritable: vi.fn().mockResolvedValue({ write, close }) });
+      (el as any)._e2eHandle = { getFileHandle };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await el.createNewFile('login');
+      expect(getFileHandle).toHaveBeenCalledWith('login.cy.ts', { create: true });
+      const written = write.mock.calls[0][0] as string;
+      expect(written).toContain("describe('login'");
+      expect(written).toContain("it('should '");
+    });
+
+    it('strips a trailing .cy.ts from the typed name', async () => {
+      const getFileHandle = vi.fn().mockResolvedValue({ createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }) });
+      (el as any)._e2eHandle = { getFileHandle };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await el.createNewFile('login.cy.ts');
+      expect(getFileHandle).toHaveBeenCalledWith('login.cy.ts', { create: true });
+    });
+
+    it('refreshes the tree and resets isCreatingFile after creating', async () => {
+      const getFileHandle = vi.fn().mockResolvedValue({ createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }) });
+      (el as any)._e2eHandle = { getFileHandle };
+      const refresh = vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      el.isCreatingFile = true;
+      await el.createNewFile('login');
+      expect(el.isCreatingFile).toBe(false);
+      expect(refresh).toHaveBeenCalled();
+    });
+
+    it('does not throw when getFileHandle rejects', async () => {
+      const getFileHandle = vi.fn().mockRejectedValue(new Error('denied'));
+      (el as any)._e2eHandle = { getFileHandle };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await expect(el.createNewFile('login')).resolves.toBeUndefined();
+    });
+
+    it('btn-new-file toggles the file form open', () => {
+      (el as any).hasPermission = true;
+      (el as any).render();
+      const btn = el.shadowRoot!.getElementById('btn-new-file') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+      expect(el.isCreatingFile).toBe(true);
+      expect(el.shadowRoot!.getElementById('input-new-file')).not.toBeNull();
+    });
+
+    it('opening the file form closes the folder form', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFolder = true;
+      (el as any).render();
+      (el.shadowRoot!.getElementById('btn-new-file') as HTMLElement).click();
+      expect(el.isCreatingFolder).toBe(false);
+      expect(el.isCreatingFile).toBe(true);
+    });
+
+    it('btn-new-file-confirm calls createNewFile with the input value', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFile = true;
+      (el as any).render();
+      const input = el.shadowRoot!.getElementById('input-new-file') as HTMLInputElement;
+      input.value = 'my-test';
+      const spy = vi.spyOn(el, 'createNewFile').mockResolvedValue(undefined);
+      (el.shadowRoot!.getElementById('btn-new-file-confirm') as HTMLElement).click();
+      expect(spy).toHaveBeenCalledWith('my-test');
+    });
+
+    it('btn-new-file-cancel closes the file form', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFile = true;
+      (el as any).render();
+      (el.shadowRoot!.getElementById('btn-new-file-cancel') as HTMLElement).click();
+      expect(el.isCreatingFile).toBe(false);
+    });
+
+    it('pressing Enter in the file input calls createNewFile', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFile = true;
+      (el as any).render();
+      const input = el.shadowRoot!.getElementById('input-new-file') as HTMLInputElement;
+      input.value = 'typed';
+      const spy = vi.spyOn(el, 'createNewFile').mockResolvedValue(undefined);
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(spy).toHaveBeenCalledWith('typed');
+    });
+
+    it('pressing Escape in the file input closes the file form', () => {
+      (el as any).hasPermission = true;
+      el.isCreatingFile = true;
+      (el as any).render();
+      const input = el.shadowRoot!.getElementById('input-new-file') as HTMLInputElement;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      expect(el.isCreatingFile).toBe(false);
+    });
+  });
+
   describe('createNewFolder', () => {
     it('does nothing when _e2eHandle is null', async () => {
       (el as any)._e2eHandle = null;
