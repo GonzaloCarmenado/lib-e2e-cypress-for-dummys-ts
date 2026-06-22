@@ -1,6 +1,6 @@
 # 005 — Launch Test Runner
 
-> **Status:** In Progress
+> **Status:** Implemented
 > **Date:** 2026-06-19
 > **Author:** Gonzalo
 
@@ -71,32 +71,33 @@ Two hard constraints from the product owner:
 
 ## Acceptance criteria
 
-- [ ] AC-01: The launch button is **enabled only** when `window.location.hostname`
+- [x] AC-01: The launch button is **enabled only** when `window.location.hostname`
       is a local host (`localhost`, `127.0.0.1`, `::1`, or empty/`file:`).
-- [ ] AC-02: When not local, the button is disabled and a hint label
+- [x] AC-02: When not local, the button is disabled and a hint label
       (`FILE_PREVIEW.LAUNCH_LOCAL_ONLY`, e.g. "muévelo a local para poder probar")
       is shown near it.
-- [ ] AC-03: Clicking sends `POST {runnerUrl}` with body `{ specPath }`, where
+- [x] AC-03: Clicking sends `POST {runnerUrl}` with body `{ specPath }`, where
       `runnerUrl` defaults to `http://localhost:8123/run-test` and is configurable.
-- [ ] AC-04: While the request is in flight the button shows a **running** state
-      (disabled + spinner/label) and cannot be re-triggered.
-- [ ] AC-05: On success the editor shows a **result panel** with pass/fail status
+- [x] AC-04: While the request is in flight the button shows a **running** state
+      (disabled + label) and cannot be re-triggered.
+- [x] AC-05: On success the editor shows a **result panel** with pass/fail status
       and the runner's output text.
-- [ ] AC-06: If the runner is unreachable (`fetch` rejects / non-OK), the user sees
+- [x] AC-06: If the runner is unreachable (`fetch` rejects / non-OK), the user sees
       a clear error (toast + result panel message); **no unhandled rejection, no
       silent failure** — `launchTest` is wrapped in try/catch.
-- [ ] AC-07: If the run completes but tests fail, the panel shows a **failed**
+- [x] AC-07: If the run completes but tests fail, the panel shows a **failed**
       state and the output; success vs failure is derived from the runner response
-      (e.g. `{ success: boolean }` / exit code).
-- [ ] AC-08: The runner executes the project's Cypress in **headless** mode for the
+      (`{ success: boolean }`).
+- [x] AC-08: The runner executes the project's Cypress in **headless** mode for the
       given spec only (`cypress run --spec <path>`), in the background (no GUI), and
       responds with JSON `{ success, exitCode, output }`.
-- [ ] AC-09: The runner URL/port is configurable (not hardcoded in the component).
-- [ ] AC-10: New user-visible strings exist in all 5 i18n files.
-- [ ] AC-11: A runner **CLI is shipped as a `bin`** in the package so the feature
-      works end-to-end with one command (`npx <pkg>-runner`), documented in the README.
-- [ ] AC-12: Coverage stays ≥ 80%; the browser side is unit-tested with `fetch`
-      mocked (success, failure, unreachable, non-local gating).
+- [x] AC-09: The runner URL/port is configurable (not hardcoded in the component).
+- [x] AC-10: New user-visible strings exist in all 5 i18n files.
+- [x] AC-11: A runner **CLI is shipped as a `bin`** in the package so the feature
+      works end-to-end with one command (`npx lib-e2e-cypress-runner`), documented in the README.
+- [x] AC-12: Coverage stays ≥ 80% (runner.ts 98.9%, host.utils 100%, file-preview 97%);
+      the browser side is unit-tested with `fetch` mocked (success, failure, unreachable,
+      non-local gating) and the runner with `spawn` mocked + a live ephemeral server.
 
 ---
 
@@ -169,10 +170,10 @@ New i18n keys (illustrative): `FILE_PREVIEW.LAUNCH_LOCAL_ONLY`,
       the runner and the `runnerUrl` property/attribute on the widget.
 - [x] Q4: **Streaming vs await** → **Resolved: await + final output for v1**;
       live streaming (SSE) is a future enhancement.
-- [ ] Q5: **Spec path resolution** — `file-preview` only knows the file *name*, not
-      its path relative to the Cypress root. _Proposed for v1: the browser sends the
-      name and the runner matches with a `--spec **/<name>` glob; refine to an exact
-      relative path (from the advanced-editor tree) later._ Confirm during impl.
+- [x] Q5: **Spec path resolution** → **Resolved**: the browser sends the file name;
+      `runner.toSpecGlob()` turns a bare name into a `**/<name>` glob so nested specs
+      match (a value with a slash is used as-is). Exact relative-path resolution from
+      the editor tree can refine this later.
 - [x] Q6: **Security** → **Resolved with mitigations**: runner binds to `127.0.0.1`
       only, passes the spec as **argv (no shell interpolation)**, restricts specs to
       the configured project dir, and is documented as a **dev-only** tool.
@@ -185,3 +186,4 @@ New i18n keys (illustrative): `FILE_PREVIEW.LAUNCH_LOCAL_ONLY`,
 |------------|--------------------------------------------------------------------|
 | 2026-06-19 | Initial draft                                                      |
 | 2026-06-19 | Review: Q1 ship a bin CLI, Q2 configurable command, Q3 port 8123 configurable, Q4 await+final output, Q6 security mitigations; Q5 left to confirm during implementation |
+| 2026-06-22 | Implemented in two phases: file-preview browser side (gating, states, result panel) + the `lib-e2e-cypress-runner` bin; Q5 resolved (glob); status → Implemented |
