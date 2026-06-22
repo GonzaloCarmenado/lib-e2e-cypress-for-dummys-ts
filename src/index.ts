@@ -1,6 +1,6 @@
 // Public API — populated as migration phases are completed
 // Keep in sync with package.json "version" (asserted in specs/public-api.spec.ts).
-export const VERSION = '0.3.0';
+export const VERSION = '0.4.0';
 
 // Phase 1 — Models
 export * from './models/lang.model';
