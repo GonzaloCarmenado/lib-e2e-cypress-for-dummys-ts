@@ -291,6 +291,42 @@ cypress/          ← select this folder
 
 ---
 
+### Running a spec from the editor (local runner)
+
+Inside the manual editor (**✏️ Editar manualmente**) the **▶ Lanzar test** button runs
+**only the spec you are editing**, headless (no Cypress GUI), and shows the result
+(pass/fail + output) right in the editor — for a fast record → tweak → run loop.
+
+The browser can't spawn Cypress, so it talks to a tiny **local runner** over HTTP.
+Start it once in your Cypress project:
+
+```bash
+npx lib-e2e-cypress-runner            # listens on http://127.0.0.1:8123
+```
+
+Options:
+
+| Flag | Default | Description |
+|---|---|---|
+| `--port` | `8123` | Port to listen on. |
+| `--command` | `npx cypress run --spec {spec}` | Command to run. `{spec}` is replaced by the spec (passed as a single argv, never through a shell). |
+| `--cwd` | current dir | Working directory the command runs in. |
+| `--host` | `127.0.0.1` | Bind address (local only). |
+
+The widget POSTs `{ specPath }` to `http://localhost:8123/run-test`; configure a
+different endpoint via the `runnerUrl` property of `<file-preview>` if needed.
+
+Notes:
+- The button is **enabled only when the app is served from localhost**. On a deployed
+  environment it is disabled with a *"muévelo a local para poder probar"* hint —
+  running a local Cypress against a remote build makes no sense.
+- If no runner is reachable you get a clear "no runner detected" message (no silent
+  failure).
+- The runner is a **dev-only** tool: it binds to `127.0.0.1` and passes the spec as an
+  argument (no shell interpolation). Don't expose it beyond your machine.
+
+---
+
 ### Recording history
 
 The last **5 recordings** are automatically saved to `localStorage` so you never lose work if you accidentally close the dialog without saving. Use `recorder.recoverLastRecording()` to restore the most recent recording programmatically.
