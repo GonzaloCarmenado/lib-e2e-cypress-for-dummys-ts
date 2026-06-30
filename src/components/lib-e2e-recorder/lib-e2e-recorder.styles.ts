@@ -1,12 +1,48 @@
+import type { ExpandDirection } from '../../utils/widget-position.utils';
+
+const DIRECTIONS: ExpandDirection[] = ['up-left', 'up-right', 'down-left', 'down-right'];
+
+/**
+ * Per-direction anchors + label placement. The toggle sits at the box corner
+ * nearest the screen edge so the radial arc always expands toward the viewport
+ * interior (spec 007). --sx/--sy drive the arc transforms; the actual widget
+ * position (left/top) is set imperatively from JS.
+ */
+function directionBlocks(): string {
+  return DIRECTIONS.map((dir) => {
+    const sx = dir.endsWith('left') ? -1 : 1;
+    const sy = dir.startsWith('up') ? -1 : 1;
+    const tv = dir.startsWith('up') ? 'bottom' : 'top';   // toggle vertical side
+    const th = dir.endsWith('left') ? 'right' : 'left';   // toggle horizontal side
+    const ov = tv === 'bottom' ? 'top' : 'bottom';        // interior vertical side
+    const oh = th === 'right' ? 'left' : 'right';          // interior (arc) horizontal side
+    const sel = `.widget[data-expand="${dir}"]`;
+
+    // Diagonal labels (n2/n3) sit on the arc's horizontal side; vertical-extreme
+    // (n1) and horizontal-extreme (n4) labels sit on the interior vertical side.
+    const labelGeneral = `${sel} .btn-action::after { ${oh}: calc(100% + 9px); ${th}: auto; top: 50%; bottom: auto; transform: translateY(-50%); }`;
+    const labelEnds = `${sel} .btn-action[data-n="1"]::after, ${sel} .btn-action[data-n="4"]::after { ${ov}: calc(100% + 9px); ${tv}: auto; left: 50%; right: auto; transform: translateX(-50%); }`;
+
+    return `
+      ${sel} { --sx: ${sx}; --sy: ${sy}; }
+      ${sel} .btn-toggle { ${tv}: 24px; ${th}: 24px; ${ov}: auto; ${oh}: auto; }
+      ${sel} .btn-pause  { ${tv}: 78px; ${th}: 24px; ${ov}: auto; ${oh}: auto; }
+      ${sel} .btn-action { ${tv}: 28px; ${th}: 28px; ${ov}: auto; ${oh}: auto; }
+      ${labelGeneral}
+      ${labelEnds}
+    `;
+  }).join('\n');
+}
+
 export function getRecorderStyles(rec: boolean, paused: boolean): string {
   return `
     :host { all: initial; }
     *, *::before, *::after { box-sizing: border-box; }
 
     /*
-     * Invisible 190×190 hit area anchored at bottom-right.
-     * Keeps :hover alive while the cursor travels from the
-     * toggle to any of the radial action buttons.
+     * Invisible 190×190 hit area. Position (left/top) is set from JS so the
+     * widget can be dragged; --sx/--sy + data-expand orient the radial menu so
+     * it always expands toward the viewport interior. Defaults to bottom-right.
      */
     .widget {
       position: fixed;
@@ -15,6 +51,8 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       width: 190px;
       height: 190px;
       z-index: 2147483647;
+      --sx: -1;
+      --sy: -1;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
@@ -27,7 +65,8 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       height: 44px;
       border-radius: 50%;
       border: none;
-      cursor: pointer;
+      cursor: grab;
+      touch-action: none;
       font-size: 19px;
       background: ${rec
         ? 'linear-gradient(135deg,#f85149 0%,#da3633 100%)'
@@ -44,7 +83,7 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       ${rec ? 'animation: toggle-pulse 2s ease-in-out infinite;' : ''}
     }
     .btn-toggle:hover  { transform: scale(1.1); }
-    .btn-toggle:active { transform: scale(0.93); }
+    .btn-toggle:active { transform: scale(0.93); cursor: grabbing; }
 
     @keyframes toggle-pulse {
       0%,100% { box-shadow: 0 4px 20px rgba(248,81,73,.55),0 0 0 4px rgba(248,81,73,.13); }
@@ -77,11 +116,6 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
     .btn-pause:active { transform: scale(0.93); }
 
     /* ── Action buttons ──────────────────────────────── */
-    /*
-     * All three start centered on the toggle button
-     * (toggle center = bottom:46px right:46px from widget edge;
-     *  button half = 18px → bottom:28px right:28px).
-     */
     .btn-action {
       position: absolute;
       bottom: 28px;
@@ -103,12 +137,11 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       opacity: 0;
       transform: scale(0.35);
       pointer-events: none;
-      /* Collapse: fast, no spring */
       transition: opacity .15s, transform .18s ease-in,
                   background .15s, color .12s, box-shadow .15s;
     }
 
-    /* Label to the left of each button */
+    /* Label chip */
     .btn-action::after {
       content: attr(data-label);
       position: absolute;
@@ -128,14 +161,6 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       border: 1px solid rgba(48,54,61,.8);
       box-shadow: 0 2px 8px rgba(0,0,0,.35);
     }
-    /* Button 1 (top) — label above instead of left to avoid overlap with btn 2 */
-    .btn-action[data-n="1"]::after {
-      right: auto;
-      left: 50%;
-      top: auto;
-      bottom: calc(100% + 9px);
-      transform: translateX(-50%);
-    }
     .btn-action:hover::after   { opacity: 1; }
     .btn-action:hover          { background: #21262d; color: #e6edf3; }
     .btn-action:active         { background: #30363d !important; }
@@ -148,31 +173,26 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
                   background .15s, color .12s, box-shadow .15s;
     }
 
-    /* Arc positions — 4 buttons, 30° spacing, radius 90px */
-    .widget:hover .btn-action[data-n="1"] {   /* 0°  — straight up   */
-      transform: translateY(-90px) scale(1);
+    /* Arc positions — signs come from --sx/--sy (data-expand) */
+    .widget:hover .btn-action[data-n="1"] {   /* vertical extreme */
+      transform: translateY(calc(var(--sy) * 90px)) scale(1);
       transition-delay: .03s;
     }
-    .widget:hover .btn-action[data-n="2"] {   /* 30° — upper-left    */
-      transform: translate(-45px,-78px) scale(1);
+    .widget:hover .btn-action[data-n="2"] {   /* diagonal near-vertical */
+      transform: translate(calc(var(--sx) * 45px), calc(var(--sy) * 78px)) scale(1);
       transition-delay: .07s;
     }
-    .widget:hover .btn-action[data-n="3"] {   /* 60° — left-upper    */
-      transform: translate(-78px,-45px) scale(1);
+    .widget:hover .btn-action[data-n="3"] {   /* diagonal near-horizontal */
+      transform: translate(calc(var(--sx) * 78px), calc(var(--sy) * 45px)) scale(1);
       transition-delay: .11s;
     }
-    .widget:hover .btn-action[data-n="4"] {   /* 90° — straight left */
-      transform: translateX(-90px) scale(1);
+    .widget:hover .btn-action[data-n="4"] {   /* horizontal extreme */
+      transform: translateX(calc(var(--sx) * 90px)) scale(1);
       transition-delay: .15s;
     }
-    /* Button 4 (pure left) — label above to avoid going off-screen */
-    .btn-action[data-n="4"]::after {
-      right: auto;
-      left: 50%;
-      top: auto;
-      bottom: calc(100% + 9px);
-      transform: translateX(-50%);
-    }
+
+    /* Per-direction anchors + label sides */
+    ${directionBlocks()}
 
     /* ── REC / PAUSED badge ──────────────────────────── */
     .rec-badge {
