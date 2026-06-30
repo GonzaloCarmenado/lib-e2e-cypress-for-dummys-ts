@@ -936,6 +936,42 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       after.remove();
     });
 
+    it('re-parenting the element (moving the same node to a new container) keeps it recording and capturing', async () => {
+      const db = new PersistenceService(`reparent_db_${++dbCounter}`);
+      await db.setConfig({ allowReadWriteFiles: 'false' });
+      const c1 = document.createElement('div');
+      const c2 = document.createElement('div');
+      document.body.append(c1, c2);
+
+      const el2 = document.createElement('lib-e2e-recorder') as LibE2eRecorderElement;
+      el2.persistence = db;
+      el2.translation = new TranslationService();
+      c1.appendChild(el2);
+      el2.toggle(); // start recording in container 1
+
+      const first = makeBtn('reparent-a');
+      click(first);
+      expect(el2.recording.getCommandsSnapshot()).toContain('cy.get(\'[data-cy="reparent-a"]\').click()');
+
+      // Move the SAME element node into container 2 (fires disconnect → connect).
+      c2.appendChild(el2);
+      await vi.waitFor(() =>
+        expect(el2.recording.getCommandsSnapshot()).toContain('cy.get(\'[data-cy="reparent-a"]\').click()'),
+      );
+      expect(el2.isRecording).toBe(true);
+
+      // The core guarantee: it still captures DOM events after the move.
+      const second = makeBtn('reparent-b');
+      click(second);
+      expect(el2.recording.getCommandsSnapshot()).toContain('cy.get(\'[data-cy="reparent-b"]\').click()');
+
+      el2.remove();
+      c1.remove();
+      c2.remove();
+      first.remove();
+      second.remove();
+    });
+
     it('a drag ending off the toggle does not swallow the next genuine click', () => {
       const toggle = el.shadowRoot!.querySelector('[data-action="toggle"]') as HTMLElement;
       const down = (x: number, y: number) => toggle.dispatchEvent(new MouseEvent('pointerdown', { clientX: x, clientY: y, bubbles: true }));

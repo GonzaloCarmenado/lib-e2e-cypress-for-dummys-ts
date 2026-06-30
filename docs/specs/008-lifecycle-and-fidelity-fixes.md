@@ -124,3 +124,4 @@ None. Internal behaviour/lifecycle only.
 |------------|--------------------------------------------------------------------|
 | 2026-06-30 | Initial draft from the post-006/007 review: 4 fixes (reconnect lifecycle, interceptor recording-gate, sticky drag-click suppression, assertion-builder escaping) + regression tests. |
 | 2026-06-30 | Implemented. Fix 1 done via `_needsRecordingRebuild` flag (not nulling the reference — avoids a race where a deferred save hit `undefined.clearCommands`). Gates green (lint 0, 806 tests, coverage 95.9%, build 0). Status → Implemented. |
+| 2026-06-30 | Added an explicit **re-parenting** regression test (move the same element node to a new container → still records & captures), the realistic scenario that triggered the AC-01 bug. Test-only; no re-release. |
