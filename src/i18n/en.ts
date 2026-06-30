@@ -84,6 +84,9 @@ export const I18N_EN = {
     START_HIDDEN_SECTION: '👁 Widget visibility',
     START_HIDDEN_TITLE: 'Start hidden',
     START_HIDDEN_SUB: 'The widget starts invisible. Use Ctrl+Shift+E to show or hide it.',
+    RESUME_TTL_SECTION: '⏱ Recording continuity',
+    RESUME_TTL_LABEL: 'Resume without asking (minutes)',
+    RESUME_TTL_HINT: 'If you reload or switch projects, an active recording resumes without asking within this window. After that, you will be asked to continue or discard.',
   },
   SELECTOR_PICKER: {
     TITLE: 'Select a DOM element',
@@ -182,5 +185,10 @@ export const I18N_EN = {
     BADGE_REC: '● REC',
     STOP_TITLE: 'Stop (Ctrl+R)',
     START_TITLE: 'Record (Ctrl+R)',
+    SESSION_RESUME_TITLE: '⏺ Recording in progress',
+    SESSION_RESUME_TEXT: 'There is an unfinished active recording.',
+    SESSION_RESUME_COUNT: 'commands captured',
+    SESSION_CONTINUE_BTN: 'Keep recording',
+    SESSION_DISCARD_BTN: 'Discard',
   },
 };

@@ -14,6 +14,21 @@ import type { LibE2eRecorderElement } from '../../src/components/lib-e2e-recorde
 import { RecordingService } from '../../src/services/recording.service';
 import { PersistenceService } from '../../src/services/persistence.service';
 import { TranslationService } from '../../src/services/translation.service';
+import { ACTIVE_SESSION_BREADCRUMB_KEY, type ActiveSessionState } from '../../src/models/active-session.model';
+
+function makeSession(overrides: Partial<ActiveSessionState> = {}): ActiveSessionState {
+  return {
+    sessionId: 's-1',
+    isRecording: true,
+    isPaused: false,
+    commands: ["cy.visit('/app-a')", "cy.get('#go').click()"],
+    interceptors: [],
+    selectorStrategy: 'data-cy',
+    startedAt: Date.now(),
+    updatedAt: Date.now(),
+    ...overrides,
+  };
+}
 
 let dbCounter = 0;
 
@@ -706,5 +721,80 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     const renderSpy = vi.spyOn(el as any, 'render');
     translation.setLang('de');
     expect(renderSpy).toHaveBeenCalled();
+  });
+
+  // ── cross-app session continuity (spec 006) ───────────────────────────────
+
+  describe('cross-app session continuity', () => {
+    beforeEach(() => {
+      localStorage.removeItem(ACTIVE_SESSION_BREADCRUMB_KEY);
+    });
+
+    it('hasActiveSession() is false when there is no breadcrumb', () => {
+      expect(el.hasActiveSession()).toBe(false);
+    });
+
+    it('hasActiveSession() is true when the breadcrumb marks a recording', () => {
+      localStorage.setItem(ACTIVE_SESSION_BREADCRUMB_KEY, JSON.stringify({ sessionId: 'x', isRecording: true, updatedAt: Date.now() }));
+      expect(el.hasActiveSession()).toBe(true);
+    });
+
+    it('starting a recording writes the active-session breadcrumb', () => {
+      el.toggle(); // start
+      expect(el.hasActiveSession()).toBe(true);
+    });
+
+    it('stopping a recording clears the active-session breadcrumb', () => {
+      el.toggle(); // start — writes breadcrumb
+      el.toggle(); // stop  — clears it
+      expect(localStorage.getItem(ACTIVE_SESSION_BREADCRUMB_KEY)).toBeNull();
+    });
+
+    it('discardSession() clears the breadcrumb and the persisted record', () => {
+      localStorage.setItem(ACTIVE_SESSION_BREADCRUMB_KEY, JSON.stringify({ sessionId: 'x', isRecording: true, updatedAt: Date.now() }));
+      const spy = vi.spyOn(persistence, 'clearActiveSession');
+      el.discardSession();
+      expect(localStorage.getItem(ACTIVE_SESSION_BREADCRUMB_KEY)).toBeNull();
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('resumes a recent active session on connect (rehydrates the buffer, no bootstrap)', async () => {
+      const db = new PersistenceService(`resume_db_${++dbCounter}`);
+      await db.setConfig({ allowReadWriteFiles: 'false' }); // skip the FS setup dialog
+      await db.saveActiveSession(makeSession());
+      const rec = new RecordingService();
+      const el2 = document.createElement('lib-e2e-recorder') as LibE2eRecorderElement;
+      el2.recording = rec;
+      el2.persistence = db;
+      el2.translation = new TranslationService();
+      document.body.appendChild(el2);
+
+      await vi.waitFor(() => expect(rec.getCommandsSnapshot()).toContain("cy.get('#go').click()"));
+      expect(el2.isRecording).toBe(true);
+      // No bootstrap re-emitted: the buffer is exactly what was persisted.
+      expect(rec.getCommandsSnapshot()).toHaveLength(2);
+
+      el2.remove();
+      rec.destroy();
+    });
+
+    it('does NOT silently resume a stale session (older than the TTL); it prompts instead', async () => {
+      const db = new PersistenceService(`stale_db_${++dbCounter}`);
+      await db.setConfig({ allowReadWriteFiles: 'false' });
+      await db.saveActiveSession(makeSession({ updatedAt: Date.now() - 31 * 60_000 }));
+      const rec = new RecordingService();
+      const el2 = document.createElement('lib-e2e-recorder') as LibE2eRecorderElement;
+      el2.recording = rec;
+      el2.persistence = db;
+      el2.translation = new TranslationService();
+      document.body.appendChild(el2);
+
+      await vi.waitFor(() => expect(Swal.fire).toHaveBeenCalled());
+      // Stale → not auto-restored into the recorder buffer.
+      expect(rec.getCommandsSnapshot()).not.toContain("cy.get('#go').click()");
+
+      el2.remove();
+      rec.destroy();
+    });
   });
 });

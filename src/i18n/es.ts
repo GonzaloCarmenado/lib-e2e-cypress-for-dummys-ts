@@ -84,6 +84,9 @@ export const I18N_ES = {
     START_HIDDEN_SECTION: '👁 Visibilidad del widget',
     START_HIDDEN_TITLE: 'Iniciar oculto',
     START_HIDDEN_SUB: 'El widget arranca invisible. Usa Ctrl+Shift+E para mostrarlo u ocultarlo.',
+    RESUME_TTL_SECTION: '⏱ Continuidad de grabación',
+    RESUME_TTL_LABEL: 'Reanudar sin preguntar (minutos)',
+    RESUME_TTL_HINT: 'Si recargas o cambias de proyecto, una grabación activa se reanuda sin preguntar dentro de este margen. Pasado ese tiempo, te preguntará si continuar o descartar.',
   },
   SELECTOR_PICKER: {
     TITLE: 'Selecciona un elemento del DOM',
@@ -182,5 +185,10 @@ export const I18N_ES = {
     BADGE_REC: '● REC',
     STOP_TITLE: 'Detener (Ctrl+R)',
     START_TITLE: 'Grabar (Ctrl+R)',
+    SESSION_RESUME_TITLE: '⏺ Grabación en curso',
+    SESSION_RESUME_TEXT: 'Hay una grabación activa sin terminar.',
+    SESSION_RESUME_COUNT: 'comandos capturados',
+    SESSION_CONTINUE_BTN: 'Continuar grabando',
+    SESSION_DISCARD_BTN: 'Descartar',
   },
 };

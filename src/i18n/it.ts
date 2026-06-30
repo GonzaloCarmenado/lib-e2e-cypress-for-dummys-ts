@@ -84,6 +84,9 @@ export const I18N_IT = {
     START_HIDDEN_SECTION: '👁 Visibilità del widget',
     START_HIDDEN_TITLE: 'Avvia nascosto',
     START_HIDDEN_SUB: 'Il widget si avvia invisibile. Usa Ctrl+Shift+E per mostrarlo o nasconderlo.',
+    RESUME_TTL_SECTION: '⏱ Continuità di registrazione',
+    RESUME_TTL_LABEL: 'Riprendi senza chiedere (minuti)',
+    RESUME_TTL_HINT: 'Se ricarichi o cambi progetto, una registrazione attiva riprende senza chiedere entro questo intervallo. Trascorso, ti chiederà se continuare o annullare.',
   },
   SELECTOR_PICKER: {
     TITLE: 'Seleziona un elemento DOM',
@@ -182,5 +185,10 @@ export const I18N_IT = {
     BADGE_REC: '● REC',
     STOP_TITLE: 'Ferma (Ctrl+R)',
     START_TITLE: 'Registra (Ctrl+R)',
+    SESSION_RESUME_TITLE: '⏺ Registrazione in corso',
+    SESSION_RESUME_TEXT: 'C\'è una registrazione attiva non terminata.',
+    SESSION_RESUME_COUNT: 'comandi catturati',
+    SESSION_CONTINUE_BTN: 'Continua a registrare',
+    SESSION_DISCARD_BTN: 'Annulla',
   },
 };

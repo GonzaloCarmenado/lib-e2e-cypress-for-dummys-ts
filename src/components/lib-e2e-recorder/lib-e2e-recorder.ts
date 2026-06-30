@@ -16,6 +16,12 @@ import {
   setSwal2DataCyAttribute,
 } from '../../utils/modal.utils';
 import type { Lang } from '../../models/lang.model';
+import {
+  type ActiveSessionState,
+  ACTIVE_SESSION_BREADCRUMB_KEY,
+  RESUME_TTL_CONFIG_KEY,
+  DEFAULT_RESUME_TTL_MINUTES,
+} from '../../models/active-session.model';
 import { showToast } from '../../utils/toast.utils';
 
 /**
@@ -59,6 +65,8 @@ export class LibE2eRecorderElement extends HTMLElement {
   private pauseUnsub?: () => void;
   private selectorNotFoundUnsub?: () => void;
   private langUnsub?: () => void;
+  private sessionUnsub?: () => void;
+  private sessionSaveTimer?: ReturnType<typeof setTimeout>;
   private controlFirstTimeData = true;
   private _previsualizerRef: { commands: string[]; interceptors: string[] } | null = null;
   private httpMonitor?: HttpMonitor;
@@ -110,6 +118,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.initSubscriptions();
     this.render();
     this.initVisibility();
+    this.initSessionContinuity();
 
     this.keydownHandler = (e: KeyboardEvent) => this.handleKeyboardEvent(e);
     window.addEventListener('keydown', this.keydownHandler);
@@ -118,12 +127,18 @@ export class LibE2eRecorderElement extends HTMLElement {
   disconnectedCallback(): void {
     if (this._isDisabled) return;
     window.removeEventListener('keydown', this.keydownHandler);
+    // Final flush: if a recording is in progress, persist it synchronously-ish
+    // before tearing the service down, so an unmount (single-spa per-sub-project
+    // placement) does not lose the last commands. The realm survives client-side
+    // navigation, so this async write completes even after the element is gone.
+    this.flushActiveSessionOnDisconnect();
     this.recordingUnsub?.();
     this.commandsUnsub?.();
     this.interceptorsUnsub?.();
     this.pauseUnsub?.();
     this.selectorNotFoundUnsub?.();
     this.langUnsub?.();
+    this.sessionUnsub?.();
     this.httpMonitor?.uninstall();
     this.recording.destroy();
   }
@@ -149,11 +164,17 @@ export class LibE2eRecorderElement extends HTMLElement {
       this.isRecording = val;
       if (!val && !this.controlFirstTimeData) {
         this.saveRecordingHistory();
+        // Stopping the recording ends the cross-app session: only an actively
+        // recording session is ever persisted/resumed (spec 006, Q2).
+        this.clearSessionPersistence();
         this.showSaveTestDialog();
       }
       this.controlFirstTimeData = false;
       this.render();
     });
+    // Persist the live session incrementally so it survives a micro-frontend
+    // crossing or a same-origin reload (spec 006).
+    this.sessionUnsub = this.recording.onSessionChange((state) => this.persistActiveSession(state));
     this.commandsUnsub = this.recording.onCommandsChange((cmds) => {
       this.cypressCommands = cmds;
       if (this._previsualizerRef) this._previsualizerRef.commands = cmds;
@@ -203,6 +224,121 @@ export class LibE2eRecorderElement extends HTMLElement {
     const strategy = config?.['selectorStrategy'] as string | undefined;
     if (strategy) this.recording.selectorStrategy = strategy as SelectorStrategy;
     this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false';
+  }
+
+  // ── cross-app session continuity (spec 006) ───────────────────────────────
+
+  /**
+   * On mount, detect a persisted live recording session and either resume it
+   * silently (recent) or prompt continue/discard (stale). No-op when there is
+   * no actively-recording session.
+   */
+  private async initSessionContinuity(): Promise<void> {
+    if (this._isDisabled) return;
+    const session = await this.persistence.getActiveSession();
+    if (!session || !session.isRecording) return;
+    const ttlMin = await this.getResumeTtlMinutes();
+    const ageMs = Date.now() - session.updatedAt;
+    if (ageMs <= ttlMin * 60_000) {
+      this.resumeSessionState(session);
+    } else {
+      this.promptResumeOrDiscard(session);
+    }
+  }
+
+  private async getResumeTtlMinutes(): Promise<number> {
+    const config = await this.persistence.getConfig(RESUME_TTL_CONFIG_KEY);
+    const raw = config?.[RESUME_TTL_CONFIG_KEY];
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_RESUME_TTL_MINUTES;
+  }
+
+  /** Rehydrates the recorder from a persisted session (no bootstrap re-emitted). */
+  private resumeSessionState(session: ActiveSessionState): void {
+    this.recording.restoreSession(session);
+    this.cypressCommands = session.commands;
+    this.interceptors = session.interceptors;
+    this.controlFirstTimeData = false;
+    this.render();
+  }
+
+  private async promptResumeOrDiscard(session: ActiveSessionState): Promise<void> {
+    const t = this.translation.translate.bind(this.translation);
+    const result = await Swal.fire({
+      title: t('RECORDER.SESSION_RESUME_TITLE'),
+      html:
+        `<div style="padding:8px 4px;color:#8b949e;font-size:13px;line-height:1.6">` +
+        `<p>${t('RECORDER.SESSION_RESUME_TEXT')}</p>` +
+        `<p style="margin-top:6px;color:#c9d1d9"><b>${session.commands.length}</b> ${t('RECORDER.SESSION_RESUME_COUNT')}</p>` +
+        `</div>`,
+      showCancelButton: true,
+      confirmButtonText: t('RECORDER.SESSION_CONTINUE_BTN'),
+      cancelButtonText: t('RECORDER.SESSION_DISCARD_BTN'),
+      color: '#e6edf3',
+    });
+    if (result && (result as { isConfirmed?: boolean }).isConfirmed) {
+      this.resumeSessionState(session);
+    } else {
+      this.discardSession();
+    }
+  }
+
+  /** Debounced persistence of the live session; clears it the moment recording stops. */
+  private persistActiveSession(state: ActiveSessionState): void {
+    if (this._isDisabled) return;
+    if (!state.isRecording) {
+      this.clearSessionPersistence();
+      return;
+    }
+    this.writeSessionBreadcrumb(state);
+    if (this.sessionSaveTimer) clearTimeout(this.sessionSaveTimer);
+    this.sessionSaveTimer = setTimeout(() => {
+      const snap = this.recording.getSessionSnapshot();
+      if (snap.isRecording) this.persistence.saveActiveSession(snap).catch(() => { /* storage errors are non-fatal */ });
+    }, 300);
+  }
+
+  private writeSessionBreadcrumb(state: ActiveSessionState): void {
+    try {
+      localStorage.setItem(ACTIVE_SESSION_BREADCRUMB_KEY, JSON.stringify({
+        sessionId: state.sessionId,
+        isRecording: state.isRecording,
+        updatedAt: state.updatedAt,
+      }));
+    } catch { /* ignore storage errors */ }
+  }
+
+  private flushActiveSessionOnDisconnect(): void {
+    const snap = this.recording.getSessionSnapshot();
+    if (!snap.isRecording) return;
+    if (this.sessionSaveTimer) clearTimeout(this.sessionSaveTimer);
+    this.writeSessionBreadcrumb(snap);
+    this.persistence.saveActiveSession(snap).catch(() => { /* non-fatal */ });
+  }
+
+  private clearSessionPersistence(): void {
+    if (this.sessionSaveTimer) { clearTimeout(this.sessionSaveTimer); this.sessionSaveTimer = undefined; }
+    try { localStorage.removeItem(ACTIVE_SESSION_BREADCRUMB_KEY); } catch { /* ignore */ }
+    this.persistence.clearActiveSession().catch(() => { /* non-fatal */ });
+  }
+
+  /** True when a synchronous breadcrumb marks an active recording session. */
+  hasActiveSession(): boolean {
+    try {
+      const raw = localStorage.getItem(ACTIVE_SESSION_BREADCRUMB_KEY);
+      if (!raw) return false;
+      return !!(JSON.parse(raw) as { isRecording?: boolean }).isRecording;
+    } catch { return false; }
+  }
+
+  /** Programmatically resume the persisted session, if any. */
+  resumeSession(): void {
+    this.persistence.getActiveSession().then((s) => { if (s) this.resumeSessionState(s); });
+  }
+
+  /** Discard the persisted live session (breadcrumb + DB record). */
+  discardSession(): void {
+    this.clearSessionPersistence();
   }
 
   toggle(): void {

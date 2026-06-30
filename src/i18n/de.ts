@@ -84,6 +84,9 @@ export const I18N_DE = {
     START_HIDDEN_SECTION: '👁 Widget-Sichtbarkeit',
     START_HIDDEN_TITLE: 'Versteckt starten',
     START_HIDDEN_SUB: 'Das Widget startet unsichtbar. Verwenden Sie Ctrl+Shift+E zum Ein-/Ausblenden.',
+    RESUME_TTL_SECTION: '⏱ Aufzeichnungskontinuität',
+    RESUME_TTL_LABEL: 'Ohne Nachfrage fortsetzen (Minuten)',
+    RESUME_TTL_HINT: 'Wenn Sie neu laden oder das Projekt wechseln, wird eine aktive Aufzeichnung innerhalb dieses Zeitfensters ohne Nachfrage fortgesetzt. Danach werden Sie gefragt, ob fortsetzen oder verwerfen.',
   },
   SELECTOR_PICKER: {
     TITLE: 'DOM-Element auswählen',
@@ -182,5 +185,10 @@ export const I18N_DE = {
     BADGE_REC: '● REC',
     STOP_TITLE: 'Stopp (Ctrl+R)',
     START_TITLE: 'Aufzeichnen (Ctrl+R)',
+    SESSION_RESUME_TITLE: '⏺ Aufzeichnung läuft',
+    SESSION_RESUME_TEXT: 'Es gibt eine nicht abgeschlossene aktive Aufzeichnung.',
+    SESSION_RESUME_COUNT: 'erfasste Befehle',
+    SESSION_CONTINUE_BTN: 'Weiter aufzeichnen',
+    SESSION_DISCARD_BTN: 'Verwerfen',
   },
 };

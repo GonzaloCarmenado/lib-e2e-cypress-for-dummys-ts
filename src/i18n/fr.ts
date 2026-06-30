@@ -84,6 +84,9 @@ export const I18N_FR = {
     START_HIDDEN_SECTION: '👁 Visibilité du widget',
     START_HIDDEN_TITLE: 'Démarrer masqué',
     START_HIDDEN_SUB: 'Le widget démarre invisible. Utilisez Ctrl+Shift+E pour l\'afficher ou le masquer.',
+    RESUME_TTL_SECTION: '⏱ Continuité d\'enregistrement',
+    RESUME_TTL_LABEL: 'Reprendre sans demander (minutes)',
+    RESUME_TTL_HINT: 'Si vous rechargez ou changez de projet, un enregistrement actif reprend sans demander dans ce délai. Au-delà, il vous demandera de continuer ou d\'ignorer.',
   },
   SELECTOR_PICKER: {
     TITLE: 'Sélectionnez un élément du DOM',
@@ -182,5 +185,10 @@ export const I18N_FR = {
     BADGE_REC: '● REC',
     STOP_TITLE: 'Arrêter (Ctrl+R)',
     START_TITLE: 'Enregistrer (Ctrl+R)',
+    SESSION_RESUME_TITLE: '⏺ Enregistrement en cours',
+    SESSION_RESUME_TEXT: 'Un enregistrement actif est inachevé.',
+    SESSION_RESUME_COUNT: 'commandes capturées',
+    SESSION_CONTINUE_BTN: 'Continuer l\'enregistrement',
+    SESSION_DISCARD_BTN: 'Ignorer',
   },
 };
