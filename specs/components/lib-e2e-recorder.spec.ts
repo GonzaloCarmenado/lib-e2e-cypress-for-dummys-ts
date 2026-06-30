@@ -797,4 +797,82 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       rec.destroy();
     });
   });
+
+  // ── draggable widget (spec 007) ───────────────────────────────────────────
+
+  describe('draggable widget', () => {
+    function toggleBtn(): HTMLElement {
+      return el.shadowRoot!.querySelector('[data-action="toggle"]') as HTMLElement;
+    }
+    function widget(): HTMLElement {
+      return el.shadowRoot!.querySelector('.widget') as HTMLElement;
+    }
+    const ptr = (type: string, x: number, y: number): MouseEvent =>
+      new MouseEvent(type, { clientX: x, clientY: y, bubbles: true });
+
+    it('applies a default position and up-left expansion on render', () => {
+      expect(widget().getAttribute('data-expand')).toBe('up-left');
+      expect(widget().style.left).not.toBe('');
+    });
+
+    it('a plain click (no drag) toggles recording', () => {
+      toggleBtn().dispatchEvent(ptr('pointerdown', 500, 500));
+      window.dispatchEvent(ptr('pointerup', 500, 500));
+      toggleBtn().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(el.isRecording).toBe(true);
+    });
+
+    it('dragging past the threshold repositions the widget and does NOT toggle recording', () => {
+      const setConfigSpy = vi.spyOn(persistence, 'setConfig');
+      toggleBtn().dispatchEvent(ptr('pointerdown', 500, 500));
+      window.dispatchEvent(ptr('pointermove', 560, 440)); // >5px → drag
+      window.dispatchEvent(ptr('pointerup', 560, 440));
+      // The click that the browser fires after a drag must be swallowed.
+      toggleBtn().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(el.isRecording).toBe(false);
+      expect(widget().style.left).not.toBe('');
+      expect(setConfigSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ widgetPosition: expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }) }),
+      );
+    });
+
+    it('a sub-threshold move is treated as a click, not a drag', () => {
+      toggleBtn().dispatchEvent(ptr('pointerdown', 500, 500));
+      window.dispatchEvent(ptr('pointermove', 502, 501)); // <5px
+      window.dispatchEvent(ptr('pointerup', 502, 501));
+      toggleBtn().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(el.isRecording).toBe(true);
+    });
+
+    it('resetWidgetPosition() returns to the default corner and clears the saved position', () => {
+      const setConfigSpy = vi.spyOn(persistence, 'setConfig');
+      // move it first
+      toggleBtn().dispatchEvent(ptr('pointerdown', 500, 500));
+      window.dispatchEvent(ptr('pointermove', 100, 100));
+      window.dispatchEvent(ptr('pointerup', 100, 100));
+
+      el.resetWidgetPosition();
+      expect(setConfigSpy).toHaveBeenCalledWith({ widgetPosition: null });
+      expect(widget().getAttribute('data-expand')).toBe('up-left'); // default bottom-right
+    });
+
+    it('restores a saved position on connect (adaptive direction)', async () => {
+      const db = new PersistenceService(`wpos_db_${++dbCounter}`);
+      await db.setConfig({ allowReadWriteFiles: 'false', widgetPosition: { x: 100, y: 100 } });
+      const rec = new RecordingService();
+      const el2 = document.createElement('lib-e2e-recorder') as LibE2eRecorderElement;
+      el2.recording = rec;
+      el2.persistence = db;
+      el2.translation = new TranslationService();
+      document.body.appendChild(el2);
+
+      const w2 = () => el2.shadowRoot!.querySelector('.widget') as HTMLElement;
+      // top-left quadrant → expands down-right
+      await vi.waitFor(() => expect(w2().getAttribute('data-expand')).toBe('down-right'));
+
+      el2.remove();
+      rec.destroy();
+    });
+  });
 });

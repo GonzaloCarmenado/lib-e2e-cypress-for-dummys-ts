@@ -22,6 +22,15 @@ import {
   RESUME_TTL_CONFIG_KEY,
   DEFAULT_RESUME_TTL_MINUTES,
 } from '../../models/active-session.model';
+import {
+  type ExpandDirection,
+  type Point,
+  DRAG_THRESHOLD,
+  clampTogglePosition,
+  resolveExpandDirection,
+  defaultTogglePosition,
+  boxTopLeftFor,
+} from '../../utils/widget-position.utils';
 import { showToast } from '../../utils/toast.utils';
 
 /**
@@ -68,6 +77,15 @@ export class LibE2eRecorderElement extends HTMLElement {
   private sessionUnsub?: () => void;
   private sessionSaveTimer?: ReturnType<typeof setTimeout>;
   private controlFirstTimeData = true;
+
+  // ── draggable widget (spec 007) ──
+  private togglePos: Point | null = null;
+  private expandDir: ExpandDirection = 'up-left';
+  private dragState?: { startX: number; startY: number; origX: number; origY: number; moved: boolean };
+  private suppressNextToggleClick = false;
+  private widgetPointerMove?: (e: MouseEvent) => void;
+  private widgetPointerUp?: () => void;
+  private widgetResize?: () => void;
   private _previsualizerRef: { commands: string[]; interceptors: string[] } | null = null;
   private httpMonitor?: HttpMonitor;
   private smartSelectorEnabled = true;
@@ -119,9 +137,19 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.render();
     this.initVisibility();
     this.initSessionContinuity();
+    this.initWidgetPosition();
 
     this.keydownHandler = (e: KeyboardEvent) => this.handleKeyboardEvent(e);
     window.addEventListener('keydown', this.keydownHandler);
+
+    // Draggable widget (spec 007): pointer move/up tracked at window level so the
+    // drag keeps working even if the cursor leaves the toggle button.
+    this.widgetPointerMove = (e: MouseEvent) => this.onWidgetPointerMove(e);
+    this.widgetPointerUp = () => this.onWidgetPointerUp();
+    this.widgetResize = () => this.applyWidgetPosition();
+    window.addEventListener('pointermove', this.widgetPointerMove as EventListener);
+    window.addEventListener('pointerup', this.widgetPointerUp);
+    window.addEventListener('resize', this.widgetResize);
   }
 
   disconnectedCallback(): void {
@@ -139,6 +167,9 @@ export class LibE2eRecorderElement extends HTMLElement {
     this.selectorNotFoundUnsub?.();
     this.langUnsub?.();
     this.sessionUnsub?.();
+    if (this.widgetPointerMove) window.removeEventListener('pointermove', this.widgetPointerMove as EventListener);
+    if (this.widgetPointerUp) window.removeEventListener('pointerup', this.widgetPointerUp);
+    if (this.widgetResize) window.removeEventListener('resize', this.widgetResize);
     this.httpMonitor?.uninstall();
     this.recording.destroy();
   }
@@ -339,6 +370,69 @@ export class LibE2eRecorderElement extends HTMLElement {
   /** Discard the persisted live session (breadcrumb + DB record). */
   discardSession(): void {
     this.clearSessionPersistence();
+  }
+
+  // ── draggable widget (spec 007) ────────────────────────────────────────────
+
+  /** Loads a previously saved widget position and applies it. */
+  private async initWidgetPosition(): Promise<void> {
+    const config = await this.persistence.getGeneralConfig();
+    const pos = config?.['widgetPosition'] as Partial<Point> | null | undefined;
+    if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+      this.togglePos = { x: pos.x, y: pos.y };
+    }
+    this.applyWidgetPosition();
+  }
+
+  /** Positions the `.widget` box from the (clamped) toggle centre and orients the arc. */
+  private applyWidgetPosition(): void {
+    const widget = this.shadow.querySelector('.widget') as HTMLElement | null;
+    if (!widget) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const centre = this.togglePos ?? defaultTogglePosition(vw, vh);
+    const clamped = clampTogglePosition(centre.x, centre.y, vw, vh);
+    this.expandDir = resolveExpandDirection(clamped.x, clamped.y, vw, vh);
+    const topLeft = boxTopLeftFor(clamped, this.expandDir);
+    widget.style.left = `${topLeft.x}px`;
+    widget.style.top = `${topLeft.y}px`;
+    widget.style.right = 'auto';
+    widget.style.bottom = 'auto';
+    widget.setAttribute('data-expand', this.expandDir);
+  }
+
+  private beginWidgetDrag(e: MouseEvent): void {
+    const origin = this.togglePos ?? defaultTogglePosition(window.innerWidth, window.innerHeight);
+    this.dragState = { startX: e.clientX, startY: e.clientY, origX: origin.x, origY: origin.y, moved: false };
+  }
+
+  private onWidgetPointerMove(e: MouseEvent): void {
+    if (!this.dragState) return;
+    const dx = e.clientX - this.dragState.startX;
+    const dy = e.clientY - this.dragState.startY;
+    if (!this.dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    this.dragState.moved = true;
+    this.togglePos = { x: this.dragState.origX + dx, y: this.dragState.origY + dy };
+    this.applyWidgetPosition();
+  }
+
+  private onWidgetPointerUp(): void {
+    if (!this.dragState) return;
+    const moved = this.dragState.moved;
+    this.dragState = undefined;
+    if (!moved || !this.togglePos) return;
+    // It was a drag, not a click: suppress the click that fires next and persist.
+    this.suppressNextToggleClick = true;
+    const clamped = clampTogglePosition(this.togglePos.x, this.togglePos.y, window.innerWidth, window.innerHeight);
+    this.togglePos = clamped;
+    this.persistence.setConfig({ widgetPosition: clamped }).catch(() => { /* non-fatal */ });
+  }
+
+  /** Resets the widget to its default corner and clears the saved position. */
+  resetWidgetPosition(): void {
+    this.togglePos = null;
+    this.persistence.setConfig({ widgetPosition: null }).catch(() => { /* non-fatal */ });
+    this.applyWidgetPosition();
   }
 
   toggle(): void {
@@ -662,6 +756,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
             this.isVisible = !e.detail;
             this.style.display = this.isVisible ? '' : 'none';
           });
+          child.addEventListener('resetwidgetposition', () => this.resetWidgetPosition());
         },
         willClose: () => { this.isSettingsDialogOpen = false; },
       });
@@ -823,8 +918,13 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     const paused = this.isPaused;
     this.style.display = this.isVisible ? '' : 'none';
     this.shadow.innerHTML = `<style>${getRecorderStyles(rec, paused)}</style>${renderRecorderWidget(rec, paused, this.translation.translate.bind(this.translation))}`;
-    this.shadow.querySelector('[data-action="toggle"]')
-      ?.addEventListener('click', () => this.toggle());
+    const toggleBtn = this.shadow.querySelector('[data-action="toggle"]');
+    toggleBtn?.addEventListener('click', () => {
+      // A drag ends with a click event we must swallow so it doesn't toggle recording.
+      if (this.suppressNextToggleClick) { this.suppressNextToggleClick = false; return; }
+      this.toggle();
+    });
+    toggleBtn?.addEventListener('pointerdown', (e) => this.beginWidgetDrag(e as MouseEvent));
     this.shadow.querySelector('[data-action="pause"]')
       ?.addEventListener('click', () => this.togglePause());
     this.shadow.querySelector('[data-action="tests"]')
@@ -835,6 +935,8 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
       ?.addEventListener('click', () => this.showSettingsDialog());
     this.shadow.querySelector('[data-action="browse"]')
       ?.addEventListener('click', () => this.showAdvancedEditorDialog());
+    // Re-apply the dragged position/orientation after every re-render.
+    this.applyWidgetPosition();
   }
 }
 
