@@ -1,6 +1,10 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { DB_SCHEMA } from '../models/db-schema.model';
+import type { ActiveSessionState } from '../models/active-session.model';
 import { normalizeBlock, escapeSingleQuotes } from '../utils/code-format.utils';
+
+/** Fixed primary key for the single active-session record. */
+const ACTIVE_SESSION_ID = 1;
 
 interface TestRecord        { id: number; name: string; createdAt: number; tags?: string[]; notes?: string; }
 interface CommandRecord     { id: number; command: string; testId: number; createdAt: number; }
@@ -173,6 +177,29 @@ export class PersistenceService {
     const db      = await this.getDB();
     const records = await db.getAll('configuration') as ConfigRecord[];
     return records[0] ?? null;
+  }
+
+  // ── Active recording session ──────────────────────────────────────────────
+
+  /** Upserts the live recording session (single record, fixed key). */
+  async saveActiveSession(state: ActiveSessionState): Promise<void> {
+    const db = await this.getDB();
+    await db.put('activeSession', { ...state, id: ACTIVE_SESSION_ID });
+  }
+
+  /** Returns the persisted live session, or null when none is stored. */
+  async getActiveSession(): Promise<ActiveSessionState | null> {
+    const db     = await this.getDB();
+    const record = await db.get('activeSession', ACTIVE_SESSION_ID) as (ActiveSessionState & { id: number }) | undefined;
+    if (!record) return null;
+    const { id: _id, ...state } = record;
+    return state as ActiveSessionState;
+  }
+
+  /** Removes the live session record. Safe to call when none exists. */
+  async clearActiveSession(): Promise<void> {
+    const db = await this.getDB();
+    await db.delete('activeSession', ACTIVE_SESSION_ID);
   }
 
   // ── Bulk operations ───────────────────────────────────────────────────────

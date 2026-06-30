@@ -1,5 +1,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PersistenceService } from '../src/services/persistence.service';
+import type { ActiveSessionState } from '../src/models/active-session.model';
+
+function makeSession(overrides: Partial<ActiveSessionState> = {}): ActiveSessionState {
+  return {
+    sessionId: 'sess-1',
+    isRecording: true,
+    isPaused: false,
+    commands: ["cy.visit('/')", "cy.get('#x').click()"],
+    interceptors: ["cy.intercept('GET', '**/api').as('a')"],
+    selectorStrategy: 'data-cy',
+    startedAt: 1000,
+    updatedAt: 2000,
+    ...overrides,
+  };
+}
 
 // Each test gets a unique DB name — no shared state, no cleanup needed.
 let dbCounter = 0;
@@ -273,6 +288,44 @@ describe('Phase 5 — PersistenceService', () => {
       await service.insertTest('no notes test');
       const tests = await service.getAllTests();
       expect(tests[0].notes == null).toBe(true);
+    });
+  });
+
+  // ── active recording session ───────────────────────────────────────────────
+
+  describe('active session', () => {
+    it('getActiveSession returns null when none is stored', async () => {
+      expect(await service.getActiveSession()).toBeNull();
+    });
+
+    it('saveActiveSession then getActiveSession round-trips the state', async () => {
+      const session = makeSession();
+      await service.saveActiveSession(session);
+      const stored = await service.getActiveSession();
+      expect(stored).toEqual(session);
+    });
+
+    it('does not leak the internal fixed id onto the returned state', async () => {
+      await service.saveActiveSession(makeSession());
+      const stored = await service.getActiveSession() as Record<string, unknown>;
+      expect('id' in stored).toBe(false);
+    });
+
+    it('saveActiveSession upserts (single record, last write wins)', async () => {
+      await service.saveActiveSession(makeSession({ commands: ['a'] }));
+      await service.saveActiveSession(makeSession({ commands: ['a', 'b', 'c'] }));
+      const stored = await service.getActiveSession();
+      expect(stored!.commands).toEqual(['a', 'b', 'c']);
+    });
+
+    it('clearActiveSession removes the stored session', async () => {
+      await service.saveActiveSession(makeSession());
+      await service.clearActiveSession();
+      expect(await service.getActiveSession()).toBeNull();
+    });
+
+    it('clearActiveSession is safe to call when none exists', async () => {
+      await expect(service.clearActiveSession()).resolves.toBeUndefined();
     });
   });
 

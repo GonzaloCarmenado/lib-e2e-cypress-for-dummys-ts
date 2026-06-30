@@ -6,6 +6,7 @@ export const VERSION = '0.4.0';
 export * from './models/lang.model';
 export * from './models/input-types.model';
 export * from './models/db-schema.model';
+export * from './models/active-session.model';
 
 // Phase 2 — TranslationService
 export * from './services/translation.service';

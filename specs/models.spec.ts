@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { SUPPORTED_LANGS, isLang, localeForLang } from '../src/models/lang.model';
 import { INPUT_TYPES } from '../src/models/input-types.model';
 import { DB_SCHEMA, DB_STORE_NAMES } from '../src/models/db-schema.model';
+import {
+  ACTIVE_SESSION_BREADCRUMB_KEY,
+  RESUME_TTL_CONFIG_KEY,
+  DEFAULT_RESUME_TTL_MINUTES,
+} from '../src/models/active-session.model';
 
 describe('Phase 1 — Models', () => {
 
@@ -57,19 +62,30 @@ describe('Phase 1 — Models', () => {
       expect(DB_SCHEMA.name).toBe('E2ECypressDB');
     });
 
-    it('DB version is 10', () => {
-      expect(DB_SCHEMA.version).toBe(10);
+    it('DB version is 11', () => {
+      expect(DB_SCHEMA.version).toBe(11);
     });
 
-    it('defines exactly 4 stores', () => {
-      expect(DB_SCHEMA.stores).toHaveLength(4);
+    it('defines exactly 5 stores', () => {
+      expect(DB_SCHEMA.stores).toHaveLength(5);
     });
 
-    it('all stores use autoIncrement with keyPath id', () => {
+    it('all stores keyPath is id', () => {
       for (const store of DB_SCHEMA.stores) {
-        expect(store.autoIncrement).toBe(true);
         expect(store.keyPath).toBe('id');
       }
+    });
+
+    it('data stores auto-increment; the single-record activeSession store does not', () => {
+      for (const store of DB_SCHEMA.stores) {
+        expect(store.autoIncrement).toBe(store.name !== 'activeSession');
+      }
+    });
+
+    it('defines the activeSession store with no indexes', () => {
+      const store = DB_SCHEMA.stores.find(s => s.name === 'activeSession');
+      expect(store).toBeDefined();
+      expect(store!.indexes).toHaveLength(0);
     });
 
     it('tests store has indexes: name, createdAt', () => {
@@ -115,11 +131,25 @@ describe('Phase 1 — Models', () => {
       }
     });
 
-    it('DB_STORE_NAMES contains the 4 store names', () => {
+    it('DB_STORE_NAMES contains the 5 store names', () => {
       expect(DB_STORE_NAMES).toEqual(
-        expect.arrayContaining(['tests', 'commands', 'interceptors', 'configuration'])
+        expect.arrayContaining(['tests', 'commands', 'interceptors', 'configuration', 'activeSession'])
       );
-      expect(DB_STORE_NAMES).toHaveLength(4);
+      expect(DB_STORE_NAMES).toHaveLength(5);
+    });
+  });
+
+  describe('active-session.model', () => {
+    it('breadcrumb key is e2e-active-session', () => {
+      expect(ACTIVE_SESSION_BREADCRUMB_KEY).toBe('e2e-active-session');
+    });
+
+    it('resume TTL config key is resumeRecencyTtlMinutes', () => {
+      expect(RESUME_TTL_CONFIG_KEY).toBe('resumeRecencyTtlMinutes');
+    });
+
+    it('default resume TTL is 30 minutes', () => {
+      expect(DEFAULT_RESUME_TTL_MINUTES).toBe(30);
     });
   });
 

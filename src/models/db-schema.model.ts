@@ -19,7 +19,7 @@ export interface DBSchema {
 
 export const DB_SCHEMA: DBSchema = {
   name: 'E2ECypressDB',
-  version: 10,
+  version: 11,
   stores: [
     {
       name: 'tests',
@@ -60,6 +60,15 @@ export const DB_SCHEMA: DBSchema = {
         { name: 'allowReadWriteFiles',  keyPath: 'allowReadWriteFiles',  unique: false },
       ],
     },
+    {
+      // Single-record store (fixed key id=1) holding the live, in-progress
+      // recording session so it survives a micro-frontend crossing or reload.
+      // See docs/specs/006-cross-app-recording-continuity.md.
+      name: 'activeSession',
+      keyPath: 'id',
+      autoIncrement: false,
+      indexes: [],
+    },
   ],
 };
 
@@ -68,4 +77,5 @@ export const DB_STORE_NAMES = DB_SCHEMA.stores.map(s => s.name) as [
   'commands',
   'interceptors',
   'configuration',
+  'activeSession',
 ];
