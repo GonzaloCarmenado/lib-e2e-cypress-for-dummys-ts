@@ -361,6 +361,23 @@ Stopping a recording (save **or** discard) ends the session, so a finished recor
 
 ---
 
+### Moving the widget (draggable)
+
+If the floating widget covers a control you need, **drag the record button (⏺/⏹)**
+to move the whole widget anywhere on screen. Press-and-move to drag; a plain click
+still starts/stops recording (a ~5 px threshold tells the two apart).
+
+The radial menu **expands toward the centre of the screen**, so the action buttons
+stay fully visible wherever you drop it, and the position is **remembered** across
+reloads (and app crossings). Reset it to the default corner from **⚙️ Config →
+🧲 Widget position → Reset position**, or programmatically:
+
+```typescript
+recorder.resetWidgetPosition();
+```
+
+---
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |
@@ -535,6 +552,9 @@ class LibE2eRecorderElement extends HTMLElement {
   hasActiveSession(): boolean;            // is a recording session persisted/active?
   resumeSession(): void;                  // rehydrate the persisted session
   discardSession(): void;                 // drop the persisted session
+
+  // Draggable widget
+  resetWidgetPosition(): void;            // move the widget back to its default corner
 }
 ```
 
