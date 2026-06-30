@@ -148,6 +148,15 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
         </label>
       </div>
 
+      <!-- Widget position (draggable widget) -->
+      <div class="card">
+        <div class="card-hd">${t('CONFIG.WIDGET_POSITION_SECTION')}</div>
+        <div class="check-sub" style="margin-bottom:10px">${t('CONFIG.WIDGET_POSITION_HINT')}</div>
+        <div class="btn-row">
+          <button id="btn-reset-position">${t('CONFIG.WIDGET_POSITION_RESET_BTN')}</button>
+        </div>
+      </div>
+
       <!-- Recording continuity (cross-app resume TTL) -->
       <div class="card">
         <div class="card-hd">${t('CONFIG.RESUME_TTL_SECTION')}</div>

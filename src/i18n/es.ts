@@ -87,6 +87,10 @@ export const I18N_ES = {
     RESUME_TTL_SECTION: '⏱ Continuidad de grabación',
     RESUME_TTL_LABEL: 'Reanudar sin preguntar (minutos)',
     RESUME_TTL_HINT: 'Si recargas o cambias de proyecto, una grabación activa se reanuda sin preguntar dentro de este margen. Pasado ese tiempo, te preguntará si continuar o descartar.',
+    WIDGET_POSITION_SECTION: '🧲 Posición del widget',
+    WIDGET_POSITION_HINT: 'Arrastra el botón de grabar para moverlo donde no estorbe. Se recuerda su posición.',
+    WIDGET_POSITION_RESET_BTN: '↺ Restablecer posición',
+    WIDGET_POSITION_RESET_DONE: '✓ Posición restablecida',
   },
   SELECTOR_PICKER: {
     TITLE: 'Selecciona un elemento del DOM',

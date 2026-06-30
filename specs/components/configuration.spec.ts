@@ -500,4 +500,25 @@ describe('Phase 8.4 — ConfigurationElement', () => {
       el2.remove();
     });
   });
+
+  // ── widget position reset (spec 007) ──────────────────────────────────────
+
+  describe('widget position reset', () => {
+    it('renders the reset-position button', () => {
+      expect(el.shadowRoot!.getElementById('btn-reset-position')).not.toBeNull();
+    });
+
+    it('onResetWidgetPosition dispatches a resetwidgetposition event', () => {
+      let fired = false;
+      el.addEventListener('resetwidgetposition', () => { fired = true; });
+      el.onResetWidgetPosition();
+      expect(fired).toBe(true);
+    });
+
+    it('clicking the reset button calls onResetWidgetPosition', () => {
+      const spy = vi.spyOn(el, 'onResetWidgetPosition');
+      (el.shadowRoot!.getElementById('btn-reset-position') as HTMLElement).click();
+      expect(spy).toHaveBeenCalled();
+    });
+  });
 });

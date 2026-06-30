@@ -87,6 +87,10 @@ export const I18N_FR = {
     RESUME_TTL_SECTION: '⏱ Continuité d\'enregistrement',
     RESUME_TTL_LABEL: 'Reprendre sans demander (minutes)',
     RESUME_TTL_HINT: 'Si vous rechargez ou changez de projet, un enregistrement actif reprend sans demander dans ce délai. Au-delà, il vous demandera de continuer ou d\'ignorer.',
+    WIDGET_POSITION_SECTION: '🧲 Position du widget',
+    WIDGET_POSITION_HINT: 'Fais glisser le bouton d\'enregistrement pour le déplacer. Sa position est mémorisée.',
+    WIDGET_POSITION_RESET_BTN: '↺ Réinitialiser la position',
+    WIDGET_POSITION_RESET_DONE: '✓ Position réinitialisée',
   },
   SELECTOR_PICKER: {
     TITLE: 'Sélectionnez un élément du DOM',

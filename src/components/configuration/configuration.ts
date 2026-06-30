@@ -93,6 +93,11 @@ export class ConfigurationElement extends HTMLElement {
     this.render();
   }
 
+  onResetWidgetPosition(): void {
+    this.dispatchEvent(new CustomEvent('resetwidgetposition', { bubbles: true, composed: true }));
+    showToast(this.t('CONFIG.WIDGET_POSITION_RESET_DONE'));
+  }
+
   async onSmartSelectorChange(enabled: boolean): Promise<void> {
     this.smartSelectorEnabled = enabled;
     await this.persistence.setConfig({ smartSelectorEnabled: enabled ? 'true' : 'false' });
@@ -237,6 +242,7 @@ export class ConfigurationElement extends HTMLElement {
     ;(this.shadow.getElementById('resume-ttl-input') as HTMLInputElement).addEventListener('change', (e) =>
       this.onResumeTtlChange(Number((e.target as HTMLInputElement).value)),
     )
+    ;this.shadow.getElementById('btn-reset-position')?.addEventListener('click', () => this.onResetWidgetPosition())
     ;(this.shadow.getElementById('selector-strategy') as HTMLSelectElement).addEventListener('change', (e) =>
       this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),
     );

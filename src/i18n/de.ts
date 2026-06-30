@@ -87,6 +87,10 @@ export const I18N_DE = {
     RESUME_TTL_SECTION: '⏱ Aufzeichnungskontinuität',
     RESUME_TTL_LABEL: 'Ohne Nachfrage fortsetzen (Minuten)',
     RESUME_TTL_HINT: 'Wenn Sie neu laden oder das Projekt wechseln, wird eine aktive Aufzeichnung innerhalb dieses Zeitfensters ohne Nachfrage fortgesetzt. Danach werden Sie gefragt, ob fortsetzen oder verwerfen.',
+    WIDGET_POSITION_SECTION: '🧲 Widget-Position',
+    WIDGET_POSITION_HINT: 'Ziehe den Aufnahme-Button, um ihn aus dem Weg zu schieben. Die Position wird gespeichert.',
+    WIDGET_POSITION_RESET_BTN: '↺ Position zurücksetzen',
+    WIDGET_POSITION_RESET_DONE: '✓ Position zurückgesetzt',
   },
   SELECTOR_PICKER: {
     TITLE: 'DOM-Element auswählen',

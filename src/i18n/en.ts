@@ -87,6 +87,10 @@ export const I18N_EN = {
     RESUME_TTL_SECTION: '⏱ Recording continuity',
     RESUME_TTL_LABEL: 'Resume without asking (minutes)',
     RESUME_TTL_HINT: 'If you reload or switch projects, an active recording resumes without asking within this window. After that, you will be asked to continue or discard.',
+    WIDGET_POSITION_SECTION: '🧲 Widget position',
+    WIDGET_POSITION_HINT: 'Drag the record button to move it out of the way. Its position is remembered.',
+    WIDGET_POSITION_RESET_BTN: '↺ Reset position',
+    WIDGET_POSITION_RESET_DONE: '✓ Position reset',
   },
   SELECTOR_PICKER: {
     TITLE: 'Select a DOM element',
