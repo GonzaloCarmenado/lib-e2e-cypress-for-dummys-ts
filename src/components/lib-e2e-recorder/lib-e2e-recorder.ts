@@ -31,6 +31,7 @@ import {
   defaultTogglePosition,
   boxTopLeftFor,
 } from '../../utils/widget-position.utils';
+import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { showToast } from '../../utils/toast.utils';
 
 /**
@@ -89,6 +90,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   private _previsualizerRef: { commands: string[]; interceptors: string[] } | null = null;
   private httpMonitor?: HttpMonitor;
   private smartSelectorEnabled = true;
+  private _needsRecordingRebuild = false;
 
   recording!: RecordingService;
   persistence!: PersistenceService;
@@ -119,7 +121,12 @@ export class LibE2eRecorderElement extends HTMLElement {
     if (!this.getAttribute('data-cy')) {
       this.setAttribute('data-cy', 'lib-e2e-cypress-for-dummys');
     }
-    if (!this.recording) this.recording = new RecordingService();
+    // Build a fresh recording service on first connect, or rebuild after a
+    // disconnect destroyed the previous one (its listeners are dead). spec 008.
+    if (!this.recording || this._needsRecordingRebuild) {
+      this.recording = new RecordingService();
+      this._needsRecordingRebuild = false;
+    }
     if (!this.persistence) this.persistence = new PersistenceService();
     if (!this.translation) this.translation = new TranslationService();
 
@@ -172,6 +179,13 @@ export class LibE2eRecorderElement extends HTMLElement {
     if (this.widgetResize) window.removeEventListener('resize', this.widgetResize);
     this.httpMonitor?.uninstall();
     this.recording.destroy();
+    // The service's AbortController is now spent (DOM listeners are dead) and the
+    // patched history methods are restored. Flag a rebuild so a reconnect of the
+    // SAME element gets a FRESH service + monitor (the buffer is recovered from
+    // IndexedDB by initSessionContinuity, spec 006). We do NOT null the reference
+    // here — the Subjects stay functional, so any in-flight async (e.g. a deferred
+    // save calling clearCommands) won't hit `undefined`.
+    this._needsRecordingRebuild = true;
   }
 
   private async initHttpConfig(): Promise<void> {
@@ -402,6 +416,9 @@ export class LibE2eRecorderElement extends HTMLElement {
   }
 
   private beginWidgetDrag(e: MouseEvent): void {
+    // Clear any stale suppression from a previous drag that ended off the toggle
+    // (no click fired there), so this fresh press can't swallow a genuine click.
+    this.suppressNextToggleClick = false;
     const origin = this.togglePos ?? defaultTogglePosition(window.innerWidth, window.innerHeight);
     this.dragState = { startX: e.clientX, startY: e.clientY, origX: origin.x, origY: origin.y, moved: false };
   }
@@ -656,9 +673,11 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
             const type = (document.getElementById('assert-type')     as HTMLSelectElement).value;
             const val  = (document.getElementById('assert-value')    as HTMLInputElement).value.trim();
             if (!sel) return;
+            const s = escapeSingleQuotes(sel);
+            const v = escapeSingleQuotes(val);
             const cmd = NO_VALUE_ASSERTIONS.has(type) || !val
-              ? `cy.get('${sel}').should('${type}')`
-              : `cy.get('${sel}').should('${type}', '${val}')`;
+              ? `cy.get('${s}').should('${type}')`
+              : `cy.get('${s}').should('${type}', '${v}')`;
             this.recording.appendCommand(cmd);
             (document.getElementById('assert-selector') as HTMLInputElement).value = '';
             (document.getElementById('assert-value')    as HTMLInputElement).value = '';

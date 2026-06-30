@@ -450,6 +450,17 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       expect(recording.getCommandsSnapshot().length).toBe(before);
     });
 
+    it('escapes single quotes in selector and value (spec 008)', () => {
+      el.showCommandsDialog();
+      (document.getElementById('assert-selector') as HTMLInputElement).value = '[data-cy="x\'y"]';
+      (document.getElementById('assert-type')     as HTMLSelectElement).value = 'contain.text';
+      (document.getElementById('assert-value')    as HTMLInputElement).value = "O'Brien";
+      (document.getElementById('btn-add-assertion') as HTMLButtonElement).click();
+      const cmd = recording.getCommandsSnapshot().at(-1)!;
+      expect(cmd).toContain("x\\'y");
+      expect(cmd).toContain("O\\'Brien");
+    });
+
     it('deletecommand event calls recording.removeCommand', () => {
       recording.startRecording();
       el.showCommandsDialog();
@@ -873,6 +884,75 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
       el2.remove();
       rec.destroy();
+    });
+  });
+
+  // ── lifecycle & fidelity fixes (spec 008) ─────────────────────────────────
+
+  describe('lifecycle & fidelity (spec 008)', () => {
+    function makeBtn(dataCy: string): HTMLButtonElement {
+      const b = document.createElement('button');
+      b.setAttribute('data-cy', dataCy);
+      document.body.appendChild(b);
+      return b;
+    }
+    const click = (node: HTMLElement): void =>
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    it('disconnect→reconnect of the same element flushes, rebuilds the recorder and keeps capturing', async () => {
+      const db = new PersistenceService(`reconnect_db_${++dbCounter}`);
+      await db.setConfig({ allowReadWriteFiles: 'false' });
+      const el2 = document.createElement('lib-e2e-recorder') as LibE2eRecorderElement;
+      el2.persistence = db;
+      el2.translation = new TranslationService();
+      document.body.appendChild(el2);
+      el2.toggle(); // start recording (new own RecordingService)
+
+      const before = makeBtn('before');
+      click(before);
+      expect(el2.recording.getCommandsSnapshot()).toContain('cy.get(\'[data-cy="before"]\').click()');
+
+      // Unmount: must flush the session to IndexedDB before tearing down (AC-02).
+      el2.remove();
+      await vi.waitFor(async () => {
+        const s = await db.getActiveSession();
+        expect(s?.commands).toContain('cy.get(\'[data-cy="before"]\').click()');
+      });
+
+      // Remount the SAME element: a fresh service is built and the buffer rehydrates.
+      document.body.appendChild(el2);
+      await vi.waitFor(() =>
+        expect(el2.recording.getCommandsSnapshot()).toContain('cy.get(\'[data-cy="before"]\').click()'),
+      );
+      expect(el2.isRecording).toBe(true);
+
+      // The fresh service's DOM listeners capture again (the core fix).
+      const after = makeBtn('after');
+      click(after);
+      expect(el2.recording.getCommandsSnapshot()).toContain('cy.get(\'[data-cy="after"]\').click()');
+
+      el2.remove();
+      before.remove();
+      after.remove();
+    });
+
+    it('a drag ending off the toggle does not swallow the next genuine click', () => {
+      const toggle = el.shadowRoot!.querySelector('[data-action="toggle"]') as HTMLElement;
+      const down = (x: number, y: number) => toggle.dispatchEvent(new MouseEvent('pointerdown', { clientX: x, clientY: y, bubbles: true }));
+      const move = (x: number, y: number) => window.dispatchEvent(new MouseEvent('pointermove', { clientX: x, clientY: y, bubbles: true }));
+      const up   = (x: number, y: number) => window.dispatchEvent(new MouseEvent('pointerup', { clientX: x, clientY: y, bubbles: true }));
+
+      // Drag that ends OFF the toggle → no click fires there → suppression set.
+      down(500, 500);
+      move(560, 440);
+      up(560, 440);
+      // No click dispatched here (cursor ended elsewhere).
+
+      // A subsequent genuine click must still toggle recording.
+      down(980, 720);
+      up(980, 720);
+      toggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(el.isRecording).toBe(true);
     });
   });
 });
