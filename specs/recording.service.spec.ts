@@ -186,6 +186,18 @@ describe('Phase 4 — RecordingService', () => {
       expect(service.getInterceptorsSnapshot()[0]).toContain(".as('users')");
     });
 
+    it('is a no-op when not recording (spec 008)', () => {
+      service.registerInterceptor('GET', 'http://localhost/api/users', 'users');
+      expect(service.getInterceptorsSnapshot()).toHaveLength(0);
+    });
+
+    it('is a no-op after recording stops (spec 008)', () => {
+      service.startRecording();
+      service.stopRecording();
+      service.registerInterceptor('GET', 'http://localhost/api/users', 'users');
+      expect(service.getInterceptorsSnapshot()).toHaveLength(0);
+    });
+
     it('does not add duplicate interceptors', () => {
       service.startRecording();
       service.registerInterceptor('GET', 'http://localhost/api/users', 'users');

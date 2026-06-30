@@ -145,7 +145,10 @@ export class RecordingService {
   }
 
   registerInterceptor(method: string, url: string, alias: string): void {
-    if (this.isPaused$.getValue()) return;
+    // Only capture interceptors while actively recording — otherwise HTTP calls
+    // the host app fires before recording starts (the monitor is installed on
+    // mount) would leak orphan cy.intercept lines into the saved test.
+    if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
     const command = `cy.intercept('${method}', '${this.urlToWildcard(url, method)}').as('${alias}')`;
     const current = this.interceptors$.getValue();
     if (!current.includes(command)) {
