@@ -333,6 +333,34 @@ The last **5 recordings** are automatically saved to `localStorage` so you never
 
 ---
 
+### Cross-app recording (single-spa / Module Federation)
+
+Recording a flow that spans **several micro-frontends** under one domain (login app → dashboard app → admin app) used to be impossible: navigating from one project to another tore the widget down and wiped the in-progress recording. Now the **live recording session is persisted** (in IndexedDB, same origin), so it **survives the crossing** and recording continues seamlessly — the captured commands and interceptors are all still there.
+
+It also survives an accidental **page reload** of the same origin: the recording is recovered automatically.
+
+> **Scope:** this covers micro-frontends served from the **same origin** (same scheme + host + port, the typical single-spa setup) with **client-side** navigation. Different origins/subdomains and cross-origin `cy.origin` test generation are out of scope (see `docs/specs/006-cross-app-recording-continuity.md`).
+
+#### Where to mount the widget
+
+Pick **exactly one** placement — never both, or the HTTP monitor installs twice and commands get double-recorded:
+
+- **Option A — a single instance in the shell (recommended).** Mount one `<lib-e2e-recorder>` in the shell/root application. The shell is not unmounted on app swaps, so a recording naturally spans every micro-frontend. Simplest and most robust.
+- **Option B — one instance per sub-project, never in the shell.** Each micro-frontend mounts its own widget; continuity across crossings is provided by the persisted session. Do **not** also put one in the shell. *Caveat:* during a single-spa transition two apps can be briefly mounted at once, so an API call fired in that window may produce a duplicate `cy.wait` — just delete the stray line, or prefer Option A.
+
+#### Resuming
+
+When the recorder loads and finds an active recording session:
+
+- **Recent** (within the resume window) → it **continues silently**.
+- **Stale** (older than the window) → it asks **continue or discard**, so a forgotten session never resumes silently (important when deployed with `start-hidden`).
+
+The resume window defaults to **30 minutes** and is editable in **⚙️ Config → ⏱ Recording continuity**. Crossing apps is instant, so it is always "recent"; the window only gates the come-back-later case.
+
+Stopping a recording (save **or** discard) ends the session, so a finished recording never resurrects on the next navigation.
+
+---
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |
@@ -502,6 +530,11 @@ class LibE2eRecorderElement extends HTMLElement {
   getRecordingHistory(): Array<{ commands: string[]; interceptors: string[]; savedAt: number }>;
   recoverLastRecording(): void;
   clearRecordingHistory(): void;
+
+  // Cross-app session (micro-frontends)
+  hasActiveSession(): boolean;            // is a recording session persisted/active?
+  resumeSession(): void;                  // rehydrate the persisted session
+  discardSession(): void;                 // drop the persisted session
 }
 ```
 
@@ -528,6 +561,12 @@ class RecordingService {
 
   clearCommands(): void;
 
+  // Cross-app session (micro-frontends) — see spec 006
+  sessionId: string | null;
+  restoreSession(state: ActiveSessionState): void;   // rehydrate WITHOUT re-running the bootstrap
+  getSessionSnapshot(): ActiveSessionState;
+  onSessionChange(fn: (state: ActiveSessionState) => void): () => void;
+
   getCommandsSnapshot(): string[];
   getInterceptorsSnapshot(): string[];
 
@@ -553,6 +592,11 @@ class PersistenceService {
   setConfigKey(key: string, value: unknown): Promise<void>;
   getConfig(key: string): Promise<Record<string, unknown> | null>;
   getGeneralConfig(): Promise<ConfigRecord | null>;
+
+  // Live recording session (cross-app continuity — see spec 006)
+  saveActiveSession(state: ActiveSessionState): Promise<void>;
+  getActiveSession(): Promise<ActiveSessionState | null>;
+  clearActiveSession(): Promise<void>;
 
   clearAllData(): Promise<void>;
   requestDirectoryPermissions(): Promise<void>;
