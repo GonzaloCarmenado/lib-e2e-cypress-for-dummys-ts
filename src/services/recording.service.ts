@@ -1,10 +1,19 @@
 import { INPUT_TYPES } from '../models/input-types.model';
+import type { ActiveSessionState } from '../models/active-session.model';
 import { Subject } from '../utils/subject';
 import { FORBIDDEN_ID_PREFIXES } from '../utils/selector-quality.utils';
 
 const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
 
 export type SelectorStrategy = 'data-cy' | 'data-testid' | 'aria-label' | 'id';
+
+/** Generates a stable, collision-resistant session id (browser + jsdom safe). */
+function createSessionId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `sess-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
+}
 
 export class RecordingService {
   private readonly commands$ = new Subject<string[]>([]);
@@ -16,6 +25,10 @@ export class RecordingService {
   private readonly abort = new AbortController();
 
   selectorStrategy: SelectorStrategy = 'data-cy';
+
+  /** Stable id of the current live session (null when none has started). */
+  sessionId: string | null = null;
+  private startedAt = 0;
 
   // Stored originals for history patching cleanup
   private readonly origPushState = history.pushState.bind(history);
@@ -31,11 +44,44 @@ export class RecordingService {
   // ── Public API ────────────────────────────────────────────────────────────
 
   startRecording(): void {
+    this.sessionId = createSessionId();
+    this.startedAt = Date.now();
     this.isPaused$.next(false);
     this.isRecording$.next(true);
     this.addCommand(`cy.viewport(1900, 1200)`);
     this.addCommand(`cy.visit('${window.location.pathname}')`);
     this.addCommand(`cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');`);
+  }
+
+  /**
+   * Rehydrates a previously persisted session WITHOUT running the startRecording
+   * bootstrap (no viewport/visit/hide). Used to continue a recording across a
+   * micro-frontend crossing or a same-origin reload.
+   * See docs/specs/006-cross-app-recording-continuity.md.
+   */
+  restoreSession(state: ActiveSessionState): void {
+    this.sessionId = state.sessionId;
+    this.startedAt = state.startedAt;
+    this.selectorStrategy = state.selectorStrategy;
+    this.commands$.next([...state.commands]);
+    this.interceptors$.next([...state.interceptors]);
+    this.isPaused$.next(state.isPaused);
+    // isRecording last so subscribers observe a fully-populated buffer.
+    this.isRecording$.next(state.isRecording);
+  }
+
+  /** Full snapshot of the live session for persistence. */
+  getSessionSnapshot(): ActiveSessionState {
+    return {
+      sessionId: this.sessionId ?? createSessionId(),
+      isRecording: this.isRecording$.getValue(),
+      isPaused: this.isPaused$.getValue(),
+      commands: this.commands$.getValue(),
+      interceptors: this.interceptors$.getValue(),
+      selectorStrategy: this.selectorStrategy,
+      startedAt: this.startedAt,
+      updatedAt: Date.now(),
+    };
   }
 
   stopRecording(): void {
@@ -134,6 +180,22 @@ export class RecordingService {
 
   onPauseChange(fn: (isPaused: boolean) => void): () => void {
     return this.isPaused$.subscribe(fn);
+  }
+
+  /**
+   * Fires a full session snapshot whenever any persisted field changes
+   * (commands, interceptors, recording or paused state). Drives the debounced
+   * persistence of the live session. Returns a combined unsubscribe.
+   */
+  onSessionChange(fn: (state: ActiveSessionState) => void): () => void {
+    const emit = (): void => fn(this.getSessionSnapshot());
+    const unsubs = [
+      this.commands$.subscribe(emit),
+      this.interceptors$.subscribe(emit),
+      this.isRecording$.subscribe(emit),
+      this.isPaused$.subscribe(emit),
+    ];
+    return () => unsubs.forEach((u) => u());
   }
 
   onSelectorNotFound(fn: (target: HTMLElement, action: 'click') => void): () => void {

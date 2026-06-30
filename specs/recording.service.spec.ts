@@ -754,4 +754,91 @@ describe('Phase 4 — RecordingService', () => {
       expect(fired).toBe(true);
     });
   });
+
+  // ── cross-app session (spec 006) ──────────────────────────────────────────
+
+  describe('session id', () => {
+    it('sessionId is null before any recording starts', () => {
+      expect(service.sessionId).toBeNull();
+    });
+
+    it('startRecording assigns a non-empty sessionId', () => {
+      service.startRecording();
+      expect(typeof service.sessionId).toBe('string');
+      expect(service.sessionId!.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getSessionSnapshot', () => {
+    it('reflects current recording state and commands', () => {
+      service.startRecording();
+      service.addCommand('cy.get(".x").click()');
+      const snap = service.getSessionSnapshot();
+      expect(snap.isRecording).toBe(true);
+      expect(snap.commands).toContain('cy.get(".x").click()');
+      expect(snap.selectorStrategy).toBe('data-cy');
+      expect(typeof snap.updatedAt).toBe('number');
+    });
+  });
+
+  describe('restoreSession', () => {
+    const session = {
+      sessionId: 'sess-xyz',
+      isRecording: true,
+      isPaused: false,
+      commands: ["cy.visit('/a')", "cy.get('#b').click()"],
+      interceptors: ["cy.intercept('GET', '**/api').as('a')"],
+      selectorStrategy: 'data-testid' as const,
+      startedAt: 111,
+      updatedAt: 222,
+    };
+
+    it('restores commands and interceptors verbatim', () => {
+      service.restoreSession(session);
+      expect(service.getCommandsSnapshot()).toEqual(session.commands);
+      expect(service.getInterceptorsSnapshot()).toEqual(session.interceptors);
+    });
+
+    it('does NOT re-emit the startRecording bootstrap (no extra viewport/visit/hide)', () => {
+      service.restoreSession(session);
+      expect(service.getCommandsSnapshot()).toHaveLength(2);
+      expect(service.getCommandsSnapshot().some((c) => c.includes('cy.viewport'))).toBe(false);
+    });
+
+    it('restores sessionId and selectorStrategy', () => {
+      service.restoreSession(session);
+      expect(service.sessionId).toBe('sess-xyz');
+      expect(service.selectorStrategy).toBe('data-testid');
+    });
+
+    it('enters recording mode so new commands keep appending', () => {
+      service.restoreSession(session);
+      service.addCommand('cy.get(".new").click()');
+      expect(service.getCommandsSnapshot()).toContain('cy.get(".new").click()');
+    });
+
+    it('restores paused state', () => {
+      service.restoreSession({ ...session, isPaused: true });
+      expect(service.getPausedSnapshot()).toBe(true);
+    });
+  });
+
+  describe('onSessionChange', () => {
+    it('fires a full snapshot when a command is added', () => {
+      const snaps: { commands: string[] }[] = [];
+      service.onSessionChange((s) => snaps.push(s));
+      service.startRecording();
+      service.addCommand('cy.get(".x").click()');
+      expect(snaps.length).toBeGreaterThan(0);
+      expect(snaps.at(-1)!.commands).toContain('cy.get(".x").click()');
+    });
+
+    it('unsubscribe stops further snapshots', () => {
+      const snaps: unknown[] = [];
+      const unsub = service.onSessionChange((s) => snaps.push(s));
+      unsub();
+      service.startRecording();
+      expect(snaps).toHaveLength(0);
+    });
+  });
 });
