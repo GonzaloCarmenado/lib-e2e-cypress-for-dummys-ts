@@ -18,6 +18,7 @@ export interface ConfigurationState {
   cypressFolderName: string | null;
   smartSelectorEnabled: boolean;
   startHidden: boolean;
+  resumeTtlMinutes: number;
   isExporting: boolean;
   exportMode: ExportMode;
   exportTests: TestWithDetails[];
@@ -93,7 +94,7 @@ export function renderExportOverlay(state: ConfigurationState, t: (key: string) 
 }
 
 export function renderConfiguration(state: ConfigurationState, t: (key: string) => string): string {
-  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden } = state;
+  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden, resumeTtlMinutes } = state;
 
   const langOptions = LANGS.map(
     (l) => `<option value="${l.value}" ${selectedLanguage === l.value ? 'selected' : ''}>${l.label}</option>`,
@@ -145,6 +146,17 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
             <div class="check-sub">${t('CONFIG.START_HIDDEN_SUB')}</div>
           </div>
         </label>
+      </div>
+
+      <!-- Recording continuity (cross-app resume TTL) -->
+      <div class="card">
+        <div class="card-hd">${t('CONFIG.RESUME_TTL_SECTION')}</div>
+        <div class="field-row">
+          <span class="field-label">${t('CONFIG.RESUME_TTL_LABEL')}</span>
+          <input type="number" id="resume-ttl-input" min="1" step="1" value="${resumeTtlMinutes}"
+            style="width:80px;padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#c9d1d9;font-size:12px;outline:none" />
+        </div>
+        <div class="check-sub" style="margin-top:8px">${t('CONFIG.RESUME_TTL_HINT')}</div>
       </div>
 
       <!-- Selector Strategy -->

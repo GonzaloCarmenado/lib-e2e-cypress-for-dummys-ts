@@ -3,6 +3,7 @@ import type { TestWithDetails } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import type { Lang } from '../../models/lang.model';
 import type { SelectorStrategy } from '../../services/recording.service';
+import { RESUME_TTL_CONFIG_KEY, DEFAULT_RESUME_TTL_MINUTES } from '../../models/active-session.model';
 import { showToast } from '../../utils/toast.utils';
 import { selectTestsForExport, type ExportMode } from '../../utils/export-selection.utils';
 import { CONFIGURATION_STYLES } from './configuration.styles';
@@ -17,6 +18,7 @@ export class ConfigurationElement extends HTMLElement {
   selectorStrategy: SelectorStrategy = 'data-cy';
   smartSelectorEnabled = true;
   startHidden = false;
+  resumeTtlMinutes = DEFAULT_RESUME_TTL_MINUTES;
   isExporting = false;
   exportMode: ExportMode = 'all';
   exportTests: TestWithDetails[] = [];
@@ -50,6 +52,13 @@ export class ConfigurationElement extends HTMLElement {
     this.selectorStrategy = (config?.['selectorStrategy'] as SelectorStrategy) ?? 'data-cy';
     this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false';
     this.startHidden = config?.['startHidden'] === 'true';
+    // Only override when the key exists — otherwise an async load could clobber a
+    // value just set via onResumeTtlChange (same pattern as `language`).
+    const ttlRaw = config?.[RESUME_TTL_CONFIG_KEY];
+    if (ttlRaw !== undefined && ttlRaw !== null) {
+      const ttl = Number(ttlRaw);
+      this.resumeTtlMinutes = Number.isFinite(ttl) && ttl > 0 ? ttl : DEFAULT_RESUME_TTL_MINUTES;
+    }
     this.filesystemGranted = config?.['allowReadWriteFiles'] === 'true';
     const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined;
     this.cypressFolderName = handle?.name ?? null;
@@ -74,6 +83,13 @@ export class ConfigurationElement extends HTMLElement {
     this.startHidden = checked;
     await this.persistence.setConfig({ startHidden: checked ? 'true' : 'false' });
     this.dispatchEvent(new CustomEvent('starthiddenchange', { detail: checked, bubbles: true, composed: true }));
+    this.render();
+  }
+
+  async onResumeTtlChange(minutes: number): Promise<void> {
+    const safe = Number.isFinite(minutes) && minutes > 0 ? Math.round(minutes) : DEFAULT_RESUME_TTL_MINUTES;
+    this.resumeTtlMinutes = safe;
+    await this.persistence.setConfig({ [RESUME_TTL_CONFIG_KEY]: safe });
     this.render();
   }
 
@@ -199,6 +215,7 @@ export class ConfigurationElement extends HTMLElement {
       cypressFolderName: this.cypressFolderName,
       smartSelectorEnabled: this.smartSelectorEnabled,
       startHidden: this.startHidden,
+      resumeTtlMinutes: this.resumeTtlMinutes,
       isExporting: this.isExporting,
       exportMode: this.exportMode,
       exportTests: this.exportTests,
@@ -216,6 +233,9 @@ export class ConfigurationElement extends HTMLElement {
     )
     ;(this.shadow.getElementById('start-hidden-toggle') as HTMLInputElement).addEventListener('change', (e) =>
       this.onStartHiddenChange((e.target as HTMLInputElement).checked),
+    )
+    ;(this.shadow.getElementById('resume-ttl-input') as HTMLInputElement).addEventListener('change', (e) =>
+      this.onResumeTtlChange(Number((e.target as HTMLInputElement).value)),
     )
     ;(this.shadow.getElementById('selector-strategy') as HTMLSelectElement).addEventListener('change', (e) =>
       this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),

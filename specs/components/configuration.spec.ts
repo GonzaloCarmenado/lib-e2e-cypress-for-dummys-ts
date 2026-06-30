@@ -456,4 +456,48 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     // Should not throw
     await expect(el.changeFolder()).resolves.toBeUndefined();
   });
+
+  // ── resume recency TTL (spec 006) ─────────────────────────────────────────
+
+  describe('resume recency TTL', () => {
+    it('resumeTtlMinutes defaults to 30', () => {
+      expect(el.resumeTtlMinutes).toBe(30);
+    });
+
+    it('renders the resume-ttl-input with the current value', () => {
+      const input = el.shadowRoot!.getElementById('resume-ttl-input') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      expect(input.value).toBe('30');
+    });
+
+    it('onResumeTtlChange updates the property and persists to IndexedDB', async () => {
+      await el.onResumeTtlChange(45);
+      expect(el.resumeTtlMinutes).toBe(45);
+      const config = await persistence.getConfig('resumeRecencyTtlMinutes');
+      expect(config).toMatchObject({ resumeRecencyTtlMinutes: 45 });
+    });
+
+    it('onResumeTtlChange clamps a non-positive value back to the default', async () => {
+      await el.onResumeTtlChange(0);
+      expect(el.resumeTtlMinutes).toBe(30);
+    });
+
+    it('change event on resume-ttl-input calls onResumeTtlChange with the number', () => {
+      const spy = vi.spyOn(el, 'onResumeTtlChange');
+      const input = el.shadowRoot!.getElementById('resume-ttl-input') as HTMLInputElement;
+      input.value = '15';
+      input.dispatchEvent(new Event('change'));
+      expect(spy).toHaveBeenCalledWith(15);
+    });
+
+    it('loadConfig reads a previously stored TTL', async () => {
+      await persistence.setConfig({ resumeRecencyTtlMinutes: 12 });
+      const el2 = document.createElement('e2e-configuration') as ConfigurationElement;
+      el2.persistence = persistence;
+      el2.translation = translation;
+      document.body.appendChild(el2);
+      await vi.waitFor(() => expect(el2.resumeTtlMinutes).toBe(12));
+      el2.remove();
+    });
+  });
 });
