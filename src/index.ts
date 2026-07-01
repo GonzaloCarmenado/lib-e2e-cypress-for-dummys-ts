@@ -32,6 +32,7 @@ export * from './utils/toast.utils';
 export * from './utils/export-selection.utils';
 export * from './utils/host.utils';
 export * from './utils/widget-position.utils';
+export * from './utils/assertion.utils';
 
 // Phase 8 — Web Components
 export * from './components/selector-picker/selector-picker';
