@@ -403,6 +403,15 @@ recorder.resetWidgetPosition();
 
 ---
 
+### In-app help panel
+
+Not sure what the widget can do? Click the **?** button in the widget (or press
+**Ctrl+Shift+H**) to open a categorised cheat-sheet — shortcuts, what gets
+recorded, assertions, the panels, selectors, HTTP, data, and the advanced
+features — in your language (es/en/fr/it/de).
+
+---
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |
@@ -413,6 +422,8 @@ recorder.resetWidgetPosition();
 | `Ctrl + 1` | Open saved tests panel |
 | `Ctrl + 2` | Open command previewer |
 | `Ctrl + 3` | Open settings |
+| `Ctrl + Shift + H` | Open the in-app **help panel** |
+| `Alt + click` | Capture an assertion for the clicked element |
 
 > `Ctrl + R` / `Ctrl + P` and the panel shortcuts only fire when the widget is **visible**. `Ctrl + Shift + E` always works regardless of visibility state.
 
