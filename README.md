@@ -130,6 +130,26 @@ The recorder automatically captures:
 
 Input events are **debounced by 1 second** so only the final value is captured, not every keystroke.
 
+#### Capturing assertions while recording — Alt+click
+
+A test that only clicks around but never checks anything is weak. While recording,
+hold **Alt** and click any element to record a **Cypress assertion** for it instead
+of a click — and the element's real action is **suppressed** (no navigation, no form
+submit), so asserting never changes your flow.
+
+The assertion is chosen automatically from the element:
+
+| Element | Generated assertion |
+|---|---|
+| Checkbox / radio | `.should('be.checked')` / `.should('not.be.checked')` |
+| Input / textarea / select with a value | `.should('have.value', '<value>')` |
+| Element with visible text | `.should('contain.text', '<text>')` |
+| Anything else | `.should('be.visible')` |
+
+The captured assertion appears in the **⌨️ Commands** previewer like any other
+command, so you can reorder or delete it. (You can still build assertions manually
+with the assertion builder — see below.)
+
 ---
 
 ### HTTP monitoring
