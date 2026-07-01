@@ -113,6 +113,10 @@ describe('Phase 9 — Public API & Build', () => {
     it('exports SelectorPickerElement class', () => {
       expect(typeof (publicApi as any).SelectorPickerElement).toBe('function');
     });
+
+    it('exports HelpPanelElement class', () => {
+      expect(typeof (publicApi as any).HelpPanelElement).toBe('function');
+    });
   });
 
   // ── Custom Elements ──────────────────────────────────────────────────────
@@ -152,6 +156,10 @@ describe('Phase 9 — Public API & Build', () => {
 
     it('<selector-picker> is registered in customElements registry', () => {
       expect(customElements.get('selector-picker')).toBeDefined();
+    });
+
+    it('<help-panel> is registered in customElements registry', () => {
+      expect(customElements.get('help-panel')).toBeDefined();
     });
   });
 

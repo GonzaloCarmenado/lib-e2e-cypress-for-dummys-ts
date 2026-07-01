@@ -9,6 +9,8 @@ export function renderRecorderWidget(rec: boolean, paused: boolean, t: (key: str
               data-label="${t('RECORDER.BTN_COMMANDS')}">⌨️</button>
       <button class="btn-action" data-n="4" data-action="tests"
               data-label="${t('RECORDER.BTN_TESTS')}">📋</button>
+      <button class="btn-action" data-n="5" data-action="help"
+              data-label="${t('RECORDER.BTN_HELP')}">❓</button>
       <button class="btn-pause" data-action="pause"
               title="${paused ? t('RECORDER.RESUME_TITLE') : t('RECORDER.PAUSE_TITLE')}">
         ${paused ? '▶' : '⏸'}

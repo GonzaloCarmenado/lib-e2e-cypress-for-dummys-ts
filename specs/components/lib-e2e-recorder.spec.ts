@@ -176,9 +176,32 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(el.isAdvancedEditorDialogOpen).toBe(true);
   });
 
-  it('widget renders 4 action buttons', () => {
+  it('widget renders 5 action buttons', () => {
     const buttons = el.shadowRoot!.querySelectorAll('.btn-action');
-    expect(buttons.length).toBe(4);
+    expect(buttons.length).toBe(5);
+  });
+
+  it('showHelpDialog() sets isHelpDialogOpen to true', () => {
+    el.showHelpDialog();
+    expect(el.isHelpDialogOpen).toBe(true);
+  });
+
+  it('showHelpDialog() called twice toggles isHelpDialogOpen to false', () => {
+    el.showHelpDialog();
+    el.showHelpDialog();
+    expect(el.isHelpDialogOpen).toBe(false);
+  });
+
+  it('Ctrl+Shift+H opens the help dialog when visible', () => {
+    el.isVisible = true;
+    window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'H', bubbles: true }));
+    expect(el.isHelpDialogOpen).toBe(true);
+  });
+
+  it('help button (data-action="help") opens the help dialog', () => {
+    const btn = el.shadowRoot!.querySelector('[data-action="help"]') as HTMLElement;
+    btn.click();
+    expect(el.isHelpDialogOpen).toBe(true);
   });
 
   it('showFileEditorDialog() calls Swal.fire', () => {
@@ -565,6 +588,27 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     it('appends an e2e-configuration child element', () => {
       el.showSettingsDialog();
       expect(container.querySelector('e2e-configuration')).not.toBeNull();
+    });
+  });
+
+  describe('showHelpDialog didOpen', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.id = 'help-modal-content';
+      document.body.appendChild(container);
+      vi.mocked(Swal.fire).mockImplementationOnce(async (opts: any) => {
+        if (opts?.didOpen) opts.didOpen();
+        return { isConfirmed: false } as any;
+      });
+    });
+
+    afterEach(() => { container.remove(); });
+
+    it('appends a help-panel child element', () => {
+      el.showHelpDialog();
+      expect(container.querySelector('help-panel')).not.toBeNull();
     });
   });
 

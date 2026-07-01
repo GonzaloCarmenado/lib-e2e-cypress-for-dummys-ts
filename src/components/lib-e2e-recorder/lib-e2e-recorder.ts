@@ -64,6 +64,7 @@ interface FilePreviewEl {
 interface SelectorPickerEl {
   targetElement: HTMLElement; recording: RecordingService; translation: TranslationService;
 }
+interface HelpPanelEl { translation: TranslationService }
 
 export class LibE2eRecorderElement extends HTMLElement {
   private shadow: ShadowRoot;
@@ -107,6 +108,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   isSaveTestDialogOpen = false;
   isSettingsDialogOpen = false;
   isAdvancedEditorDialogOpen = false;
+  isHelpDialogOpen = false;
 
   constructor() {
     super();
@@ -475,6 +477,7 @@ export class LibE2eRecorderElement extends HTMLElement {
     else if (key === '1') { event.preventDefault(); this.showSavedTestsDialog(); }
     else if (key === '2') { event.preventDefault(); this.showCommandsDialog(); }
     else if (key === '3') { event.preventDefault(); this.showSettingsDialog(); }
+    else if (key === 'h' && event.shiftKey) { event.preventDefault(); this.showHelpDialog(); }
   }
 
   toggleVisibility(): void {
@@ -783,6 +786,30 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     });
   }
 
+  showHelpDialog(): void {
+    this.toggleModal('isHelpDialogOpen', () => {
+      Swal.fire({
+        title: this.translation.translate('HELP.TITLE'),
+        html: '<div id="help-modal-content" style="padding:0"></div>',
+        showCloseButton: true,
+        showConfirmButton: false,
+        width: 560,
+        color: '#e6edf3',
+        didOpen: () => {
+          makeSwalDraggable();
+          setSwal2DataCyAttribute();
+          const container = document.getElementById('help-modal-content');
+          if (!container) return;
+          const child = document.createElement('help-panel') as unknown as HelpPanelEl;
+          child.translation = this.translation;
+          container.appendChild(child as unknown as Node);
+        },
+        willClose: () => { this.isHelpDialogOpen = false; },
+      });
+      this.resizePopup();
+    });
+  }
+
   showAdvancedEditorDialog(testId?: number): void {
     this.toggleModal('isAdvancedEditorDialogOpen', () => {
       Swal.fire({
@@ -954,6 +981,8 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
       ?.addEventListener('click', () => this.showSettingsDialog());
     this.shadow.querySelector('[data-action="browse"]')
       ?.addEventListener('click', () => this.showAdvancedEditorDialog());
+    this.shadow.querySelector('[data-action="help"]')
+      ?.addEventListener('click', () => this.showHelpDialog());
     // Re-apply the dragged position/orientation after every re-render.
     this.applyWidgetPosition();
   }

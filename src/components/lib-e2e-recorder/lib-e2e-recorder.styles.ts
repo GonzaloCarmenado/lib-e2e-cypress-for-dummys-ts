@@ -21,7 +21,7 @@ function directionBlocks(): string {
     // Diagonal labels (n2/n3) sit on the arc's horizontal side; vertical-extreme
     // (n1) and horizontal-extreme (n4) labels sit on the interior vertical side.
     const labelGeneral = `${sel} .btn-action::after { ${oh}: calc(100% + 9px); ${th}: auto; top: 50%; bottom: auto; transform: translateY(-50%); }`;
-    const labelEnds = `${sel} .btn-action[data-n="1"]::after, ${sel} .btn-action[data-n="4"]::after { ${ov}: calc(100% + 9px); ${tv}: auto; left: 50%; right: auto; transform: translateX(-50%); }`;
+    const labelEnds = `${sel} .btn-action[data-n="1"]::after, ${sel} .btn-action[data-n="5"]::after { ${ov}: calc(100% + 9px); ${tv}: auto; left: 50%; right: auto; transform: translateX(-50%); }`;
 
     return `
       ${sel} { --sx: ${sx}; --sy: ${sy}; }
@@ -173,20 +173,25 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
                   background .15s, color .12s, box-shadow .15s;
     }
 
-    /* Arc positions — signs come from --sx/--sy (data-expand) */
+    /* Arc positions — 5 buttons over the quarter (~0/22.5/45/67.5/90°),
+       signs come from --sx/--sy (data-expand) */
     .widget:hover .btn-action[data-n="1"] {   /* vertical extreme */
       transform: translateY(calc(var(--sy) * 90px)) scale(1);
       transition-delay: .03s;
     }
-    .widget:hover .btn-action[data-n="2"] {   /* diagonal near-vertical */
-      transform: translate(calc(var(--sx) * 45px), calc(var(--sy) * 78px)) scale(1);
-      transition-delay: .07s;
+    .widget:hover .btn-action[data-n="2"] {
+      transform: translate(calc(var(--sx) * 34px), calc(var(--sy) * 83px)) scale(1);
+      transition-delay: .06s;
     }
-    .widget:hover .btn-action[data-n="3"] {   /* diagonal near-horizontal */
-      transform: translate(calc(var(--sx) * 78px), calc(var(--sy) * 45px)) scale(1);
-      transition-delay: .11s;
+    .widget:hover .btn-action[data-n="3"] {   /* diagonal (45°) */
+      transform: translate(calc(var(--sx) * 64px), calc(var(--sy) * 64px)) scale(1);
+      transition-delay: .09s;
     }
-    .widget:hover .btn-action[data-n="4"] {   /* horizontal extreme */
+    .widget:hover .btn-action[data-n="4"] {
+      transform: translate(calc(var(--sx) * 83px), calc(var(--sy) * 34px)) scale(1);
+      transition-delay: .12s;
+    }
+    .widget:hover .btn-action[data-n="5"] {   /* horizontal extreme */
       transform: translateX(calc(var(--sx) * 90px)) scale(1);
       transition-delay: .15s;
     }
