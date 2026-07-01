@@ -42,4 +42,5 @@ export * from './components/test-editor/test-editor';
 export * from './components/configuration/configuration';
 export * from './components/advanced-test-editor/advanced-test-editor';
 export * from './components/file-preview/file-preview';
+export * from './components/help-panel/help-panel';
 export * from './components/lib-e2e-recorder/lib-e2e-recorder';
