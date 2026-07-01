@@ -38,8 +38,11 @@ export class RecordingService {
   constructor() {
     this.listenToAssertClicks();
     this.listenToClicks();
+    this.listenToDoubleClicks();
+    this.listenToContextMenu();
     this.listenToInput();
     this.listenToSelect();
+    this.listenToKeys();
     this.listenToRouteChanges();
   }
 
@@ -272,6 +275,76 @@ export class RecordingService {
     );
   }
 
+  /** Centralised selector resolution for the pointer/key listeners (spec 010). */
+  private resolveSelectorFor(target: HTMLElement | null): string | null {
+    if (!target || this.isOwnElement(target)) return null;
+    const tag = target.tagName?.toLowerCase();
+    if (tag === 'body' || tag === 'html') return null;
+    const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
+    if (!container) return null;
+    const selector = this.getReliableSelector(container);
+    if (!selector || this.isOwnSelector(selector)) return null;
+    return selector;
+  }
+
+  private listenToDoubleClicks(): void {
+    document.addEventListener(
+      'dblclick',
+      (e: Event) => {
+        if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
+        if ((e as MouseEvent).altKey) return;
+        const selector = this.resolveSelectorFor(e.target as HTMLElement);
+        if (!selector) return;
+        // Collapse the up-to-2 single clicks the browser fired before the dblclick.
+        const clickCmd = `cy.get('${selector}').click()`;
+        let cmds = this.commands$.getValue();
+        let removed = 0;
+        while (removed < 2 && cmds.length > 0 && cmds[cmds.length - 1] === clickCmd) {
+          cmds = cmds.slice(0, -1);
+          removed++;
+        }
+        if (removed > 0) this.commands$.next(cmds);
+        this.addCommand(`cy.get('${selector}').dblclick()`);
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
+  private listenToContextMenu(): void {
+    document.addEventListener(
+      'contextmenu',
+      (e: Event) => {
+        if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
+        const selector = this.resolveSelectorFor(e.target as HTMLElement);
+        if (!selector) return;
+        this.addCommand(`cy.get('${selector}').rightclick()`);
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
+  /** Enter → type('{enter}'), Escape → type('{esc}'), only inside a field. */
+  private listenToKeys(): void {
+    document.addEventListener(
+      'keydown',
+      (e: Event) => {
+        if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
+        const key = (e as KeyboardEvent).key;
+        if (key !== 'Enter' && key !== 'Escape') return;
+        const target = e.target as HTMLElement;
+        const tag = target?.tagName?.toLowerCase();
+        if (tag !== 'input' && tag !== 'textarea' && tag !== 'select') return;
+        const selector = this.resolveSelectorFor(target);
+        if (!selector) return;
+        // Record the field's pending value before the key press.
+        this.flushInputDebounce(target);
+        const token = key === 'Enter' ? '{enter}' : '{esc}';
+        this.addCommand(`cy.get('${selector}').type('${token}')`);
+      },
+      { signal: this.abort.signal }
+    );
+  }
+
   private listenToInput(): void {
     document.addEventListener(
       'input',
@@ -370,7 +443,21 @@ export class RecordingService {
     const tag = target.tagName.toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') {
       const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
-      if (!container) this.selectorNotFound$.next({ target, action: 'click' });
+      if (!container) { this.selectorNotFound$.next({ target, action: 'click' }); return; }
+      // Checkbox/radio → check()/uncheck(); other input clicks stay a no-op (the
+      // value is captured via the `input` event). Runs in the bubble phase, so
+      // `checked` already reflects the post-click state (spec 010).
+      if (tag === 'input') {
+        const input = target as HTMLInputElement;
+        const type = (input.getAttribute('type') ?? '').toLowerCase();
+        if (type === 'checkbox' || type === 'radio') {
+          const selector = this.getReliableSelector(container);
+          if (selector && !this.isOwnSelector(selector)) {
+            const action = type === 'radio' || input.checked ? 'check' : 'uncheck';
+            this.addCommand(`cy.get('${selector}').${action}()`);
+          }
+        }
+      }
       return;
     }
 
@@ -426,15 +513,31 @@ export class RecordingService {
     this.inputDebounceTimers.set(
       target,
       setTimeout(() => {
-        const selector = this.getReliableSelector(container);
-        const value = target.value.replace(/'/g, "\\'");
-        this.addGenericCommand({
-          selector,
-          action: (s) => `cy.get('${s}').clear().type('${value}')`,
-        });
         this.inputDebounceTimers.delete(target);
+        this.recordInputValue(target);
       }, 1000)
     );
+  }
+
+  /** Records a text field's current value as a `clear().type()` command. */
+  private recordInputValue(target: HTMLInputElement | HTMLTextAreaElement): void {
+    const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
+    if (!container) return;
+    const selector = this.getReliableSelector(container);
+    const value = target.value.replace(/'/g, "\\'");
+    this.addGenericCommand({
+      selector,
+      action: (s) => `cy.get('${s}').clear().type('${value}')`,
+    });
+  }
+
+  /** Flushes any pending debounced value for an element, recording it now. */
+  private flushInputDebounce(target: HTMLElement): void {
+    const timer = this.inputDebounceTimers.get(target);
+    if (timer === undefined) return;
+    clearTimeout(timer);
+    this.inputDebounceTimers.delete(target);
+    this.recordInputValue(target as HTMLInputElement | HTMLTextAreaElement);
   }
 
   // ── Select helpers ────────────────────────────────────────────────────────

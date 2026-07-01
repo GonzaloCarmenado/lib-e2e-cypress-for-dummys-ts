@@ -23,6 +23,18 @@ function altClick(el: HTMLElement): MouseEvent {
   return ev;
 }
 
+function dblclick(el: HTMLElement): void {
+  el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+}
+
+function rightClick(el: HTMLElement): void {
+  el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+}
+
+function keydown(el: HTMLElement, key: string): void {
+  el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+}
+
 function input(el: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   el.value = value;
   el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -353,6 +365,98 @@ describe('Phase 4 — RecordingService', () => {
       const btn = makeElement('button', { 'data-cy': 'save-btn' });
       click(btn);
       expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"save-btn\"]').click()");
+    });
+  });
+
+  // ── Richer interactions (spec 010) ────────────────────────────────────────
+
+  describe('checkbox / radio', () => {
+    beforeEach(() => service.startRecording());
+
+    it('clicking a checkbox into the checked state records check()', () => {
+      const cb = makeElement('input', { 'data-cy': 'agree', type: 'checkbox' }) as HTMLInputElement;
+      click(cb); // jsdom toggles → checked
+      expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"agree\"]').check()");
+    });
+
+    it('clicking a checkbox into the unchecked state records uncheck()', () => {
+      const cb = makeElement('input', { 'data-cy': 'agree', type: 'checkbox' }) as HTMLInputElement;
+      cb.checked = true;
+      click(cb); // jsdom toggles → unchecked
+      expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"agree\"]').uncheck()");
+    });
+
+    it('clicking a radio records check()', () => {
+      const radio = makeElement('input', { 'data-cy': 'opt', type: 'radio' }) as HTMLInputElement;
+      click(radio);
+      expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"opt\"]').check()");
+    });
+
+    it('clicking a plain text input still records no command', () => {
+      const inp = makeElement('input', { 'data-cy': 'name', type: 'text' });
+      const before = service.getCommandsSnapshot().length;
+      click(inp);
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+  });
+
+  describe('double-click', () => {
+    beforeEach(() => service.startRecording());
+
+    it('records dblclick() and collapses the two preceding single clicks', () => {
+      const btn = makeElement('button', { 'data-cy': 'row' });
+      click(btn);
+      click(btn);
+      const afterClicks = service.getCommandsSnapshot().length;
+      dblclick(btn);
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.at(-1)).toBe("cy.get('[data-cy=\"row\"]').dblclick()");
+      // two clicks removed, one dblclick added → net -1 vs after the two clicks
+      expect(cmds.length).toBe(afterClicks - 1);
+      expect(cmds.filter((c) => c === "cy.get('[data-cy=\"row\"]').click()")).toHaveLength(0);
+    });
+  });
+
+  describe('right-click', () => {
+    beforeEach(() => service.startRecording());
+
+    it('records rightclick()', () => {
+      const btn = makeElement('button', { 'data-cy': 'ctx' });
+      rightClick(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"ctx\"]').rightclick()");
+    });
+  });
+
+  describe('keyboard (Enter / Escape)', () => {
+    beforeEach(() => service.startRecording());
+
+    it('Enter in a field flushes the pending value then records type({enter})', () => {
+      const inp = makeElement('input', { 'data-cy': 'q', type: 'text' }) as HTMLInputElement;
+      input(inp, 'hello'); // starts the 1s debounce, no command yet
+      keydown(inp, 'Enter');
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.at(-2)).toBe("cy.get('[data-cy=\"q\"]').clear().type('hello')");
+      expect(cmds.at(-1)).toBe("cy.get('[data-cy=\"q\"]').type('{enter}')");
+    });
+
+    it('Escape in a field records type({esc})', () => {
+      const inp = makeElement('input', { 'data-cy': 'q', type: 'text' });
+      keydown(inp, 'Escape');
+      expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"q\"]').type('{esc}')");
+    });
+
+    it('Tab records nothing (Cypress does not support {tab})', () => {
+      const inp = makeElement('input', { 'data-cy': 'q', type: 'text' });
+      const before = service.getCommandsSnapshot().length;
+      keydown(inp, 'Tab');
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('Enter outside a field records nothing', () => {
+      const div = makeElement('div', { 'data-cy': 'panel' });
+      const before = service.getCommandsSnapshot().length;
+      keydown(div, 'Enter');
+      expect(service.getCommandsSnapshot().length).toBe(before);
     });
   });
 
