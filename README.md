@@ -123,7 +123,12 @@ The recorder automatically captures:
 | Interaction | Generated Cypress command |
 |---|---|
 | Click on a button or element | `cy.get('[data-cy="submit"]').click()` |
+| Double-click | `cy.get('[data-cy="row"]').dblclick()` |
+| Right-click | `cy.get('[data-cy="ctx"]').rightclick()` |
+| Check / uncheck a checkbox | `cy.get('[data-cy="agree"]').check()` / `.uncheck()` |
+| Pick a radio | `cy.get('[data-cy="plan"]').check()` |
 | Type into a text field | `cy.get('[data-cy="email"]').clear().type('user@example.com')` |
+| Press Enter / Escape in a field | `cy.get('[data-cy="q"]').type('{enter}')` / `type('{esc}')` |
 | Select a `<select>` value | `cy.get('[data-cy="country"]').select('ES')` |
 | SPA route change (push/replace/popstate) | `cy.url().should('include', '/dashboard')` |
 | Page load | `cy.visit('/current-path')` |
