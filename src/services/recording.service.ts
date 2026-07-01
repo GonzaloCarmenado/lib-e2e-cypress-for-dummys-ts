@@ -2,6 +2,7 @@ import { INPUT_TYPES } from '../models/input-types.model';
 import type { ActiveSessionState } from '../models/active-session.model';
 import { Subject } from '../utils/subject';
 import { FORBIDDEN_ID_PREFIXES } from '../utils/selector-quality.utils';
+import { inferAssertionCommand } from '../utils/assertion.utils';
 
 const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
 
@@ -35,6 +36,7 @@ export class RecordingService {
   private readonly origReplaceState = history.replaceState.bind(history);
 
   constructor() {
+    this.listenToAssertClicks();
     this.listenToClicks();
     this.listenToInput();
     this.listenToSelect();
@@ -216,6 +218,44 @@ export class RecordingService {
   }
 
   // ── DOM listeners ─────────────────────────────────────────────────────────
+
+  /**
+   * Alt+click captures an ASSERTION for the element instead of a click, and
+   * suppresses the element's real action. Runs in the capture phase so it fires
+   * before the app's handlers and before the bubble-phase click listener below
+   * (stopImmediatePropagation prevents a duplicate `.click()`). See spec 009.
+   */
+  private listenToAssertClicks(): void {
+    document.addEventListener(
+      'click',
+      (e: Event) => {
+        if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
+        if (!(e as MouseEvent).altKey) return;
+        const target = e.target as HTMLElement;
+        if (!target || this.isOwnElement(target)) return;
+        const tag = target.tagName?.toLowerCase();
+        if (tag === 'body' || tag === 'html') return;
+        const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
+        if (!container) return; // no reliable selector → leave it as a normal Alt+click
+        const selector = this.getReliableSelector(container);
+        if (!selector || this.isOwnSelector(selector)) return;
+        // Assert-only: don't let the click perform its action or record a click.
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const emit = (): void => this.addCommand(inferAssertionCommand(container, selector));
+        // A checkbox/radio toggles its `checked` during the click's activation;
+        // since we cancelled the action it is restored afterwards, so read the true
+        // state on the next microtask rather than the transient toggled value.
+        const type = (container.getAttribute('type') ?? '').toLowerCase();
+        if (container.tagName.toLowerCase() === 'input' && (type === 'checkbox' || type === 'radio')) {
+          queueMicrotask(emit);
+        } else {
+          emit();
+        }
+      },
+      { capture: true, signal: this.abort.signal }
+    );
+  }
 
   private listenToClicks(): void {
     document.addEventListener(

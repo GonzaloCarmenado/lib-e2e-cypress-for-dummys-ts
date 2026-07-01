@@ -17,6 +17,12 @@ function click(el: HTMLElement): void {
   el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 }
 
+function altClick(el: HTMLElement): MouseEvent {
+  const ev = new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true });
+  el.dispatchEvent(ev);
+  return ev;
+}
+
 function input(el: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   el.value = value;
   el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -272,6 +278,81 @@ describe('Phase 4 — RecordingService', () => {
       const before = service.getCommandsSnapshot().length;
       click(btn);
       expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+  });
+
+  // ── Alt+click assertion capture (spec 009) ────────────────────────────────
+
+  describe('Alt+click assertion capture', () => {
+    beforeEach(() => service.startRecording());
+
+    it('Alt+click on a [data-cy] element with text records a contain.text assertion', () => {
+      const btn = makeElement('button', { 'data-cy': 'save-btn' });
+      btn.textContent = 'Guardar';
+      altClick(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toBe(
+        "cy.get('[data-cy=\"save-btn\"]').should('contain.text', 'Guardar')"
+      );
+    });
+
+    it('Alt+click does NOT also record a .click()', () => {
+      const btn = makeElement('button', { 'data-cy': 'save-btn' });
+      btn.textContent = 'Guardar';
+      altClick(btn);
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.some((c) => c.endsWith('.click()'))).toBe(false);
+      expect(cmds.at(-1)).toContain('should(');
+    });
+
+    it('Alt+click suppresses the element action (stops propagation + preventDefault)', () => {
+      const btn = makeElement('button', { 'data-cy': 'save-btn' });
+      btn.textContent = 'Guardar';
+      let appClickFired = false;
+      btn.addEventListener('click', () => { appClickFired = true; });
+      const ev = altClick(btn);
+      expect(appClickFired).toBe(false);
+      expect(ev.defaultPrevented).toBe(true);
+    });
+
+    it('Alt+click on a text input asserts have.value', () => {
+      const inp = makeElement('input', { 'data-cy': 'email', type: 'text' }) as HTMLInputElement;
+      inp.value = 'a@b.com';
+      altClick(inp);
+      expect(service.getCommandsSnapshot().at(-1)).toBe(
+        "cy.get('[data-cy=\"email\"]').should('have.value', 'a@b.com')"
+      );
+    });
+
+    it('Alt+click on a checked checkbox asserts be.checked', async () => {
+      const cb = makeElement('input', { 'data-cy': 'agree', type: 'checkbox' }) as HTMLInputElement;
+      cb.checked = true;
+      altClick(cb);
+      // checkbox state is read on the next microtask (after the cancelled toggle)
+      await Promise.resolve();
+      expect(service.getCommandsSnapshot().at(-1)).toBe(
+        "cy.get('[data-cy=\"agree\"]').should('be.checked')"
+      );
+    });
+
+    it('Alt+click is a no-op when not recording', () => {
+      service.stopRecording();
+      const btn = makeElement('button', { 'data-cy': 'save-btn' });
+      const before = service.getCommandsSnapshot().length;
+      altClick(btn);
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('Alt+click on an element with no reliable selector records nothing and does not throw', () => {
+      const plain = makeElement('div');
+      const before = service.getCommandsSnapshot().length;
+      expect(() => altClick(plain)).not.toThrow();
+      expect(service.getCommandsSnapshot().length).toBe(before);
+    });
+
+    it('a normal click (no Alt) still records a .click() action', () => {
+      const btn = makeElement('button', { 'data-cy': 'save-btn' });
+      click(btn);
+      expect(service.getCommandsSnapshot().at(-1)).toBe("cy.get('[data-cy=\"save-btn\"]').click()");
     });
   });
 
