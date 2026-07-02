@@ -194,6 +194,23 @@ cy.wait('@post-api-users').then((interception) => {
 
 Fields named `id` or `uid` are always skipped (they change between environments). Array responses fall back to the default empty `.then()` block.
 
+#### Fixture mode (deterministic stubs)
+
+Enable **🧪 Fixtures HTTP** in the settings panel to turn GET responses into
+**Cypress fixtures + stubs** instead of spies. While recording, each GET with a
+JSON body is saved as `cypress/fixtures/<alias>.json` and its interceptor becomes:
+
+```javascript
+cy.intercept('GET', '**/api/users', { fixture: 'get-api-users.json' }).as('get-api-users')
+cy.wait('@get-api-users').then((interception) => { })
+```
+
+so the test replays deterministic data with **no backend**. When you save the
+test, the fixture files are written into your `cypress/fixtures/` folder
+automatically (requires the Cypress folder configured — see the advanced editor
+setup). POST/PUT keep the spy + body-validation behaviour; non-JSON GETs fall back
+to a spy.
+
 ---
 
 ### Selector strategy
