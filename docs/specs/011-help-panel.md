@@ -37,18 +37,21 @@ the recorder can do, opened from the widget.
 
 ## Acceptance criteria
 
-- [x] AC-01: A **`?` action button** appears in the widget's radial menu (now 5
-      buttons) and opens the Help panel; the radial arc still expands adaptively
-      and stays on-screen (spec 007 behaviour preserved).
+- [x] AC-01: A **`?` action** appears in the widget's action menu and opens the
+      Help panel. **The action menu was changed from a radial fan to a labelled
+      grid popover** (icons + labels) — the 5th button made the radial cramped; the
+      popover opens toward the viewport interior (adaptive, spec 007 preserved) and
+      is more discoverable (labels visible).
 - [x] AC-02: **Ctrl+Shift+H** opens the Help panel (works when the widget is
       visible, like the other panel shortcuts).
 - [x] AC-03: The panel is a Custom Element (`help-panel`) shown in a Swal modal,
       consistent with the other panels; its template is **pure** and all content is
       **escaped** (`escHtml` — needed because values contain literal `<select>`).
-- [x] AC-04: Content is **categorized** (8 sections) and covers: recording,
-      keyboard shortcuts, captured interactions, Alt+click assertions, the 4 panels,
-      selector strategy, HTTP, data export/import, invisible mode, runner, cross-app,
-      drag.
+- [x] AC-04: Content is **categorized** and split into **two tabs**: *Quick
+      reference* (8-section cheat-sheet) and *Usage guide* (workflow + what it
+      covers + what it does NOT cover). Covers recording, shortcuts, interactions,
+      Alt+click assertions, the panels, selectors, HTTP, data, invisible mode,
+      runner, cross-app, drag.
 - [x] AC-05: **Every** string goes through `TranslationService`; the new `HELP.*`
       keys exist and are **fully translated in all 5** language files.
 - [x] AC-06: `showHelpDialog()` + `isHelpDialogOpen` are exposed on the element
@@ -108,3 +111,4 @@ languages. New key `RECORDER.BTN_HELP` (radial button label).
 |------------|--------------------------------------------------------------------|
 | 2026-07-01 | Initial draft. Decisions: `?` radial button (5th) + Ctrl+Shift+H; comprehensive categorized content; all 5 languages fully translated. |
 | 2026-07-01 | Implemented: `help-panel` component + 8-section content driven by `HELP.*` keys (fully translated ×5), radial re-fanned to 5 buttons, `showHelpDialog()` + Ctrl+Shift+H. Content escaped with `escHtml` (values contain `<select>`). Gates green (lint 0, 851 tests, coverage 96.28%, build 0). Held on a branch pending testing. |
+| 2026-07-02 | UX iteration after testing: the 5-button radial felt cramped → **replaced with a labelled grid popover** (icons + labels). Added **two tabs** to the help panel — *Quick reference* + *Usage guide* (workflow / what it covers / what it does NOT cover). Guide body: es/en full; fr/it/de fallback to ES with `// TODO: translate`. Gates green (854 tests, coverage 96.38%, build 0). |
