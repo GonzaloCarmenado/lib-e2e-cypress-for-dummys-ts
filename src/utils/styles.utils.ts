@@ -108,6 +108,10 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   align-items: stretch;
   box-sizing: border-box;
   overflow: hidden !important;
+  /* Left-align modal body text/code (SweetAlert defaults it to centre, which
+     inherits into the panels — including their shadow DOM). Titles/buttons keep
+     their own alignment. */
+  text-align: left !important;
 }
 /* The single wrapper div we inject inside each modal fills the container */
 .swal2-html-container > div {

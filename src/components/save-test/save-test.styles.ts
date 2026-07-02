@@ -2,7 +2,7 @@ export const SAVE_TEST_STYLES = `
   :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
   * { box-sizing: border-box; }
   .container { padding: 24px 28px; text-align: left; }
-  .btn-row, p { text-align: center; }
+  .btn-row { text-align: center; }
   p { margin: 0 0 20px; font-size: 14px; color: #8b949e; line-height: 1.5; }
   .btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
   button {
