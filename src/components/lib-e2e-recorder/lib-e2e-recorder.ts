@@ -198,6 +198,9 @@ export class LibE2eRecorderElement extends HTMLElement {
     } else {
       localStorage.setItem('extendedHttpCommands', (config['extendedHttpCommands'] as string) ?? 'true');
     }
+    // Mirror the fixture-mode flag to localStorage so HttpMonitor can read it (spec 012).
+    const fx = await this.persistence.getConfig('fixtureMode');
+    localStorage.setItem('fixtureMode', (fx?.['fixtureMode'] as string) ?? 'false');
   }
 
   private async initLanguage(): Promise<void> {
@@ -937,7 +940,9 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
 
   private async onSaveTest(description: string | null, tags: string[] = [], notes = ''): Promise<void> {
     if (description) {
+      const fixtures = this.recording.getFixturesSnapshot();
       await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes);
+      await this.writeFixturesIfAny(fixtures);
       this.recording.clearCommands();
       this.clearRecordingHistory();
       this.cypressCommands = [];
@@ -947,12 +952,25 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
 
   private async onSaveAndExportTest(description: string | null, tags: string[] = [], notes = ''): Promise<void> {
     if (description) {
+      const fixtures = this.recording.getFixturesSnapshot();
       const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes);
+      await this.writeFixturesIfAny(fixtures);
       this.recording.clearCommands();
       this.clearRecordingHistory();
       this.cypressCommands = [];
       this.interceptors = [];
       setTimeout(() => this.showAdvancedEditorDialog(id), 300);
+    }
+  }
+
+  /** Writes captured fixtures to cypress/fixtures and toasts the outcome (spec 012). */
+  private async writeFixturesIfAny(fixtures: Array<{ name: string; content: string }>): Promise<void> {
+    if (!fixtures.length) return;
+    try {
+      const n = await this.persistence.writeFixtures(fixtures);
+      showToast(`${this.translation.translate('RECORDER.FIXTURES_WRITTEN_TOAST')} (${n})`);
+    } catch {
+      showToast(this.translation.translate('RECORDER.FIXTURES_NO_FOLDER_TOAST'), false);
     }
   }
 

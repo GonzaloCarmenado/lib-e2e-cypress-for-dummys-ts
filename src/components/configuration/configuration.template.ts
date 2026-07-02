@@ -13,6 +13,7 @@ export const LANGS = [
 export interface ConfigurationState {
   selectedLanguage: string;
   advancedHttpConfig: boolean;
+  fixtureMode: boolean;
   selectorStrategy: string;
   filesystemGranted: boolean;
   cypressFolderName: string | null;
@@ -94,7 +95,7 @@ export function renderExportOverlay(state: ConfigurationState, t: (key: string) 
 }
 
 export function renderConfiguration(state: ConfigurationState, t: (key: string) => string): string {
-  const { selectedLanguage, advancedHttpConfig, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden, resumeTtlMinutes } = state;
+  const { selectedLanguage, advancedHttpConfig, fixtureMode, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden, resumeTtlMinutes } = state;
 
   const langOptions = LANGS.map(
     (l) => `<option value="${l.value}" ${selectedLanguage === l.value ? 'selected' : ''}>${l.label}</option>`,
@@ -120,6 +121,18 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
           <div>
             <div class="check-title">${t('CONFIG.HTTP_TITLE')}</div>
             <div class="check-sub">${t('CONFIG.HTTP_SUB')}</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- HTTP Fixtures -->
+      <div class="card">
+        <div class="card-hd">${t('CONFIG.FIXTURE_SECTION')}</div>
+        <label class="check-row">
+          <input type="checkbox" id="fixture-toggle" ${fixtureMode ? 'checked' : ''} />
+          <div>
+            <div class="check-title">${t('CONFIG.FIXTURE_TITLE')}</div>
+            <div class="check-sub">${t('CONFIG.FIXTURE_SUB')}</div>
           </div>
         </label>
       </div>

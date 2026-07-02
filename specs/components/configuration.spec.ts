@@ -501,6 +501,33 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     });
   });
 
+  // ── fixture mode toggle (spec 012) ─────────────────────────────────────────
+
+  describe('fixture mode', () => {
+    it('fixtureMode defaults to false', () => {
+      expect(el.fixtureMode).toBe(false);
+    });
+
+    it('onFixtureModeChange(true) sets the flag and localStorage', () => {
+      el.onFixtureModeChange(true);
+      expect(el.fixtureMode).toBe(true);
+      expect(localStorage.getItem('fixtureMode')).toBe('true');
+    });
+
+    it('onFixtureModeChange(false) sets localStorage to "false"', () => {
+      el.onFixtureModeChange(false);
+      expect(localStorage.getItem('fixtureMode')).toBe('false');
+    });
+
+    it('change on #fixture-toggle calls onFixtureModeChange', () => {
+      const spy = vi.spyOn(el, 'onFixtureModeChange');
+      const cb = el.shadowRoot!.getElementById('fixture-toggle') as HTMLInputElement;
+      cb.checked = true;
+      cb.dispatchEvent(new Event('change'));
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+  });
+
   // ── widget position reset (spec 007) ──────────────────────────────────────
 
   describe('widget position reset', () => {

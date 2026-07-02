@@ -15,6 +15,7 @@ export class ConfigurationElement extends HTMLElement {
   translation!: TranslationService;
   selectedLanguage = 'es';
   advancedHttpConfig = false;
+  fixtureMode = false;
   selectorStrategy: SelectorStrategy = 'data-cy';
   smartSelectorEnabled = true;
   startHidden = false;
@@ -31,6 +32,7 @@ export class ConfigurationElement extends HTMLElement {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
     this.advancedHttpConfig = localStorage.getItem('extendedHttpCommands') === 'true';
+    this.fixtureMode = localStorage.getItem('fixtureMode') === 'true';
   }
 
   connectedCallback(): void {
@@ -49,6 +51,7 @@ export class ConfigurationElement extends HTMLElement {
       this.translation.setLang(this.selectedLanguage as Lang);
     }
     this.advancedHttpConfig = localStorage.getItem('extendedHttpCommands') === 'true';
+    this.fixtureMode = localStorage.getItem('fixtureMode') === 'true';
     this.selectorStrategy = (config?.['selectorStrategy'] as SelectorStrategy) ?? 'data-cy';
     this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false';
     this.startHidden = config?.['startHidden'] === 'true';
@@ -76,6 +79,13 @@ export class ConfigurationElement extends HTMLElement {
     this.advancedHttpConfig = checked;
     localStorage.setItem('extendedHttpCommands', checked ? 'true' : 'false');
     this.persistence.setConfig({ extendedHttpCommands: checked ? 'true' : 'false' });
+    this.render();
+  }
+
+  onFixtureModeChange(checked: boolean): void {
+    this.fixtureMode = checked;
+    localStorage.setItem('fixtureMode', checked ? 'true' : 'false');
+    this.persistence.setConfig({ fixtureMode: checked ? 'true' : 'false' });
     this.render();
   }
 
@@ -215,6 +225,7 @@ export class ConfigurationElement extends HTMLElement {
     this.shadow.innerHTML = `<style>${CONFIGURATION_STYLES}</style>${renderConfiguration({
       selectedLanguage: this.selectedLanguage,
       advancedHttpConfig: this.advancedHttpConfig,
+      fixtureMode: this.fixtureMode,
       selectorStrategy: this.selectorStrategy,
       filesystemGranted: this.filesystemGranted,
       cypressFolderName: this.cypressFolderName,
@@ -232,6 +243,9 @@ export class ConfigurationElement extends HTMLElement {
     )
     ;(this.shadow.getElementById('http-toggle') as HTMLInputElement).addEventListener('change', (e) =>
       this.onAdvancedHttpConfigChange((e.target as HTMLInputElement).checked),
+    )
+    ;(this.shadow.getElementById('fixture-toggle') as HTMLInputElement).addEventListener('change', (e) =>
+      this.onFixtureModeChange((e.target as HTMLInputElement).checked),
     )
     ;(this.shadow.getElementById('smart-selector-toggle') as HTMLInputElement).addEventListener('change', (e) =>
       this.onSmartSelectorChange((e.target as HTMLInputElement).checked),
