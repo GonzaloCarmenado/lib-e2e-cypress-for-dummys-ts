@@ -876,7 +876,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
   ): void {
     Swal.fire({
       title: this.translation.translate('RECORDER.FILE_EDITOR_TITLE'),
-      html: '<div id="file-editor-modal-content" style="padding:0;height:540px"></div>',
+      html: '<div id="file-editor-modal-content" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:0"></div>',
       showCloseButton: false,
       showConfirmButton: false,
       allowOutsideClick: false,
@@ -885,6 +885,22 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
       didOpen: () => {
         makeSwalDraggable();
         setSwal2DataCyAttribute();
+        // Give the code editor a tall default height (otherwise the popup collapses
+        // to its ~210px min-height and the user has to resize it every time).
+        const popup = Swal.getPopup();
+        if (popup) {
+          popup.style.height = '640px';
+          const htmlContainer = popup.querySelector('.swal2-html-container') as HTMLElement | null;
+          if (htmlContainer) {
+            htmlContainer.style.flex = '1';
+            htmlContainer.style.minHeight = '0';
+            htmlContainer.style.overflow = 'hidden';
+            htmlContainer.style.padding = '0';
+            htmlContainer.style.margin = '0';
+            htmlContainer.style.display = 'flex';
+            htmlContainer.style.flexDirection = 'column';
+          }
+        }
         const container = document.getElementById('file-editor-modal-content');
         if (!container) return;
         const child = document.createElement('file-preview') as unknown as FilePreviewEl;
