@@ -176,8 +176,8 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(el.isAdvancedEditorDialogOpen).toBe(true);
   });
 
-  it('widget renders 5 action buttons', () => {
-    const buttons = el.shadowRoot!.querySelectorAll('.btn-action');
+  it('widget renders 5 action items in the menu', () => {
+    const buttons = el.shadowRoot!.querySelectorAll('.action-item');
     expect(buttons.length).toBe(5);
   });
 

@@ -1,16 +1,18 @@
 export function renderRecorderWidget(rec: boolean, paused: boolean, t: (key: string) => string): string {
   return `
     <div class="widget">
-      <button class="btn-action" data-n="1" data-action="config"
-              data-label="${t('RECORDER.BTN_CONFIG')}">⚙️</button>
-      <button class="btn-action" data-n="2" data-action="browse"
-              data-label="${t('RECORDER.BTN_FILES')}">📁</button>
-      <button class="btn-action" data-n="3" data-action="commands"
-              data-label="${t('RECORDER.BTN_COMMANDS')}">⌨️</button>
-      <button class="btn-action" data-n="4" data-action="tests"
-              data-label="${t('RECORDER.BTN_TESTS')}">📋</button>
-      <button class="btn-action" data-n="5" data-action="help"
-              data-label="${t('RECORDER.BTN_HELP')}">❓</button>
+      <div class="action-menu">
+        <button class="action-item" data-action="config">
+          <span class="ico">⚙️</span><span class="label">${t('RECORDER.BTN_CONFIG')}</span></button>
+        <button class="action-item" data-action="browse">
+          <span class="ico">📁</span><span class="label">${t('RECORDER.BTN_FILES')}</span></button>
+        <button class="action-item" data-action="commands">
+          <span class="ico">⌨️</span><span class="label">${t('RECORDER.BTN_COMMANDS')}</span></button>
+        <button class="action-item" data-action="tests">
+          <span class="ico">📋</span><span class="label">${t('RECORDER.BTN_TESTS')}</span></button>
+        <button class="action-item" data-action="help">
+          <span class="ico">❓</span><span class="label">${t('RECORDER.BTN_HELP')}</span></button>
+      </div>
       <button class="btn-pause" data-action="pause"
               title="${paused ? t('RECORDER.RESUME_TITLE') : t('RECORDER.PAUSE_TITLE')}">
         ${paused ? '▶' : '⏸'}

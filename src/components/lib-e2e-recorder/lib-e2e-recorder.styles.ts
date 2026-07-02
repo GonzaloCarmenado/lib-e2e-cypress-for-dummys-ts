@@ -3,33 +3,21 @@ import type { ExpandDirection } from '../../utils/widget-position.utils';
 const DIRECTIONS: ExpandDirection[] = ['up-left', 'up-right', 'down-left', 'down-right'];
 
 /**
- * Per-direction anchors + label placement. The toggle sits at the box corner
- * nearest the screen edge so the radial arc always expands toward the viewport
- * interior (spec 007). --sx/--sy drive the arc transforms; the actual widget
- * position (left/top) is set imperatively from JS.
+ * Per-direction anchors for the toggle/pause buttons and the action-menu popover.
+ * The menu opens on the side of the FAB that faces the viewport interior, so it
+ * stays on-screen wherever the (draggable) widget is dropped (spec 007 + 012).
  */
 function directionBlocks(): string {
   return DIRECTIONS.map((dir) => {
-    const sx = dir.endsWith('left') ? -1 : 1;
-    const sy = dir.startsWith('up') ? -1 : 1;
-    const tv = dir.startsWith('up') ? 'bottom' : 'top';   // toggle vertical side
-    const th = dir.endsWith('left') ? 'right' : 'left';   // toggle horizontal side
-    const ov = tv === 'bottom' ? 'top' : 'bottom';        // interior vertical side
-    const oh = th === 'right' ? 'left' : 'right';          // interior (arc) horizontal side
+    const tv = dir.startsWith('up') ? 'bottom' : 'top';   // FAB vertical side
+    const th = dir.endsWith('left') ? 'right' : 'left';    // FAB horizontal side
+    const ov = tv === 'bottom' ? 'top' : 'bottom';
+    const oh = th === 'right' ? 'left' : 'right';
     const sel = `.widget[data-expand="${dir}"]`;
-
-    // Diagonal labels (n2/n3) sit on the arc's horizontal side; vertical-extreme
-    // (n1) and horizontal-extreme (n4) labels sit on the interior vertical side.
-    const labelGeneral = `${sel} .btn-action::after { ${oh}: calc(100% + 9px); ${th}: auto; top: 50%; bottom: auto; transform: translateY(-50%); }`;
-    const labelEnds = `${sel} .btn-action[data-n="1"]::after, ${sel} .btn-action[data-n="5"]::after { ${ov}: calc(100% + 9px); ${tv}: auto; left: 50%; right: auto; transform: translateX(-50%); }`;
-
     return `
-      ${sel} { --sx: ${sx}; --sy: ${sy}; }
-      ${sel} .btn-toggle { ${tv}: 24px; ${th}: 24px; ${ov}: auto; ${oh}: auto; }
-      ${sel} .btn-pause  { ${tv}: 78px; ${th}: 24px; ${ov}: auto; ${oh}: auto; }
-      ${sel} .btn-action { ${tv}: 28px; ${th}: 28px; ${ov}: auto; ${oh}: auto; }
-      ${labelGeneral}
-      ${labelEnds}
+      ${sel} .btn-toggle  { ${tv}: 24px; ${th}: 24px; ${ov}: auto; ${oh}: auto; }
+      ${sel} .btn-pause   { ${tv}: 78px; ${th}: 24px; ${ov}: auto; ${oh}: auto; }
+      ${sel} .action-menu { ${tv}: 118px; ${th}: 8px; ${ov}: auto; ${oh}: auto; transform-origin: ${tv} ${th}; }
     `;
   }).join('\n');
 }
@@ -40,9 +28,10 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
     *, *::before, *::after { box-sizing: border-box; }
 
     /*
-     * Invisible 190×190 hit area. Position (left/top) is set from JS so the
-     * widget can be dragged; --sx/--sy + data-expand orient the radial menu so
-     * it always expands toward the viewport interior. Defaults to bottom-right.
+     * Hit area. Position (left/top) is set from JS so the widget can be dragged;
+     * data-expand orients the action-menu popover toward the viewport interior.
+     * The menu is a DOM child, so hovering it keeps :host(.widget):hover alive even
+     * though it visually overflows this box. Defaults to bottom-right.
      */
     .widget {
       position: fixed;
@@ -51,12 +40,10 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       width: 190px;
       height: 190px;
       z-index: 2147483647;
-      --sx: -1;
-      --sy: -1;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    /* ── Toggle ──────────────────────────────────────── */
+    /* ── Toggle (FAB) ─────────────────────────────────── */
     .btn-toggle {
       position: absolute;
       bottom: 24px;
@@ -115,88 +102,58 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
     .btn-pause:hover { transform: scale(1.12); }
     .btn-pause:active { transform: scale(0.93); }
 
-    /* ── Action buttons ──────────────────────────────── */
-    .btn-action {
+    /* ── Action menu (labelled grid popover) ─────────── */
+    .action-menu {
       position: absolute;
-      bottom: 28px;
-      right: 28px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(13,17,23,.92);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 8px;
+      width: 174px;
+      background: rgba(13,17,23,.97);
+      border: 1px solid rgba(48,54,61,.9);
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.5);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      color: #8b949e;
-      box-shadow: 0 4px 18px rgba(0,0,0,.45), 0 0 0 1px rgba(48,54,61,.75);
       opacity: 0;
-      transform: scale(0.35);
+      transform: scale(0.9);
       pointer-events: none;
-      transition: opacity .15s, transform .18s ease-in,
-                  background .15s, color .12s, box-shadow .15s;
+      transition: opacity .16s, transform .2s cubic-bezier(.34,1.56,.64,1);
+      z-index: 3;
     }
-
-    /* Label chip */
-    .btn-action::after {
-      content: attr(data-label);
-      position: absolute;
-      right: calc(100% + 9px);
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(13,17,23,.95);
-      color: #e6edf3;
-      font-size: 11px;
-      font-weight: 500;
-      padding: 3px 9px;
-      border-radius: 6px;
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .15s .05s;
-      border: 1px solid rgba(48,54,61,.8);
-      box-shadow: 0 2px 8px rgba(0,0,0,.35);
-    }
-    .btn-action:hover::after   { opacity: 1; }
-    .btn-action:hover          { background: #21262d; color: #e6edf3; }
-    .btn-action:active         { background: #30363d !important; }
-
-    /* Expand: spring + stagger */
-    .widget:hover .btn-action {
+    .widget:hover .action-menu {
       opacity: 1;
+      transform: scale(1);
       pointer-events: all;
-      transition: opacity .2s, transform .32s cubic-bezier(.34,1.56,.64,1),
-                  background .15s, color .12s, box-shadow .15s;
     }
 
-    /* Arc positions — 5 buttons over the quarter (~0/22.5/45/67.5/90°),
-       signs come from --sx/--sy (data-expand) */
-    .widget:hover .btn-action[data-n="1"] {   /* vertical extreme */
-      transform: translateY(calc(var(--sy) * 90px)) scale(1);
-      transition-delay: .03s;
+    .action-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 3px;
+      padding: 8px 4px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      color: #c9d1d9;
+      font-size: 18px;
+      line-height: 1;
+      transition: background .12s;
     }
-    .widget:hover .btn-action[data-n="2"] {
-      transform: translate(calc(var(--sx) * 34px), calc(var(--sy) * 83px)) scale(1);
-      transition-delay: .06s;
+    .action-item:hover { background: #21262d; }
+    .action-item .label {
+      font-size: 9px;
+      font-weight: 500;
+      color: #8b949e;
+      white-space: nowrap;
     }
-    .widget:hover .btn-action[data-n="3"] {   /* diagonal (45°) */
-      transform: translate(calc(var(--sx) * 64px), calc(var(--sy) * 64px)) scale(1);
-      transition-delay: .09s;
-    }
-    .widget:hover .btn-action[data-n="4"] {
-      transform: translate(calc(var(--sx) * 83px), calc(var(--sy) * 34px)) scale(1);
-      transition-delay: .12s;
-    }
-    .widget:hover .btn-action[data-n="5"] {   /* horizontal extreme */
-      transform: translateX(calc(var(--sx) * 90px)) scale(1);
-      transition-delay: .15s;
-    }
+    .action-item:hover .label { color: #e6edf3; }
 
-    /* Per-direction anchors + label sides */
+    /* Per-direction anchors */
     ${directionBlocks()}
 
     /* ── REC / PAUSED badge ──────────────────────────── */
