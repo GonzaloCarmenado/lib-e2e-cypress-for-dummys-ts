@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PersistenceService } from '../src/services/persistence.service';
 import type { ActiveSessionState } from '../src/models/active-session.model';
 
@@ -326,6 +326,73 @@ describe('Phase 5 — PersistenceService', () => {
 
     it('clearActiveSession is safe to call when none exists', async () => {
       await expect(service.clearActiveSession()).resolves.toBeUndefined();
+    });
+  });
+
+  // ── writeFixtures (spec 012) ────────────────────────────────────────────────
+
+  describe('writeFixtures', () => {
+    it('returns 0 for an empty list', async () => {
+      expect(await service.writeFixtures([])).toBe(0);
+    });
+
+    it('throws when no Cypress folder is configured', async () => {
+      await expect(service.writeFixtures([{ name: 'a.json', content: '{}' }])).rejects.toThrow();
+    });
+
+    it('writes each fixture into cypress/fixtures via the folder handle', async () => {
+      const writes: Record<string, string> = {};
+      const fixturesDir = {
+        getFileHandle: vi.fn(async (name: string) => ({
+          createWritable: async () => ({
+            write: async (c: string) => { writes[name] = c; },
+            close: async () => { /* noop */ },
+          }),
+        })),
+      };
+      const dirHandle = {
+        queryPermission: async () => 'granted',
+        requestPermission: async () => 'granted',
+        getDirectoryHandle: vi.fn(async () => fixturesDir),
+      };
+      vi.spyOn(service, 'getGeneralConfig').mockResolvedValue({ id: 1, cypressDirectoryHandle: dirHandle } as never);
+
+      const n = await service.writeFixtures([
+        { name: 'a.json', content: '{"a":1}' },
+        { name: 'b.json', content: '[]' },
+      ]);
+
+      expect(n).toBe(2);
+      expect(dirHandle.getDirectoryHandle).toHaveBeenCalledWith('fixtures', { create: true });
+      expect(writes['a.json']).toBe('{"a":1}');
+      expect(writes['b.json']).toBe('[]');
+    });
+
+    it('requests permission when it is not already granted', async () => {
+      const request = vi.fn(async () => 'granted');
+      const dirHandle = {
+        queryPermission: async () => 'prompt',
+        requestPermission: request,
+        getDirectoryHandle: async () => ({
+          getFileHandle: async () => ({
+            createWritable: async () => ({ write: async () => { /* noop */ }, close: async () => { /* noop */ } }),
+          }),
+        }),
+      };
+      vi.spyOn(service, 'getGeneralConfig').mockResolvedValue({ id: 1, cypressDirectoryHandle: dirHandle } as never);
+
+      await service.writeFixtures([{ name: 'a.json', content: '{}' }]);
+      expect(request).toHaveBeenCalled();
+    });
+
+    it('throws when write permission is denied', async () => {
+      const dirHandle = {
+        queryPermission: async () => 'denied',
+        requestPermission: async () => 'denied',
+        getDirectoryHandle: async () => ({ getFileHandle: async () => ({}) }),
+      };
+      vi.spyOn(service, 'getGeneralConfig').mockResolvedValue({ id: 1, cypressDirectoryHandle: dirHandle } as never);
+      await expect(service.writeFixtures([{ name: 'a.json', content: '{}' }])).rejects.toThrow();
     });
   });
 

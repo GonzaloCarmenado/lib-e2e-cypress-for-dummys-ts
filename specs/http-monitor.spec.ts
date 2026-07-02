@@ -86,6 +86,57 @@ describe('Phase 6 — HttpMonitor', () => {
     });
   });
 
+  // ── fixture mode (spec 012) ──────────────────────────────────────────────
+
+  describe('fixture mode', () => {
+    it('isFixtureModeEnabled reflects the localStorage flag', () => {
+      expect(monitor.isFixtureModeEnabled()).toBe(false);
+      localStorage.setItem('fixtureMode', 'true');
+      expect(monitor.isFixtureModeEnabled()).toBe(true);
+    });
+
+    it('GET with a JSON body becomes a fixture stub + fixture file + plain wait', async () => {
+      localStorage.setItem('fixtureMode', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ users: [{ id: 1 }] }));
+      monitor.install();
+      await fetch('/api/users');
+      expect(lastInterceptor(recording)).toContain('{ fixture:');
+      expect(lastInterceptor(recording)).toContain('.json');
+      expect(lastCommand(recording)).toContain("cy.wait('@");
+      const fixtures = recording.getFixturesSnapshot();
+      expect(fixtures).toHaveLength(1);
+      expect(fixtures[0].name).toMatch(/\.json$/);
+      expect(fixtures[0].content).toContain('"users"');
+    });
+
+    it('GET with a non-JSON body falls back to a spy (no fixture)', async () => {
+      localStorage.setItem('fixtureMode', 'true');
+      mockFetch.mockResolvedValue(new Response('not json', { status: 200 }));
+      monitor.install();
+      await fetch('/api/health');
+      expect(lastInterceptor(recording)).not.toContain('fixture');
+      expect(recording.getFixturesSnapshot()).toHaveLength(0);
+    });
+
+    it('POST is unaffected by fixture mode (still a spy, no fixture)', async () => {
+      localStorage.setItem('fixtureMode', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ id: 1 }));
+      monitor.install();
+      await fetch('/api/users', { method: 'POST', body: '{}' });
+      expect(lastInterceptor(recording)).toContain("cy.intercept('POST'");
+      expect(lastInterceptor(recording)).not.toContain('fixture');
+      expect(recording.getFixturesSnapshot()).toHaveLength(0);
+    });
+
+    it('with fixture mode off, GET stays a spy (no fixture)', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ ok: true }));
+      monitor.install();
+      await fetch('/api/users');
+      expect(lastInterceptor(recording)).not.toContain('fixture');
+      expect(recording.getFixturesSnapshot()).toHaveLength(0);
+    });
+  });
+
   // ── fetch interception ───────────────────────────────────────────────────
 
   describe('fetch interception', () => {

@@ -53,6 +53,17 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
   return null;
 }
 
+/** Returns pretty-printed JSON (objects OR arrays) for a fixture, or null. */
+function prettyJsonOrNull(text: string): string | null {
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object') return JSON.stringify(parsed, null, 2);
+  } catch {
+    // not JSON
+  }
+  return null;
+}
+
 function parseRequestBody(init?: RequestInit): Record<string, unknown> | null {
   const body = init?.body;
   if (typeof body === 'string') return parseJsonObject(body);
@@ -89,6 +100,10 @@ export class HttpMonitor {
 
   isExtendedHttpEnabled(): boolean {
     return localStorage.getItem('extendedHttpCommands') === 'true';
+  }
+
+  isFixtureModeEnabled(): boolean {
+    return localStorage.getItem('fixtureMode') === 'true';
   }
 
   private installFetch(): void {
@@ -174,6 +189,16 @@ export class HttpMonitor {
     const url = resolveUrl(input);
     const alias = generateAlias(method, url);
 
+    // Fixture (stub) mode: a GET with a JSON body becomes a fixture + stub.
+    if (this.isFixtureModeEnabled() && method === 'GET') {
+      const pretty = prettyJsonOrNull(await responseClone.text());
+      const fixtureFile = `${alias}.json`;
+      if (pretty !== null) this.recording.registerFixture(fixtureFile, pretty);
+      this.recording.registerInterceptor(method, url, alias, pretty !== null ? fixtureFile : undefined);
+      this.recording.addCommand(`cy.wait('@${alias}').then((interception) => { })`);
+      return; // body already consumed; can't re-read for validations
+    }
+
     this.recording.registerInterceptor(method, url, alias);
 
     const extendedHttp = this.isExtendedHttpEnabled();
@@ -200,6 +225,17 @@ export class HttpMonitor {
     if (!(INTERCEPTED_METHODS as readonly string[]).includes(method as InterceptedMethod)) return;
 
     const alias = generateAlias(method, url);
+
+    // Fixture (stub) mode: a GET with a JSON body becomes a fixture + stub.
+    if (this.isFixtureModeEnabled() && method === 'GET') {
+      const pretty = prettyJsonOrNull(responseText);
+      const fixtureFile = `${alias}.json`;
+      if (pretty !== null) this.recording.registerFixture(fixtureFile, pretty);
+      this.recording.registerInterceptor(method, url, alias, pretty !== null ? fixtureFile : undefined);
+      this.recording.addCommand(`cy.wait('@${alias}').then((interception) => { })`);
+      return;
+    }
+
     this.recording.registerInterceptor(method, url, alias);
 
     const extendedHttp = this.isExtendedHttpEnabled();

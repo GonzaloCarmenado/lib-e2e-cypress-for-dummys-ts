@@ -242,6 +242,34 @@ export class PersistenceService {
     await this.setConfigKey('allowReadWriteFiles', 'true');
   }
 
+  /**
+   * Writes captured fixtures into `cypress/fixtures/` using the configured Cypress
+   * folder handle (spec 012). Returns the number written. Throws if no folder is
+   * configured or write permission is denied.
+   */
+  async writeFixtures(fixtures: Array<{ name: string; content: string }>): Promise<number> {
+    if (!fixtures.length) return 0;
+    const config = await this.getGeneralConfig();
+    const dirHandle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined;
+    if (!dirHandle) throw new Error('No Cypress folder configured');
+
+    const perm = dirHandle as unknown as FileSystemHandleWithPermission;
+    let state = await perm.queryPermission({ mode: 'readwrite' });
+    if (state !== 'granted') state = await perm.requestPermission({ mode: 'readwrite' });
+    if (state !== 'granted') throw new Error('Write permission denied');
+
+    const fixturesDir = await dirHandle.getDirectoryHandle('fixtures', { create: true });
+    let written = 0;
+    for (const fx of fixtures) {
+      const fileHandle = await fixturesDir.getFileHandle(fx.name, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(fx.content);
+      await writable.close();
+      written++;
+    }
+    return written;
+  }
+
   private async bulkInsertWithoutId(store: string, items: Record<string, unknown>[]): Promise<void> {
     if (!Array.isArray(items)) return;
     const db = await this.getDB();

@@ -238,6 +238,36 @@ describe('Phase 4 — RecordingService', () => {
     });
   });
 
+  // ── fixtures (spec 012) ────────────────────────────────────────────────────
+
+  describe('fixtures', () => {
+    beforeEach(() => service.startRecording());
+
+    it('registerInterceptor with a fixtureFile produces the { fixture } form', () => {
+      service.registerInterceptor('GET', 'http://localhost/api/users', 'get-users', 'get-users.json');
+      expect(service.getInterceptorsSnapshot()[0]).toBe(
+        "cy.intercept('GET', '**/api/users', { fixture: 'get-users.json' }).as('get-users')"
+      );
+    });
+
+    it('registerFixture stores content retrievable via getFixturesSnapshot', () => {
+      service.registerFixture('get-users.json', '{"a":1}');
+      expect(service.getFixturesSnapshot()).toEqual([{ name: 'get-users.json', content: '{"a":1}' }]);
+    });
+
+    it('registerFixture is a no-op when not recording', () => {
+      service.stopRecording();
+      service.registerFixture('x.json', '{}');
+      expect(service.getFixturesSnapshot()).toHaveLength(0);
+    });
+
+    it('clearCommands also clears fixtures', () => {
+      service.registerFixture('x.json', '{}');
+      service.clearCommands();
+      expect(service.getFixturesSnapshot()).toHaveLength(0);
+    });
+  });
+
   // ── DOM click events ─────────────────────────────────────────────────────
 
   describe('DOM — click events', () => {

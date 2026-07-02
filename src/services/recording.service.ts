@@ -23,6 +23,7 @@ export class RecordingService {
   private readonly isPaused$ = new Subject<boolean>(false);
   private readonly selectorNotFound$ = new Subject<{ target: HTMLElement; action: 'click' } | null>(null);
   private readonly inputDebounceTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
+  private readonly fixtures = new Map<string, string>();
   private readonly abort = new AbortController();
 
   selectorStrategy: SelectorStrategy = 'data-cy';
@@ -149,21 +150,35 @@ export class RecordingService {
     this.interceptors$.next([...ints.slice(0, index), ...ints.slice(index + 1)]);
   }
 
-  registerInterceptor(method: string, url: string, alias: string): void {
+  registerInterceptor(method: string, url: string, alias: string, fixtureFile?: string): void {
     // Only capture interceptors while actively recording — otherwise HTTP calls
     // the host app fires before recording starts (the monitor is installed on
     // mount) would leak orphan cy.intercept lines into the saved test.
     if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
-    const command = `cy.intercept('${method}', '${this.urlToWildcard(url, method)}').as('${alias}')`;
+    const wildcard = this.urlToWildcard(url, method);
+    const command = fixtureFile
+      ? `cy.intercept('${method}', '${wildcard}', { fixture: '${fixtureFile}' }).as('${alias}')`
+      : `cy.intercept('${method}', '${wildcard}').as('${alias}')`;
     const current = this.interceptors$.getValue();
     if (!current.includes(command)) {
       this.interceptors$.next([...current, command]);
     }
   }
 
+  /** Registers a captured response as a Cypress fixture (name → JSON content). */
+  registerFixture(name: string, content: string): void {
+    if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
+    this.fixtures.set(name, content);
+  }
+
+  getFixturesSnapshot(): Array<{ name: string; content: string }> {
+    return [...this.fixtures.entries()].map(([name, content]) => ({ name, content }));
+  }
+
   clearCommands(): void {
     this.commands$.next([]);
     this.interceptors$.next([]);
+    this.fixtures.clear();
   }
 
   clearInterceptors(): void {
