@@ -33,12 +33,18 @@ async function loadRemote(path: string, recorderMode: string) {
 
   try {
     let mod: RemoteModule;
+    const unwrap = (m: unknown): RemoteModule => {
+      const raw = m as Record<string, unknown>;
+      return (raw['default'] && typeof (raw['default'] as RemoteModule).mount === 'function'
+        ? raw['default']
+        : raw) as RemoteModule;
+    };
     if (path.startsWith('/store')) {
-      mod = await import('store/mount') as RemoteModule;
+      mod = unwrap(await import('store/mount'));
     } else if (path.startsWith('/forms')) {
-      mod = await import('forms/mount') as RemoteModule;
+      mod = unwrap(await import('forms/mount'));
     } else if (path.startsWith('/admin')) {
-      mod = await import('admin/mount') as RemoteModule;
+      mod = unwrap(await import('admin/mount'));
     } else if (path === '/guide') {
       const { mountGuide } = await import('./pages/guide.js');
       mountGuide(slot());
