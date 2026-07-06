@@ -63,6 +63,18 @@ export const TEST_EDITOR_STYLES = `
     padding: 1px 7px; border-radius: 20px; font-size: 10px;
     background: rgba(47,129,247,0.1); color: #8b949e; border: 1px solid rgba(47,129,247,0.2);
   }
+  .ticket-badge, .ticket-link {
+    padding: 1px 7px; border-radius: 20px; font-size: 10px; font-weight: 500;
+    background: rgba(210,153,34,0.12); color: #d29922; border: 1px solid rgba(210,153,34,0.3);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .ticket-link {
+    text-decoration: none; cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .ticket-link::before { content: '🎫 '; font-size: 9px; }
+  .ticket-link:hover { background: rgba(210,153,34,0.22); border-color: rgba(210,153,34,0.55); color: #e3b341; }
+  .ticket-badge::before { content: '🎫 '; font-size: 9px; }
   .btn-icon {
     padding: 3px 8px; border: none; border-radius: 6px; cursor: pointer;
     font-size: 11px; background: #21262d; color: #8b949e;
@@ -94,6 +106,13 @@ export const TEST_EDITOR_STYLES = `
   .code-preview::-webkit-scrollbar { height: 4px; }
   .code-preview::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
   .code-preview-icp { margin-top: 8px; }
+  .ticket-group { margin-bottom: 8px; }
+  .ticket-group-header {
+    padding: 4px 10px; margin-bottom: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px;
+    color: #d29922; border-left: 3px solid rgba(210,153,34,0.5);
+    background: rgba(210,153,34,0.06); border-radius: 0 4px 4px 0;
+  }
   .sh-kw  { color: #ff7b72; }
   .sh-bi  { color: #d2a8ff; }
   .sh-str { color: #a5d6ff; }
