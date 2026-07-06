@@ -1,6 +1,6 @@
 # Spec 014 — Ticket Reference & Grouping
 
-## Status: Implemented
+## Status: Done ✅
 
 ## Context and motivation
 
@@ -19,16 +19,16 @@ This spec adds a lightweight, browser-only ticket reference: a free-text ticket 
 
 ## Acceptance criteria
 
-- [ ] `src/models/issue-tracker.model.ts` exports `IssueTrackerProvider`, `IssueTrackerPreset`, `ISSUE_TRACKER_PRESETS` (5 providers + custom), and `IssueTrackerConfig`.
-- [ ] `src/utils/ticket.utils.ts` exports `buildTicketUrl`, `buildTicketComment`, `isValidTicketId`.
-- [ ] `TestRecord` has an optional `ticketId?: string` field.
-- [ ] `PersistenceService.insertTest` accepts an optional `ticketId` parameter.
-- [ ] `SaveTestElement` emits `ticketId` in the `savetest` / `saveandexport` detail.
-- [ ] `ConfigurationElement` has an "Issue tracker" section with enable toggle, provider select, and base URL field.
-- [ ] `TestEditorElement` shows a ticket link (if configured) next to each test and supports group-by-ticket view.
-- [ ] `it()` title is **never** modified — ticket appears as a file comment.
-- [ ] All 5 i18n files contain the new keys.
-- [ ] All quality gates pass: lint 0 errors, all tests green, coverage ≥ 80%.
+- [x] `src/models/issue-tracker.model.ts` exports `IssueTrackerProvider`, `IssueTrackerPreset`, `ISSUE_TRACKER_PRESETS` (5 providers + custom), and `IssueTrackerConfig`.
+- [x] `src/utils/ticket.utils.ts` exports `buildTicketUrl`, `buildTicketComment`, `isValidTicketId`.
+- [x] `TestRecord` has an optional `ticketId?: string` field.
+- [x] `PersistenceService.insertTest` accepts an optional `ticketId` parameter.
+- [x] `SaveTestElement` emits `ticketId` in the `savetest` / `saveandexport` detail.
+- [x] `ConfigurationElement` has an "Issue tracker" section with enable toggle, provider select, and base URL field.
+- [x] `TestEditorElement` shows a ticket link (if configured) next to each test and supports group-by-ticket view.
+- [x] `it()` title is **never** modified — ticket appears as a file comment.
+- [x] All 5 i18n files contain the new keys.
+- [x] All quality gates pass: lint 0 errors, all tests green, coverage ≥ 80%.
 
 ## Out of scope
 

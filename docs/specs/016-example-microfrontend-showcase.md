@@ -1,6 +1,6 @@
 # 016 — Example: Microfrontend feature showcase
 
-> **Status:** Draft
+> **Status:** Done ✅
 > **Date:** 2026-07-06
 > **Author:** Gonzalo
 
@@ -78,72 +78,72 @@ The existing Angular `ejemplo/` is deleted (recoverable from git history).
 ## Acceptance criteria
 
 ### Structure & build
-- [ ] AC-01: The old Angular `ejemplo/` is removed; a new example lives under
+- [x] AC-01: The old Angular `ejemplo/` is removed; a new example lives under
       `ejemplo/` as an npm-workspaces monorepo: `packages/{shared,shell,mfe-store,
       mfe-forms,mfe-admin}` plus a `cypress/` folder.
-- [ ] AC-02: Every package is **Vite + TypeScript + Web Components** (Custom
+- [x] AC-02: Every package is **Vite + TypeScript + Web Components** (Custom
       Elements), no Angular/React/Vue runtime.
-- [ ] AC-03: `mfe-store`, `mfe-forms`, `mfe-admin` are Module Federation **remotes**
+- [x] AC-03: `mfe-store`, `mfe-forms`, `mfe-admin` are Module Federation **remotes**
       (each exposes a `./mount` module: `mount(el) / unmount(el)`); `shell` is the
       **host** consuming all three via `@originjs/vite-plugin-federation`.
-- [ ] AC-04: A root script (`npm run dev` from `ejemplo/`) builds the library
+- [x] AC-04: A root script (`npm run dev` from `ejemplo/`) builds the library
       (`tsup` in the parent) and starts the shell + three remote dev servers
       (shell `:5000`, store `:5001`, forms `:5002`, admin `:5003`).
-- [ ] AC-05: The example imports the library's built `dist/index.js` (via `file:..`),
+- [x] AC-05: The example imports the library's built `dist/index.js` (via `file:..`),
       not the parent's source.
 
 ### Feature coverage (every area triggerable)
-- [ ] AC-06: **Interaction capture** — the apps contain triggers for click,
+- [x] AC-06: **Interaction capture** — the apps contain triggers for click,
       double-click, right-click, checkbox check/uncheck, radio, text input (with
       1s debounce), Enter/Escape in a field, and `<select>` change.
-- [ ] AC-07: **Selector strategy** — `mfe-store` has four clearly-labelled sections
+- [x] AC-07: **Selector strategy** — `mfe-store` has four clearly-labelled sections
       whose interactive elements expose respectively `data-cy`, `data-testid`,
       `aria-label`, and a clean `id`, plus a section with framework-prefixed ids
       (`cdk-*`, `mat-*`) that must be skipped, so switching the strategy in Config
       is observable.
-- [ ] AC-08: **Smart Selector Picker** — `mfe-store` has at least one interactive
+- [x] AC-08: **Smart Selector Picker** — `mfe-store` has at least one interactive
       element with **no** valid selector (only classes/tag) so a click opens the
       picker when smart selector is enabled.
-- [ ] AC-09: **Assertion capture (Alt+click)** — `mfe-forms` has targets that
+- [x] AC-09: **Assertion capture (Alt+click)** — `mfe-forms` has targets that
       produce each inferred assertion: a checkbox (`be.checked`), a filled input
       (`have.value`), a text element (`contain.text`), and a plain element
       (`be.visible`).
-- [ ] AC-10: **HTTP monitoring** — `mfe-store` fires `GET` (fetch), `mfe-forms`
+- [x] AC-10: **HTTP monitoring** — `mfe-store` fires `GET` (fetch), `mfe-forms`
       fires `POST` and `PUT` (fetch and/or XHR), and there is a `DELETE` trigger to
       confirm it is ignored. All are served by MSW returning JSON.
-- [ ] AC-11: **Extended HTTP body validations** and **fixture mode** are both
+- [x] AC-11: **Extended HTTP body validations** and **fixture mode** are both
       exercisable from the store/forms flows, with the Config toggles documented in
       their feature cards.
-- [ ] AC-12: **SPA routing / cross-app crossing** — navigating between remotes in
+- [x] AC-12: **SPA routing / cross-app crossing** — navigating between remotes in
       the shell uses the History API (client-side) and produces a
       `cy.url().should('include', …)`; `mfe-admin` additionally has **internal**
       sub-routes via `pushState`.
-- [ ] AC-13: **Cross-app continuity (spec 006)** — with `?recorder=shell` a
+- [x] AC-13: **Cross-app continuity (spec 006)** — with `?recorder=shell` a
       recording started in one remote survives navigating to another; with
       `?recorder=mfe` each remote mounts its own recorder and continuity is carried
       by the persisted session.
 
 ### Guidance & "how to activate"
-- [ ] AC-14: A shared `<feature-card>` Web Component wraps each demo, showing:
+- [x] AC-14: A shared `<feature-card>` Web Component wraps each demo, showing:
       the feature name, **how to activate it** (shortcut/toggle/interaction), and
       the **expected Cypress command/output**.
-- [ ] AC-15: The shell has a **Guía** route: a matrix of all feature areas →
+- [x] AC-15: The shell has a **Guía** route: a matrix of all feature areas →
       activation method → which app/page to test it in → expected output, including
       the keyboard-shortcut table and the Option A/B explanation with the caveat.
-- [ ] AC-16: The recorder is mounted per the `?recorder=` query param (default
+- [x] AC-16: The recorder is mounted per the `?recorder=` query param (default
       `shell` = Option A); the Guide documents both and warns about B's transient
       double-`cy.wait`.
 
 ### File-system features
-- [ ] AC-17: The example ships a real `ejemplo/cypress/` with `e2e/` (a sample
+- [x] AC-17: The example ships a real `ejemplo/cypress/` with `e2e/` (a sample
       `.cy.ts`) and `fixtures/`, so the File panel, fixture writing, and the runner
       can be tried; the README documents `npx lib-e2e-cypress-runner`.
 
 ### Docs & gates
-- [ ] AC-18: `ejemplo/README.md` documents install, `npm run dev`, the ports, the
+- [x] AC-18: `ejemplo/README.md` documents install, `npm run dev`, the ports, the
       `?recorder=` toggle, and a per-app feature checklist. The root `README.md`
       "example project" reference is updated to the new setup.
-- [ ] AC-19: The example builds cleanly (`npm run build` in `ejemplo/`) and each
+- [x] AC-19: The example builds cleanly (`npm run build` in `ejemplo/`) and each
       app boots. The **library's** own gates (root `lint` / `test` / `build` /
       coverage) remain green and unaffected (the example is not part of the
       library's test suite or coverage).
@@ -240,12 +240,12 @@ ejemplo/
 
 ## Open questions
 
-- [ ] Q1: `concurrently` vs a single Vite multi-app runner for `npm run dev` —
+- [x] Q1: `concurrently` vs a single Vite multi-app runner for `npm run dev` —
       pick whichever gives the cleanest one-command start on Windows.
-- [ ] Q2: Should the Guide page live in the shell only, or also be reachable as a
+- [x] Q2: Should the Guide page live in the shell only, or also be reachable as a
       floating "?" independent of the library's own help panel? (Lean: shell route
       only, to avoid confusion with the widget's in-app help.)
-- [ ] Q3: MSW `onUnhandledRequest` policy — bypass (so federation/asset requests
+- [x] Q3: MSW `onUnhandledRequest` policy — bypass (so federation/asset requests
       are untouched) vs warn. (Lean: bypass.)
 
 ---
