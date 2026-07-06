@@ -1,5 +1,5 @@
 import '../../shared/src/styles.css';
-import '../../shared/src/feature-card.js';
+import { fc, injectFcStyles } from '../../shared/src/feature-card.js';
 
 export function mount(el: HTMLElement): void {
   render(el, '/admin');
@@ -9,27 +9,25 @@ export function unmount(el: HTMLElement): void {
   el.innerHTML = '';
 }
 
+const TAB_STYLE = `<style>
+  .tab-btn{background:#21262d;border:1px solid #30363d;border-radius:6px;color:#8b949e;cursor:pointer;padding:6px 16px}
+  .tab-btn.active{background:#2f81f7;border-color:#2f81f7;color:#fff}
+</style>`;
+
 function renderUsers(el: HTMLElement): void {
+  injectFcStyles();
   el.innerHTML = `
   <div class="page">
     <p class="page-title">⚙️ Panel Admin — Usuarios</p>
 
-    <!-- §1 Sub-rutas internas -->
-    <feature-card
-      name="§1 — Navegación interna (sub-rutas)"
-      how="Grabar activo|Hacer clic en los tabs de abajo"
-      expected="cy.url().should('include', '/admin/users')&#10;cy.url().should('include', '/admin/config')">
+    ${fc({ name: '§1 — Navegación interna (sub-rutas)', how: 'Grabar activo|Hacer clic en los tabs de abajo', expected: `cy.url().should('include', '/admin/users')\ncy.url().should('include', '/admin/config')` }, `
       <div class="row" style="margin-bottom:4px">
         <button data-cy="tab-users" class="tab-btn active" onclick="window._adminNav('/admin/users')">Usuarios</button>
         <button data-cy="tab-config" class="tab-btn" onclick="window._adminNav('/admin/config')">Configuración</button>
       </div>
-    </feature-card>
+    `)}
 
-    <!-- §2 Tabla con dblclick / rightclick -->
-    <feature-card
-      name="§2 — Tabla: dblclick / rightclick"
-      how="Grabar activo|Doble clic en una fila para editar|Botón derecho para el menú contextual"
-      expected="cy.get('[data-cy=\\"row-user-1\\"]').dblclick()&#10;cy.get('[data-cy=\\"row-user-2\\"]').rightclick()">
+    ${fc({ name: '§2 — Tabla: dblclick / rightclick', how: 'Grabar activo|Doble clic en una fila para editar|Botón derecho para el menú contextual', expected: `cy.get('[data-cy="row-user-1"]').dblclick()\ncy.get('[data-cy="row-user-2"]').rightclick()` }, `
       <table>
         <thead><tr><th>ID</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr></thead>
         <tbody>
@@ -38,25 +36,17 @@ function renderUsers(el: HTMLElement): void {
           <tr data-cy="row-user-3" style="cursor:pointer"><td>003</td><td>María Ruiz</td><td>Viewer</td><td><span class="badge badge-amber">Inactiva</span></td></tr>
         </tbody>
       </table>
-    </feature-card>
+    `)}
 
-    <!-- §3 IDs con prefijo de framework -->
-    <feature-card
-      name="§3 — IDs con prefijo de framework (ignorados)"
-      how="Estrategia 'id' en Config|Click en los botones — mat-/cdk- NO generan selector de ID"
-      expected="cy.get('#admin-save').click()   ← id limpio&#10;(sin selector para mat-button-0, cdk-step-1)">
+    ${fc({ name: '§3 — IDs con prefijo de framework (ignorados)', how: "Estrategia 'id' en Config|Click en los botones — mat-/cdk- NO generan selector de ID", expected: `cy.get('#admin-save').click()   ← id limpio\n(sin selector para mat-button-0, cdk-step-1)` }, `
       <div class="row">
         <button id="admin-save" data-cy="btn-admin-save">id="admin-save" ✓</button>
         <button id="mat-button-0">id="mat-button-0" ✗</button>
         <button id="cdk-step-1">id="cdk-step-1" ✗</button>
       </div>
-    </feature-card>
+    `)}
 
-    <!-- §4 mat-select simulado -->
-    <feature-card
-      name="§4 — Elemento mat-select-like (overlay)"
-      how="Grabar activo|Click en el select personalizado|Seleccionar una opción del dropdown"
-      expected="cy.get('[data-cy=\\"mat-like-select\\"]').click()&#10;cy.get('[data-cy=\\"opt-editor\\"]').click()">
+    ${fc({ name: '§4 — Elemento mat-select-like (overlay)', how: 'Grabar activo|Click en el select personalizado|Seleccionar una opción del dropdown', expected: `cy.get('[data-cy="mat-like-select"]').click()\ncy.get('[data-cy="opt-editor"]').click()` }, `
       <div style="position:relative;display:inline-block">
         <div data-cy="mat-like-select" id="mat-like-trigger"
           style="padding:8px 14px;background:#21262d;border:1px solid #30363d;border-radius:6px;cursor:pointer;min-width:160px;user-select:none"
@@ -71,23 +61,16 @@ function renderUsers(el: HTMLElement): void {
           <div data-cy="opt-viewer" style="padding:8px 14px;cursor:pointer" onclick="window._adminSelectOpt('Viewer')">Viewer</div>
         </div>
       </div>
-    </feature-card>
+    `)}
 
-    <!-- §5 HTTP GET users -->
-    <feature-card
-      name="§5 — HTTP GET (cargar usuarios)"
-      how="Grabar activo|Pulsar 'Cargar usuarios'"
-      expected="cy.intercept('GET','**/api/users').as('get-api-users')&#10;cy.wait('@get-api-users')">
+    ${fc({ name: '§5 — HTTP GET (cargar usuarios)', how: "Grabar activo|Pulsar 'Cargar usuarios'", expected: `cy.intercept('GET','**/api/users').as('get-api-users')\ncy.wait('@get-api-users')` }, `
       <div class="col">
         <button data-cy="btn-load-users" onclick="window._adminLoadUsers()">Cargar usuarios (GET)</button>
         <div id="users-output" style="font-size:11px;color:#8b949e;font-family:monospace;min-height:18px;margin-top:4px"></div>
       </div>
-    </feature-card>
+    `)}
   </div>
-  <style>
-    .tab-btn { background:#21262d;border:1px solid #30363d;border-radius:6px;color:#8b949e;cursor:pointer;padding:6px 16px }
-    .tab-btn.active { background:#2f81f7;border-color:#2f81f7;color:#fff }
-  </style>`;
+  ${TAB_STYLE}`;
 }
 
 function renderConfig(el: HTMLElement): void {
@@ -104,10 +87,7 @@ function renderConfig(el: HTMLElement): void {
       <button data-cy="btn-reset-config" style="margin-top:12px">Restablecer configuración</button>
     </div>
   </div>
-  <style>
-    .tab-btn { background:#21262d;border:1px solid #30363d;border-radius:6px;color:#8b949e;cursor:pointer;padding:6px 16px }
-    .tab-btn.active { background:#2f81f7;border-color:#2f81f7;color:#fff }
-  </style>`;
+  ${TAB_STYLE}`;
 }
 
 function render(el: HTMLElement, path: string): void {
