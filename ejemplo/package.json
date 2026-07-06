@@ -7,7 +7,7 @@
   "scripts": {
     "build:lib": "cd .. && npm run build",
     "build:remotes": "npm run build -w packages/mfe-store && npm run build -w packages/mfe-forms && npm run build -w packages/mfe-admin",
-    "dev": "npm run build:lib && npm run build:remotes && concurrently -n store,forms,admin,shell -c cyan,green,yellow,magenta \"npm run preview -w packages/mfe-store\" \"npm run preview -w packages/mfe-forms\" \"npm run preview -w packages/mfe-admin\" \"npm run dev -w packages/shell\"",
+    "dev": "npm run build:lib && npm run build:remotes && npm run build -w packages/shell && concurrently -n store,forms,admin,shell -c cyan,green,yellow,magenta \"npm run preview -w packages/mfe-store\" \"npm run preview -w packages/mfe-forms\" \"npm run preview -w packages/mfe-admin\" \"npm run preview -w packages/shell\"",
     "build": "npm run build:lib && npm run build -w packages/mfe-store && npm run build -w packages/mfe-forms && npm run build -w packages/mfe-admin && npm run build -w packages/shell",
     "preview": "concurrently -n store,forms,admin,shell -c cyan,green,yellow,magenta \"npm run preview -w packages/mfe-store\" \"npm run preview -w packages/mfe-forms\" \"npm run preview -w packages/mfe-admin\" \"npm run preview -w packages/shell\""
   },

@@ -15,6 +15,6 @@ export default defineConfig({
     minify: false,
     outDir: 'dist',
   },
-  server: { port: 5003 },
-  preview: { port: 5003 },
+  server: { port: 5003, cors: true },
+  preview: { port: 5003, cors: true },
 });
