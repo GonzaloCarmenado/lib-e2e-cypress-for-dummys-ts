@@ -98,12 +98,14 @@ function render(el: HTMLElement): void {
       name="§6 — &lt;select&gt; dropdown"
       how="Grabar activo|Cambiar el valor del select"
       expected="cy.get('[data-cy=\\"category-filter\\"]').select('Monitores')">
-      <select data-cy="category-filter">
-        <option value="">Todas las categorías</option>
-        <option value="Periféricos">Periféricos</option>
-        <option value="Monitores">Monitores</option>
-        <option value="Almacenamiento">Almacenamiento</option>
-      </select>
+      <div style="width:260px">
+        <select data-cy="category-filter">
+          <option value="">Todas las categorías</option>
+          <option value="Periféricos">Periféricos</option>
+          <option value="Monitores">Monitores</option>
+          <option value="Almacenamiento">Almacenamiento</option>
+        </select>
+      </div>
     </feature-card>
 
     <!-- §7 Input + Enter/Escape -->
@@ -111,7 +113,7 @@ function render(el: HTMLElement): void {
       name="§7 — Input de texto + Enter/Escape"
       how="Grabar activo|Escribe en el campo (debounce 1s)|Pulsa Enter o Escape dentro del campo"
       expected="cy.get('[data-cy=\\"search-input\\"]').clear().type('teclado')&#10;cy.get('[data-cy=\\"search-input\\"]').type('{enter}')">
-      <div class="col" style="max-width:280px">
+      <div class="col" style="width:280px">
         <input data-cy="search-input" type="text" placeholder="Buscar productos…" />
       </div>
     </feature-card>

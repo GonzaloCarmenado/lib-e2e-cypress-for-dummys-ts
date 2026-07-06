@@ -53,7 +53,7 @@ function render(el: HTMLElement): void {
       name="§4 — HTTP POST (body validation)"
       how="Activar 'Validaciones de body HTTP' en Config|Rellenar datos mínimos y pulsar 'Realizar pedido'"
       expected="cy.intercept('POST','**/api/orders').as('post-api-orders')&#10;cy.wait('@post-api-orders').then(icp => {&#10;  expect(icp.request.body).to.include.keys('product','qty')&#10;})">
-      <div class="col" style="max-width:320px">
+      <div class="col" style="width:320px">
         <input data-cy="input-product" type="text" placeholder="Producto ID" style="margin-bottom:8px"/>
         <input data-cy="input-qty" type="number" placeholder="Cantidad" min="1" style="margin-bottom:8px"/>
         <button data-cy="btn-submit-order" onclick="window._formsPost()">Realizar pedido (POST)</button>
@@ -66,7 +66,7 @@ function render(el: HTMLElement): void {
       name="§5 — HTTP PUT (modificar pedido)"
       how="Activar 'Validaciones de body HTTP' en Config|Pulsar 'Modificar pedido'"
       expected="cy.intercept('PUT','**/api/orders/*').as('put-api-orders')&#10;cy.wait('@put-api-orders')">
-      <div class="col" style="max-width:320px">
+      <div class="col" style="width:320px">
         <input data-cy="input-order-id" type="text" placeholder="Order ID (ej: 42)" style="margin-bottom:8px"/>
         <button data-cy="btn-update-order" onclick="window._formsPut()">Modificar pedido (PUT)</button>
         <div id="put-output" style="font-size:11px;color:#8b949e;font-family:monospace;min-height:18px;margin-top:4px"></div>
