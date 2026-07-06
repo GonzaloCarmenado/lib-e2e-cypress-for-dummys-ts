@@ -1,5 +1,5 @@
 export const CONFIGURATION_STYLES = `
-  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; }
+  :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; max-height: 70vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #30363d transparent; }
   * { box-sizing: border-box; }
 
   /* ── Grid container ───────────────────────────────────── */
