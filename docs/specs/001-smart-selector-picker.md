@@ -1,6 +1,6 @@
 # 001 — Smart Selector Picker
 
-> **Status:** Draft
+> **Status:** Done ✅
 > **Date:** 2026-05-07
 > **Author:** gc
 
@@ -50,20 +50,20 @@ This feature adds an interactive picker that activates on those "no valid select
 
 ## Acceptance criteria
 
-- [ ] AC-01: A new boolean config key `smartSelectorEnabled` (string `'true'`/`'false'`, default `'true'`) is stored in the existing `configuration` IndexedDB store via `PersistenceService.setConfig`.
-- [ ] AC-02: A toggle for this setting is visible in the `ConfigurationElement` panel under a new section.
-- [ ] AC-03: When `smartSelectorEnabled` is `'false'`, no picker is shown; the click is silently dropped.
-- [ ] AC-04: When the picker opens, it shows the full ancestor chain from the clicked element up to (but not including) `<html>`, excluding the recorder's own Shadow DOM host.
-- [ ] AC-05: Every row shows: quality badge (colour + emoji), tag name, the key attribute value if any, and the generated `cy.get()` selector preview.
-- [ ] AC-06: The four quality tiers are applied exactly as specified in UC-03.
-- [ ] AC-07: ↑ / ↓ navigation wraps around (bottom → top and vice versa).
-- [ ] AC-08: `Enter` or row click adds `cy.get('<selector>').click()` via `recording.appendCommand()` and closes the picker.
-- [ ] AC-09: `Escape` or outside click closes the picker without adding any command.
-- [ ] AC-10: The picker closes automatically when recording stops or pauses.
-- [ ] AC-11: The picker never appears for clicks on the recorder widget itself.
-- [ ] AC-12: All visible strings go through `TranslationService` (all 5 languages).
-- [ ] AC-13: Unit tests cover: quality classification logic, keyboard navigation, confirm/cancel paths, auto-close on recording change.
-- [ ] AC-14: `npm run lint`, `npm test`, `npm run test:coverage` (≥ 80%) and `npm run build` all pass.
+- [x] AC-01: A new boolean config key `smartSelectorEnabled` (string `'true'`/`'false'`, default `'true'`) is stored in the existing `configuration` IndexedDB store via `PersistenceService.setConfig`.
+- [x] AC-02: A toggle for this setting is visible in the `ConfigurationElement` panel under a new section.
+- [x] AC-03: When `smartSelectorEnabled` is `'false'`, no picker is shown; the click is silently dropped.
+- [x] AC-04: When the picker opens, it shows the full ancestor chain from the clicked element up to (but not including) `<html>`, excluding the recorder's own Shadow DOM host.
+- [x] AC-05: Every row shows: quality badge (colour + emoji), tag name, the key attribute value if any, and the generated `cy.get()` selector preview.
+- [x] AC-06: The four quality tiers are applied exactly as specified in UC-03.
+- [x] AC-07: ↑ / ↓ navigation wraps around (bottom → top and vice versa).
+- [x] AC-08: `Enter` or row click adds `cy.get('<selector>').click()` via `recording.appendCommand()` and closes the picker.
+- [x] AC-09: `Escape` or outside click closes the picker without adding any command.
+- [x] AC-10: The picker closes automatically when recording stops or pauses.
+- [x] AC-11: The picker never appears for clicks on the recorder widget itself.
+- [x] AC-12: All visible strings go through `TranslationService` (all 5 languages).
+- [x] AC-13: Unit tests cover: quality classification logic, keyboard navigation, confirm/cancel paths, auto-close on recording change.
+- [x] AC-14: `npm run lint`, `npm test`, `npm run test:coverage` (≥ 80%) and `npm run build` all pass.
 
 ---
 
