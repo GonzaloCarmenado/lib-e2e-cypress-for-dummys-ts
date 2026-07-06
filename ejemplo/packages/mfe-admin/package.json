@@ -1,0 +1,19 @@
+{
+  "name": "@ejemplo/mfe-admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite serve --port 5003",
+    "build": "vite build",
+    "preview": "vite preview --port 5003"
+  },
+  "dependencies": {
+    "@ejemplo/shared": "*"
+  },
+  "devDependencies": {
+    "@originjs/vite-plugin-federation": "^1.3.6",
+    "typescript": "~5.7.2",
+    "vite": "^6.3.5"
+  }
+}

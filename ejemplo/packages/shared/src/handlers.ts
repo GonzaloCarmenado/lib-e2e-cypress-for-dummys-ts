@@ -1,0 +1,32 @@
+import { http, HttpResponse } from 'msw';
+import { PRODUCTS, USERS, ORDER_RESPONSE } from './mock-data.js';
+
+export const handlers = [
+  // GET /api/products
+  http.get('/api/products', () =>
+    HttpResponse.json({ products: PRODUCTS, total: PRODUCTS.length })
+  ),
+  // GET /api/products/:id
+  http.get('/api/products/:id', ({ params }) => {
+    const product = PRODUCTS.find(p => p.id === Number(params['id']));
+    return product
+      ? HttpResponse.json(product)
+      : new HttpResponse(null, { status: 404 });
+  }),
+  // POST /api/orders
+  http.post('/api/orders', () =>
+    HttpResponse.json(ORDER_RESPONSE, { status: 201 })
+  ),
+  // PUT /api/orders/:id
+  http.put('/api/orders/:id', ({ params }) =>
+    HttpResponse.json({ id: Number(params['id']), status: 'updated', total: 89.99 })
+  ),
+  // DELETE /api/orders/:id  — returns 204 (no body; recorder ignores DELETE)
+  http.delete('/api/orders/:id', () =>
+    new HttpResponse(null, { status: 204 })
+  ),
+  // GET /api/users  (for admin panel)
+  http.get('/api/users', () =>
+    HttpResponse.json({ users: USERS })
+  ),
+];
