@@ -22,6 +22,9 @@ export const I18N_ES = {
     REMOVE_TAG_TITLE: 'Quitar',
     NOTES_LABEL: 'Descripción / Notas (opcional):',
     NOTES_PLACEHOLDER: 'Qué valida este test, condiciones previas, etc.',
+    TICKET_LABEL: 'Ticket / Issue (opcional):',
+    TICKET_PLACEHOLDER: 'Ej: PROJ-123, #42',
+    TICKET_WARN: 'ID no válido para el proveedor configurado (se guardará igualmente)',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Sin etiquetas',
@@ -36,6 +39,10 @@ export const I18N_ES = {
     DEFAULT_DESCRIBE: 'Suite de tests',
     NO_TESTS: 'No hay tests guardados',
     DELETE_TITLE: 'Eliminar',
+    GROUP_BY_TICKET: '🎫 Agrupar por ticket',
+    UNGROUP_TICKET: '🎫 Desagrupar',
+    NO_TICKET: 'Sin ticket',
+    TICKET_LINK_TITLE: 'Abrir ticket',
   },
   CONFIG: {
     LANG_SECTION: '🌐 Idioma',
@@ -94,6 +101,12 @@ export const I18N_ES = {
     WIDGET_POSITION_HINT: 'Arrastra el botón de grabar para moverlo donde no estorbe. Se recuerda su posición.',
     WIDGET_POSITION_RESET_BTN: '↺ Restablecer posición',
     WIDGET_POSITION_RESET_DONE: '✓ Posición restablecida',
+    ISSUE_TRACKER_SECTION: '🎫 Issue tracker',
+    ISSUE_TRACKER_TITLE: 'Vincular tests a tickets',
+    ISSUE_TRACKER_SUB: 'Añade un ID de ticket al guardar y genera un enlace clickable en el listado.',
+    ISSUE_TRACKER_PROVIDER: 'Proveedor',
+    ISSUE_TRACKER_BASE_URL: 'URL base',
+    ISSUE_TRACKER_BASE_URL_PH: 'Ej: https://miproyecto.atlassian.net',
   },
   SELECTOR_PICKER: {
     TITLE: 'Selecciona un elemento del DOM',

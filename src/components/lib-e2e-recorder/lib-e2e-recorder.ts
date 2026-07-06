@@ -33,6 +33,7 @@ import {
 } from '../../utils/widget-position.utils';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { showToast } from '../../utils/toast.utils';
+import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig, type IssueTrackerProvider } from '../../models/issue-tracker.model';
 
 /**
  * Minimal property/event shapes for dynamically-created child custom elements.
@@ -43,9 +44,10 @@ interface PrevisualizerEl {
   translation: TranslationService; commands: string[]; interceptors: string[]; editable: boolean;
   addEventListener(type: string, listener: (e: CustomEvent) => void): void;
 }
-interface TestEditorEl { persistence: PersistenceService; translation: TranslationService }
+interface TestEditorEl { persistence: PersistenceService; translation: TranslationService; issueTrackerConfig: IssueTrackerConfig; groupByTicket: boolean; }
 interface SaveTestEl {
   translation: TranslationService;
+  issueTrackerConfig: IssueTrackerConfig;
   addEventListener(type: string, listener: (e: CustomEvent) => void): void;
 }
 interface ConfigEl {
@@ -92,6 +94,7 @@ export class LibE2eRecorderElement extends HTMLElement {
   private httpMonitor?: HttpMonitor;
   private smartSelectorEnabled = true;
   private _needsRecordingRebuild = false;
+  private issueTrackerConfig: IssueTrackerConfig = { ...DEFAULT_ISSUE_TRACKER_CONFIG };
 
   recording!: RecordingService;
   persistence!: PersistenceService;
@@ -274,6 +277,11 @@ export class LibE2eRecorderElement extends HTMLElement {
     const strategy = config?.['selectorStrategy'] as string | undefined;
     if (strategy) this.recording.selectorStrategy = strategy as SelectorStrategy;
     this.smartSelectorEnabled = config?.['smartSelectorEnabled'] !== 'false';
+    this.issueTrackerConfig = {
+      enabled:  config?.['issueTrackerEnabled']  === 'true',
+      provider: (config?.['issueTrackerProvider'] as IssueTrackerProvider) ?? DEFAULT_ISSUE_TRACKER_CONFIG.provider,
+      baseUrl:  (config?.['issueTrackerBaseUrl']  as string) ?? '',
+    };
   }
 
   // ── cross-app session continuity (spec 006) ───────────────────────────────
@@ -715,6 +723,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           const child = document.createElement('test-editor') as unknown as TestEditorEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
+          child.issueTrackerConfig = this.issueTrackerConfig;
           container.appendChild(child as unknown as Node);
         },
         willClose: () => { this.isSavedTestsDialogOpen = false; },
@@ -739,15 +748,16 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           if (!container) return;
           const child = document.createElement('save-test') as unknown as SaveTestEl;
           child.translation = this.translation;
+          child.issueTrackerConfig = this.issueTrackerConfig;
           container.appendChild(child as unknown as Node);
           child.addEventListener('savetest', (e: CustomEvent) => {
-            const { description, notes, tags } = e.detail ?? {};
-            this.onSaveTest(description ?? null, tags ?? [], notes ?? '');
+            const { description, notes, tags, ticketId } = e.detail ?? {};
+            this.onSaveTest(description ?? null, tags ?? [], notes ?? '', ticketId ?? '');
             Swal.close();
           });
           child.addEventListener('saveandexport', (e: CustomEvent) => {
-            const { description, notes, tags } = e.detail ?? {};
-            this.onSaveAndExportTest(description ?? null, tags ?? [], notes ?? '');
+            const { description, notes, tags, ticketId } = e.detail ?? {};
+            this.onSaveAndExportTest(description ?? null, tags ?? [], notes ?? '', ticketId ?? '');
             Swal.close();
           });
         },
@@ -782,6 +792,9 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
             this.style.display = this.isVisible ? '' : 'none';
           });
           child.addEventListener('resetwidgetposition', () => this.resetWidgetPosition());
+          child.addEventListener('issuetrackerchange', (e: CustomEvent) => {
+            this.issueTrackerConfig = e.detail as IssueTrackerConfig;
+          });
         },
         willClose: () => { this.isSettingsDialogOpen = false; },
       });
@@ -938,10 +951,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
 
   // ── save handlers ─────────────────────────────────────────────────────────
 
-  private async onSaveTest(description: string | null, tags: string[] = [], notes = ''): Promise<void> {
+  private async onSaveTest(description: string | null, tags: string[] = [], notes = '', ticketId = ''): Promise<void> {
     if (description) {
       const fixtures = this.recording.getFixturesSnapshot();
-      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes);
+      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes, ticketId || undefined);
       await this.writeFixturesIfAny(fixtures);
       this.recording.clearCommands();
       this.clearRecordingHistory();
@@ -950,10 +963,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
     }
   }
 
-  private async onSaveAndExportTest(description: string | null, tags: string[] = [], notes = ''): Promise<void> {
+  private async onSaveAndExportTest(description: string | null, tags: string[] = [], notes = '', ticketId = ''): Promise<void> {
     if (description) {
       const fixtures = this.recording.getFixturesSnapshot();
-      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes);
+      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes, ticketId || undefined);
       await this.writeFixturesIfAny(fixtures);
       this.recording.clearCommands();
       this.clearRecordingHistory();

@@ -3,6 +3,7 @@ import type { TestWithDetails } from '../../services/persistence.service';
 import { translationService, type TranslationService } from '../../services/translation.service';
 import { localeForLang } from '../../models/lang.model';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
+import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig } from '../../models/issue-tracker.model';
 import { TEST_EDITOR_STYLES } from './test-editor.styles';
 import { renderTestEditor } from './test-editor.template';
 
@@ -17,6 +18,8 @@ export class TestEditorElement extends HTMLElement {
   selectMode = false;
   selectedIds: Set<number> = new Set();
   describeName = '';
+  groupByTicket = false;
+  issueTrackerConfig: IssueTrackerConfig = { ...DEFAULT_ISSUE_TRACKER_CONFIG };
 
   constructor() {
     super();
@@ -52,6 +55,11 @@ export class TestEditorElement extends HTMLElement {
 
   hasInterceptors(testId: number): boolean {
     return Array.isArray(this.interceptorsByTest[testId]) && this.interceptorsByTest[testId].length > 0;
+  }
+
+  toggleGroupByTicket(): void {
+    this.groupByTicket = !this.groupByTicket;
+    this.render();
   }
 
   toggleSelectMode(): void {
@@ -125,8 +133,11 @@ export class TestEditorElement extends HTMLElement {
       expandedIndex: this.expandedIndex,
       interceptorsByTest: this.interceptorsByTest,
       locale: localeForLang(this.translation.getLang()),
+      groupByTicket: this.groupByTicket,
+      issueTrackerConfig: this.issueTrackerConfig,
     }, this.t.bind(this))}`;
 
+    this.shadow.getElementById('btn-group-ticket')?.addEventListener('click', () => this.toggleGroupByTicket());
     this.shadow.getElementById('btn-select-mode')?.addEventListener('click', () => this.toggleSelectMode());
 
     this.shadow.querySelectorAll('[data-filter-tag]').forEach((el) => {

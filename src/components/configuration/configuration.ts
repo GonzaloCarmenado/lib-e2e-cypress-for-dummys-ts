@@ -4,6 +4,7 @@ import { TranslationService } from '../../services/translation.service';
 import type { Lang } from '../../models/lang.model';
 import type { SelectorStrategy } from '../../services/recording.service';
 import { RESUME_TTL_CONFIG_KEY, DEFAULT_RESUME_TTL_MINUTES } from '../../models/active-session.model';
+import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig, type IssueTrackerProvider } from '../../models/issue-tracker.model';
 import { showToast } from '../../utils/toast.utils';
 import { selectTestsForExport, type ExportMode } from '../../utils/export-selection.utils';
 import { CONFIGURATION_STYLES } from './configuration.styles';
@@ -25,6 +26,7 @@ export class ConfigurationElement extends HTMLElement {
   exportTests: TestWithDetails[] = [];
   exportSelectedIds: Set<number> = new Set();
   exportSelectedTags: Set<string> = new Set();
+  issueTrackerConfig: IssueTrackerConfig = { ...DEFAULT_ISSUE_TRACKER_CONFIG };
   private filesystemGranted = false;
   private cypressFolderName: string | null = null;
 
@@ -65,6 +67,11 @@ export class ConfigurationElement extends HTMLElement {
     this.filesystemGranted = config?.['allowReadWriteFiles'] === 'true';
     const handle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined;
     this.cypressFolderName = handle?.name ?? null;
+    this.issueTrackerConfig = {
+      enabled:  config?.['issueTrackerEnabled']  === 'true',
+      provider: (config?.['issueTrackerProvider'] as IssueTrackerProvider) ?? DEFAULT_ISSUE_TRACKER_CONFIG.provider,
+      baseUrl:  (config?.['issueTrackerBaseUrl']  as string) ?? '',
+    };
     this.render();
   }
 
@@ -120,6 +127,26 @@ export class ConfigurationElement extends HTMLElement {
     await this.persistence.setConfig({ selectorStrategy: strategy });
     this.dispatchEvent(new CustomEvent('selectorstrategychange', { detail: strategy, bubbles: true, composed: true }));
     this.render();
+  }
+
+  async onIssueTrackerEnabledChange(enabled: boolean): Promise<void> {
+    this.issueTrackerConfig = { ...this.issueTrackerConfig, enabled };
+    await this.persistence.setConfig({ issueTrackerEnabled: enabled ? 'true' : 'false' });
+    this.dispatchEvent(new CustomEvent('issuetrackerchange', { detail: { ...this.issueTrackerConfig }, bubbles: true, composed: true }));
+    this.render();
+  }
+
+  async onIssueTrackerProviderChange(provider: IssueTrackerProvider): Promise<void> {
+    this.issueTrackerConfig = { ...this.issueTrackerConfig, provider };
+    await this.persistence.setConfig({ issueTrackerProvider: provider });
+    this.dispatchEvent(new CustomEvent('issuetrackerchange', { detail: { ...this.issueTrackerConfig }, bubbles: true, composed: true }));
+    this.render();
+  }
+
+  async onIssueTrackerBaseUrlChange(baseUrl: string): Promise<void> {
+    this.issueTrackerConfig = { ...this.issueTrackerConfig, baseUrl };
+    await this.persistence.setConfig({ issueTrackerBaseUrl: baseUrl });
+    this.dispatchEvent(new CustomEvent('issuetrackerchange', { detail: { ...this.issueTrackerConfig }, bubbles: true, composed: true }));
   }
 
   async changeFolder(): Promise<void> {
@@ -237,6 +264,7 @@ export class ConfigurationElement extends HTMLElement {
       exportTests: this.exportTests,
       exportSelectedIds: this.exportSelectedIds,
       exportSelectedTags: this.exportSelectedTags,
+      issueTrackerConfig: this.issueTrackerConfig,
     }, this.t.bind(this))}`;
     ;(this.shadow.getElementById('lang-select') as HTMLSelectElement).addEventListener('change', (e) =>
       this.onLanguageChange((e.target as HTMLSelectElement).value),
@@ -261,7 +289,16 @@ export class ConfigurationElement extends HTMLElement {
       this.onSelectorStrategyChange((e.target as HTMLSelectElement).value as SelectorStrategy),
     );
 
-    this.shadow.getElementById('btn-change-folder')?.addEventListener('click', () => this.changeFolder());
+    ;(this.shadow.getElementById('issue-tracker-toggle') as HTMLInputElement)?.addEventListener('change', (e) =>
+      this.onIssueTrackerEnabledChange((e.target as HTMLInputElement).checked),
+    )
+    ;(this.shadow.getElementById('issue-tracker-provider') as HTMLSelectElement)?.addEventListener('change', (e) =>
+      this.onIssueTrackerProviderChange((e.target as HTMLSelectElement).value as IssueTrackerProvider),
+    )
+    ;(this.shadow.getElementById('issue-tracker-base-url') as HTMLInputElement)?.addEventListener('change', (e) =>
+      this.onIssueTrackerBaseUrlChange((e.target as HTMLInputElement).value),
+    )
+    ;this.shadow.getElementById('btn-change-folder')?.addEventListener('click', () => this.changeFolder());
     this.shadow.getElementById('btn-revoke')?.addEventListener('click', () => this.revokeAccess());
     this.shadow.getElementById('btn-export')?.addEventListener('click', () => this.openExportDialog());
 

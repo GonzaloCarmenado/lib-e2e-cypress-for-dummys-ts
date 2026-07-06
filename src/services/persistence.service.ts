@@ -6,7 +6,7 @@ import { normalizeBlock, escapeSingleQuotes } from '../utils/code-format.utils';
 /** Fixed primary key for the single active-session record. */
 const ACTIVE_SESSION_ID = 1;
 
-interface TestRecord        { id: number; name: string; createdAt: number; tags?: string[]; notes?: string; }
+interface TestRecord        { id: number; name: string; createdAt: number; tags?: string[]; notes?: string; ticketId?: string; }
 interface CommandRecord     { id: number; command: string; testId: number; createdAt: number; }
 interface InterceptorRecord { id: number; interceptor: string; testId: number; createdAt: number; }
 interface ConfigRecord      { id: number; [key: string]: unknown; }
@@ -46,14 +46,14 @@ export class PersistenceService {
         },
       });
     }
-    return this._db;
+    return this._db as Promise<IDBPDatabase>;
   }
 
   // ── Tests ─────────────────────────────────────────────────────────────────
 
-  async insertTest(name: string, commands: string[] = [], interceptors: string[] = [], tags: string[] = [], notes?: string): Promise<number> {
+  async insertTest(name: string, commands: string[] = [], interceptors: string[] = [], tags: string[] = [], notes?: string, ticketId?: string): Promise<number> {
     const db = await this.getDB();
-    const record: Omit<TestRecord, 'id'> = { name, createdAt: Date.now(), ...(tags.length ? { tags } : {}), ...(notes ? { notes } : {}) };
+    const record: Omit<TestRecord, 'id'> = { name, createdAt: Date.now(), ...(tags.length ? { tags } : {}), ...(notes ? { notes } : {}), ...(ticketId ? { ticketId } : {}) };
     const id = await db.add('tests', record) as number;
     if (commands.length)     await this.insertCommands(commands, id);
     if (interceptors.length) await this.insertInterceptors(interceptors, id);

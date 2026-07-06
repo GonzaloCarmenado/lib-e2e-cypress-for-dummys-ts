@@ -1,6 +1,7 @@
 import { escHtml, escAttr } from '../../utils/html.utils';
 import { selectTestsForExport, type ExportMode } from '../../utils/export-selection.utils';
 import type { TestWithDetails } from '../../services/persistence.service';
+import { ISSUE_TRACKER_PRESETS, type IssueTrackerConfig } from '../../models/issue-tracker.model';
 
 export const LANGS = [
   { value: 'es', label: 'Español' },
@@ -25,6 +26,7 @@ export interface ConfigurationState {
   exportTests: TestWithDetails[];
   exportSelectedIds: Set<number>;
   exportSelectedTags: Set<string>;
+  issueTrackerConfig: IssueTrackerConfig;
 }
 
 export function renderExportOverlay(state: ConfigurationState, t: (key: string) => string): string {
@@ -95,7 +97,7 @@ export function renderExportOverlay(state: ConfigurationState, t: (key: string) 
 }
 
 export function renderConfiguration(state: ConfigurationState, t: (key: string) => string): string {
-  const { selectedLanguage, advancedHttpConfig, fixtureMode, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden, resumeTtlMinutes } = state;
+  const { selectedLanguage, advancedHttpConfig, fixtureMode, selectorStrategy, filesystemGranted, cypressFolderName, smartSelectorEnabled, startHidden, resumeTtlMinutes, issueTrackerConfig } = state;
 
   const langOptions = LANGS.map(
     (l) => `<option value="${l.value}" ${selectedLanguage === l.value ? 'selected' : ''}>${l.label}</option>`,
@@ -220,6 +222,34 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Issue Tracker -->
+      <div class="card card-wide">
+        <div class="card-hd">${t('CONFIG.ISSUE_TRACKER_SECTION')}</div>
+        <label class="check-row">
+          <input type="checkbox" id="issue-tracker-toggle" ${issueTrackerConfig.enabled ? 'checked' : ''} />
+          <div>
+            <div class="check-title">${t('CONFIG.ISSUE_TRACKER_TITLE')}</div>
+            <div class="check-sub">${t('CONFIG.ISSUE_TRACKER_SUB')}</div>
+          </div>
+        </label>
+        ${issueTrackerConfig.enabled ? `
+        <div class="field-row" style="margin-top:10px">
+          <span class="field-label">${t('CONFIG.ISSUE_TRACKER_PROVIDER')}</span>
+          <select id="issue-tracker-provider">
+            ${Object.values(ISSUE_TRACKER_PRESETS).map((p) =>
+              `<option value="${p.id}" ${issueTrackerConfig.provider === p.id ? 'selected' : ''}>${escHtml(p.label)}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="field-row" style="margin-top:8px">
+          <span class="field-label">${t('CONFIG.ISSUE_TRACKER_BASE_URL')}</span>
+          <input id="issue-tracker-base-url" type="text"
+                 placeholder="${escAttr(t('CONFIG.ISSUE_TRACKER_BASE_URL_PH'))}"
+                 value="${escAttr(issueTrackerConfig.baseUrl)}"
+                 style="flex:1;padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#c9d1d9;font-size:12px;outline:none" />
+        </div>` : ''}
       </div>
 
       <!-- Data -->

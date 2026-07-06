@@ -22,6 +22,9 @@ export const I18N_EN = {
     REMOVE_TAG_TITLE: 'Remove',
     NOTES_LABEL: 'Description / Notes (optional):',
     NOTES_PLACEHOLDER: 'What this test validates, preconditions, etc.',
+    TICKET_LABEL: 'Ticket / Issue (optional):',
+    TICKET_PLACEHOLDER: 'E.g.: PROJ-123, #42',
+    TICKET_WARN: 'Invalid ID for the configured provider (will be saved anyway)',
   },
   TEST_EDITOR: {
     NO_TAGS: 'No tags',
@@ -36,6 +39,10 @@ export const I18N_EN = {
     DEFAULT_DESCRIBE: 'Test suite',
     NO_TESTS: 'No saved tests',
     DELETE_TITLE: 'Delete',
+    GROUP_BY_TICKET: '🎫 Group by ticket',
+    UNGROUP_TICKET: '🎫 Ungroup',
+    NO_TICKET: 'No ticket',
+    TICKET_LINK_TITLE: 'Open ticket',
   },
   CONFIG: {
     LANG_SECTION: '🌐 Language',
@@ -94,6 +101,12 @@ export const I18N_EN = {
     WIDGET_POSITION_HINT: 'Drag the record button to move it out of the way. Its position is remembered.',
     WIDGET_POSITION_RESET_BTN: '↺ Reset position',
     WIDGET_POSITION_RESET_DONE: '✓ Position reset',
+    ISSUE_TRACKER_SECTION: '🎫 Issue tracker',
+    ISSUE_TRACKER_TITLE: 'Link tests to tickets',
+    ISSUE_TRACKER_SUB: 'Add a ticket ID when saving and generate a clickable link in the test list.',
+    ISSUE_TRACKER_PROVIDER: 'Provider',
+    ISSUE_TRACKER_BASE_URL: 'Base URL',
+    ISSUE_TRACKER_BASE_URL_PH: 'E.g.: https://myproject.atlassian.net',
   },
   SELECTOR_PICKER: {
     TITLE: 'Select a DOM element',
