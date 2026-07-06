@@ -95,14 +95,17 @@ describe('Phase 6 — HttpMonitor', () => {
       expect(monitor.isFixtureModeEnabled()).toBe(true);
     });
 
-    it('GET with a JSON body becomes a fixture stub + fixture file + plain wait', async () => {
+    it('GET with a JSON body — records a spy interceptor and captures fixture content (converted to stub at save-and-export time)', async () => {
       localStorage.setItem('fixtureMode', 'true');
       mockFetch.mockResolvedValue(makeJsonResponse({ users: [{ id: 1 }] }));
       monitor.install();
       await fetch('/api/users');
-      expect(lastInterceptor(recording)).toContain('{ fixture:');
-      expect(lastInterceptor(recording)).toContain('.json');
+      // During recording the interceptor is always spy-style; fixture stubs are
+      // generated at save-and-export time (spec 012).
+      expect(lastInterceptor(recording)).toContain("cy.intercept('GET'");
+      expect(lastInterceptor(recording)).not.toContain('{ fixture:');
       expect(lastCommand(recording)).toContain("cy.wait('@");
+      // Response JSON is captured so it can be written as a fixture file later.
       const fixtures = recording.getFixturesSnapshot();
       expect(fixtures).toHaveLength(1);
       expect(fixtures[0].name).toMatch(/\.json$/);

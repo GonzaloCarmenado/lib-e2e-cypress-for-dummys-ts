@@ -34,6 +34,7 @@ import {
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { showToast } from '../../utils/toast.utils';
 import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig, type IssueTrackerProvider } from '../../models/issue-tracker.model';
+import { toFixtureInterceptors, simplifyFixtureWaits } from '../../utils/fixture-convert.utils';
 
 /**
  * Minimal property/event shapes for dynamically-created child custom elements.
@@ -952,39 +953,43 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
   // ── save handlers ─────────────────────────────────────────────────────────
 
   private async onSaveTest(description: string | null, tags: string[] = [], notes = '', ticketId = ''): Promise<void> {
-    if (description) {
-      const fixtures = this.recording.getFixturesSnapshot();
-      await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes, ticketId || undefined);
-      await this.writeFixturesIfAny(fixtures);
-      this.recording.clearCommands();
-      this.clearRecordingHistory();
-      this.cypressCommands = [];
-      this.interceptors = [];
-    }
+    if (!description) return;
+    // Plain save → IndexedDB only, spy interceptors with inline validations.
+    // No fixture files written regardless of fixture mode (spec 012).
+    await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes, ticketId || undefined);
+    this.recording.clearCommands();
+    this.clearRecordingHistory();
+    this.cypressCommands = [];
+    this.interceptors = [];
   }
 
   private async onSaveAndExportTest(description: string | null, tags: string[] = [], notes = '', ticketId = ''): Promise<void> {
-    if (description) {
-      const fixtures = this.recording.getFixturesSnapshot();
-      const id = await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes, ticketId || undefined);
-      await this.writeFixturesIfAny(fixtures);
-      this.recording.clearCommands();
-      this.clearRecordingHistory();
-      this.cypressCommands = [];
-      this.interceptors = [];
-      setTimeout(() => this.showAdvancedEditorDialog(id), 300);
-    }
-  }
+    if (!description) return;
 
-  /** Writes captured fixtures to cypress/fixtures and toasts the outcome (spec 012). */
-  private async writeFixturesIfAny(fixtures: Array<{ name: string; content: string }>): Promise<void> {
-    if (!fixtures.length) return;
-    try {
-      const n = await this.persistence.writeFixtures(fixtures);
-      showToast(`${this.translation.translate('RECORDER.FIXTURES_WRITTEN_TOAST')} (${n})`);
-    } catch {
-      showToast(this.translation.translate('RECORDER.FIXTURES_NO_FOLDER_TOAST'), false);
+    const fixtures = this.recording.getFixturesSnapshot();
+    const isFixtureMode = this.httpMonitor?.isFixtureModeEnabled() ?? false;
+    let finalInterceptors = this.interceptors;
+    let finalCommands = this.cypressCommands;
+
+    // Fixture mode + Save-and-Edit: attempt to write fixture files and convert
+    // spy interceptors to fixture stubs.  Falls back to spy on no folder/permission.
+    if (isFixtureMode && fixtures.length > 0) {
+      try {
+        const n = await this.persistence.writeFixtures(fixtures);
+        finalInterceptors = toFixtureInterceptors(this.interceptors, fixtures);
+        finalCommands = simplifyFixtureWaits(this.cypressCommands, fixtures);
+        showToast(`${this.translation.translate('RECORDER.FIXTURES_WRITTEN_TOAST')} (${n})`);
+      } catch {
+        showToast(this.translation.translate('RECORDER.FIXTURES_NO_FOLDER_TOAST'), false);
+      }
     }
+
+    const id = await this.persistence.insertTest(description, finalCommands, finalInterceptors, tags, notes, ticketId || undefined);
+    this.recording.clearCommands();
+    this.clearRecordingHistory();
+    this.cypressCommands = [];
+    this.interceptors = [];
+    setTimeout(() => this.showAdvancedEditorDialog(id), 300);
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

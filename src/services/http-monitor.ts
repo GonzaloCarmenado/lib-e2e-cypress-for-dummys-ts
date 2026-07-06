@@ -189,27 +189,31 @@ export class HttpMonitor {
     const url = resolveUrl(input);
     const alias = generateAlias(method, url);
 
-    // Fixture (stub) mode: a GET with a JSON body becomes a fixture + stub.
-    if (this.isFixtureModeEnabled() && method === 'GET') {
-      const pretty = prettyJsonOrNull(await responseClone.text());
-      const fixtureFile = `${alias}.json`;
-      if (pretty !== null) this.recording.registerFixture(fixtureFile, pretty);
-      this.recording.registerInterceptor(method, url, alias, pretty !== null ? fixtureFile : undefined);
-      this.recording.addCommand(`cy.wait('@${alias}').then((interception) => { })`);
-      return; // body already consumed; can't re-read for validations
-    }
-
+    // Always register a spy interceptor — the fixture-stub form is applied at
+    // save time (spec 012) so we don't lock the format before knowing which
+    // save action the user will choose.
     this.recording.registerInterceptor(method, url, alias);
 
     const extendedHttp = this.isExtendedHttpEnabled();
+    const fixtureMode = this.isFixtureModeEnabled();
     const requestBody = extendedHttp ? parseRequestBody(init) : null;
+
+    let responseText: string | null = null;
     let responseBody: Record<string, unknown> | null = null;
-    if (extendedHttp) {
+
+    if (extendedHttp || (fixtureMode && method === 'GET')) {
       try {
-        responseBody = parseJsonObject(await responseClone.text());
+        responseText = await responseClone.text();
+        if (extendedHttp) responseBody = parseJsonObject(responseText);
       } catch {
         // Unreadable body — continue without validations
       }
+    }
+
+    // Capture response JSON for potential fixture use at save-and-export time.
+    if (fixtureMode && method === 'GET' && responseText !== null) {
+      const pretty = prettyJsonOrNull(responseText);
+      if (pretty !== null) this.recording.registerFixture(`${alias}.json`, pretty);
     }
 
     const cmd = buildCyWaitCommand(method, alias, extendedHttp, requestBody, responseBody);
@@ -226,17 +230,14 @@ export class HttpMonitor {
 
     const alias = generateAlias(method, url);
 
-    // Fixture (stub) mode: a GET with a JSON body becomes a fixture + stub.
+    // Always register a spy interceptor (fixture-stub form is applied at save time).
+    this.recording.registerInterceptor(method, url, alias);
+
+    // Capture response JSON for potential fixture use at save-and-export time.
     if (this.isFixtureModeEnabled() && method === 'GET') {
       const pretty = prettyJsonOrNull(responseText);
-      const fixtureFile = `${alias}.json`;
-      if (pretty !== null) this.recording.registerFixture(fixtureFile, pretty);
-      this.recording.registerInterceptor(method, url, alias, pretty !== null ? fixtureFile : undefined);
-      this.recording.addCommand(`cy.wait('@${alias}').then((interception) => { })`);
-      return;
+      if (pretty !== null) this.recording.registerFixture(`${alias}.json`, pretty);
     }
-
-    this.recording.registerInterceptor(method, url, alias);
 
     const extendedHttp = this.isExtendedHttpEnabled();
     const responseBody = extendedHttp ? parseJsonObject(responseText) : null;

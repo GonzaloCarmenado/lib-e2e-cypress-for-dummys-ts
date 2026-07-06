@@ -43,16 +43,21 @@ so the test replays deterministic data with no backend.
 - [x] AC-01: A **"Record responses as fixtures"** toggle exists in ⚙️ Config,
       persisted (IndexedDB + a `localStorage` mirror `fixtureMode`), with i18n ×5.
 - [x] AC-02: With fixture mode **on**, a captured **GET** with a JSON response
-      registers `cy.intercept('GET','<wildcard>',{ fixture:'<alias>.json' }).as('<alias>')`
-      and a plain `cy.wait('@<alias>')` (no inline body assertion — data is stubbed).
+      registers a **spy** interceptor during recording (`cy.intercept('GET','<wildcard>').as('<alias>')`)
+      and captures the response JSON for deferred use; the stub form
+      (`{ fixture:'<alias>.json' }`) is only emitted at save-and-export time.
 - [x] AC-03: The GET response JSON is captured as a **fixture** (`<alias>.json`,
       pretty-printed) held by `RecordingService`; non-JSON GETs fall back to the
       normal spy (no fixture).
 - [x] AC-04: With fixture mode **off**, HTTP behaviour is **exactly as before**
       (spy + optional body validation). POST/PUT are always spy.
-- [x] AC-05: On **save**, captured fixtures are written to `cypress/fixtures/` via
-      the configured folder handle (creating the dir if needed); with no folder /
-      permission, a clear toast is shown and nothing throws.
+- [x] AC-05: **Save strategy is decided at save time** (not during recording):
+      - **"Save" (IndexedDB only)**: spy interceptors + inline validations saved;
+        no fixture files written — even when fixture mode is on.
+      - **"Save and Edit" + fixture mode ON + folder permission**: fixture stubs
+        emitted, inline wait validations simplified, fixture files written.
+      - **"Save and Edit" + fixture mode ON + no folder/permission**: fallback to
+        spy interceptors; toast warns the user; nothing throws.
 - [x] AC-06: `RecordingService` exposes `registerFixture` / `getFixturesSnapshot`;
       fixtures are cleared with `clearCommands`. `registerInterceptor` gained an
       optional `fixtureFile` param producing the `{ fixture }` form.
@@ -99,15 +104,24 @@ New i18n keys: `CONFIG.FIXTURE_SECTION` / `_TITLE` / `_SUB`, toasts
 
 - **Toggle**: mirror the `extendedHttpCommands` pattern (config + localStorage;
   recorder syncs the mirror on mount; `HttpMonitor.isFixtureModeEnabled()` reads it).
-- **HttpMonitor**: for GET when fixture mode is on and the response parses as JSON,
-  build the `{ fixture }` interceptor, `registerFixture(alias + '.json', pretty)`,
-  and add a plain wait; otherwise the existing path.
+- **HttpMonitor**: always registers a spy interceptor regardless of fixture mode.
+  For GET + fixture mode ON + JSON response, also calls `registerFixture(alias +
+  '.json', pretty)` to capture the content for deferred use. The response body text
+  is read once and reused for both the fixture snapshot and the extended-HTTP
+  inline validations.
 - **Fixtures store**: a `Map<string,string>` in `RecordingService` (not reactive);
   snapshot returns entries; `clearCommands` clears it too.
+- **Deferred conversion** (`src/utils/fixture-convert.utils.ts`):
+  `toFixtureInterceptors` rewrites spy interceptors to `{ fixture }` form for any
+  alias that has a captured fixture; `simplifyFixtureWaits` strips inline body
+  validations from the matching `cy.wait` commands.
 - **Writing**: `PersistenceService.writeFixtures` reads `cypressDirectoryHandle`
   from config, `getDirectoryHandle('fixtures',{create:true})`, then writes each
-  file (query/request `readwrite` permission). Recorder calls it in `onSaveTest` /
-  `onSaveAndExportTest` (snapshot fixtures before `clearCommands`); toasts result.
+  file (query/request `readwrite` permission).
+  Recorder `onSaveTest` — plain save — never writes fixture files.
+  Recorder `onSaveAndExportTest` — if fixture mode ON + fixtures exist: writes
+  files, then inserts the test with converted interceptors; on failure, inserts
+  with spy interceptors and shows a warning toast.
 
 ---
 
@@ -117,3 +131,4 @@ New i18n keys: `CONFIG.FIXTURE_SECTION` / `_TITLE` / `_SUB`, toasts
 |------------|--------------------------------------------------------------------|
 | 2026-07-02 | Initial draft. Decisions: opt-in Config toggle; write to cypress/fixtures via File System Access; GET only. |
 | 2026-07-02 | Implemented: HttpMonitor fixture branch for GET; RecordingService fixtures + `registerInterceptor(fixtureFile)`; `PersistenceService.writeFixtures`; Config toggle + i18n ×5; recorder writes fixtures on save. README + Help updated. Gates green (lint 0, 872 tests, coverage 95.96%, build 0). |
+| 2026-07-06 | Behavioral fix: fixture-stub form now deferred to save-and-export time. `HttpMonitor` always records spy interceptors; `registerFixture` still captures GET JSON for potential use. `onSaveTest` no longer writes fixtures. `onSaveAndExportTest` conditionally converts + writes. New `fixture-convert.utils.ts` with `toFixtureInterceptors` / `simplifyFixtureWaits` (13 unit tests). Gates green (lint 0, 906 tests, coverage 95.68%, build 0). |
