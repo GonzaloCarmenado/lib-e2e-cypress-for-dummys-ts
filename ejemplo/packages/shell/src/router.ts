@@ -34,11 +34,11 @@ async function loadRemote(path: string, recorderMode: string) {
   try {
     let mod: RemoteModule;
     if (path.startsWith('/store')) {
-      mod = await import(/* @vite-ignore */ 'store/mount') as RemoteModule;
+      mod = await import('store/mount') as RemoteModule;
     } else if (path.startsWith('/forms')) {
-      mod = await import(/* @vite-ignore */ 'forms/mount') as RemoteModule;
+      mod = await import('forms/mount') as RemoteModule;
     } else if (path.startsWith('/admin')) {
-      mod = await import(/* @vite-ignore */ 'admin/mount') as RemoteModule;
+      mod = await import('admin/mount') as RemoteModule;
     } else if (path === '/guide') {
       const { mountGuide } = await import('./pages/guide.js');
       mountGuide(slot());
