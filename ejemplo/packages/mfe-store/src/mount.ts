@@ -69,9 +69,19 @@ function render(el: HTMLElement): void {
       </div>
     `)}
 
-    ${fc({ name: '§5 — Smart Selector Picker', how: "Activar 'Smart selector' en Config (está ON por defecto)|Click en el botón de abajo (no tiene atributo de test ni id válido)", expected: `El picker muestra la cadena de ancestros; selecciona uno con ↑↓ y Enter` }, `
-      <div style="padding:10px;background:#0d1117;border-radius:6px">
-        <span><button style="background:#21262d;border:1px dashed #484f58">Sin selector (solo clases CSS)</button></span>
+    ${fc({ name: '§5.1 — Smart Selector Picker: caso mínimo', how: "Smart selector ON en Config (defecto)|Grabar activo|Click en el botón — no tiene data-cy, testid, aria-label ni id", expected: `Overlay con la cadena de ancestros.\nSelecciona con ↑↓ · confirma con Enter · cancela con Escape` }, `
+      <div style="padding:12px;background:#0d1117;border-radius:6px;display:inline-block">
+        <button>Sin ningún selector de test</button>
+      </div>
+    `)}
+
+    ${fc({ name: '§5.2 — Smart Selector Picker: cadena con los 4 tiers', how: "Smart selector ON en Config (defecto)|Grabar activo|Click en el botón interior — el picker mostrará los 4 niveles de calidad en la cadena", expected: `🟢 Excelente  → data-cy="picker-demo"\n🟡 Aceptable  → .picker-section\n🔵 Bueno      → #picker-group\n🔴 Poor       → button (solo tag)` }, `
+      <div data-cy="picker-demo" style="padding:12px;background:#0d1117;border-radius:6px;display:inline-block">
+        <div class="picker-section" style="padding:8px;border:1px dashed #30363d;border-radius:6px">
+          <span id="picker-group" style="display:inline-block;padding:6px">
+            <button>Botón sin selector (clic para abrir picker)</button>
+          </span>
+        </div>
       </div>
     `)}
 

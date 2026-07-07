@@ -43,7 +43,7 @@ export function mountGuide(el: HTMLElement) {
       <tr><td>Selector aria-label</td><td>🛒 Tienda §3</td><td>Cambiar estrategia a "aria-label"</td><td><code>[aria-label="..."]</code></td></tr>
       <tr><td>Selector id</td><td>🛒 Tienda §4</td><td>Cambiar estrategia a "id"</td><td><code>#btn-id</code></td></tr>
       <tr><td>IDs prefijo framework</td><td>⚙️ Panel</td><td>Click en elemento con id cdk-xxx/mat-xxx — debe ignorarse</td><td>(sin selector de ID framework)</td></tr>
-      <tr><td>Smart Selector Picker</td><td>🛒 Tienda §5</td><td>Click en elemento SIN atributo de test</td><td>Overlay con ancestros coloreados</td></tr>
+      <tr><td>Smart Selector Picker</td><td>🛒 Tienda §5.1 / §5.2</td><td>Click en elemento SIN atributo de test</td><td>Overlay con ancestros coloreados · ↑↓ navega · Enter confirma</td></tr>
       <tr><td>Builder de aserciones</td><td>Panel Comandos</td><td>Abrir Ctrl+2 → formulario inferior</td><td><code>cy.get('...').should('...')</code></td></tr>
       <tr><td>Continuidad cross-app</td><td>Shell + remotes</td><td>Grabar en Tienda → navegar a Checkout → seguir grabando</td><td>Comandos de ambas apps en un solo test</td></tr>
       <tr><td>Opción A vs B (spec 006)</td><td>Shell</td><td><code>?recorder=shell</code> vs <code>?recorder=mfe</code></td><td>Ver tabla inferior</td></tr>
@@ -52,6 +52,45 @@ export function mountGuide(el: HTMLElement) {
       <tr><td>Historial grabaciones</td><td>API JS</td><td><code>recorder.recoverLastRecording()</code></td><td>Restaura last-5 del localStorage</td></tr>
       <tr><td>Idioma</td><td>Config ⚙️</td><td>Ctrl+3 → selector de idioma</td><td>UI en es/en/fr/it/de</td></tr>
     </table>
+
+    <h2 style="margin-bottom:12px">🎯 Smart Selector Picker — tiers de calidad</h2>
+    <p style="font-size:13px;color:#8b949e;margin-bottom:12px">
+      Cuando grabas un clic en un elemento <b>sin selector de test válido</b>, el picker muestra
+      la cadena de ancestros coloreada por calidad. Navega con <kbd>↑↓</kbd>, confirma con
+      <kbd>Enter</kbd> o cancela con <kbd>Escape</kbd>.
+      Puedes desactivarlo en <kbd>Ctrl+3</kbd> → "Smart Selector".
+    </p>
+    <table style="margin-bottom:28px">
+      <tr><th>Badge</th><th>Tier</th><th>Cuándo se asigna</th><th>Selector generado</th></tr>
+      <tr>
+        <td><span style="color:#3fb950;font-size:16px">🟢</span></td>
+        <td><b style="color:#3fb950">Excelente</b></td>
+        <td>Tiene <code>data-cy</code>, <code>data-testid</code> o <code>aria-label</code></td>
+        <td><code>[data-cy="…"]</code> / <code>[aria-label="…"]</code></td>
+      </tr>
+      <tr>
+        <td><span style="color:#2f81f7;font-size:16px">🔵</span></td>
+        <td><b style="color:#2f81f7">Bueno</b></td>
+        <td>Tiene un <code>id</code> válido (sin prefijo <code>cdk-/mat-/ng-</code>, &lt; 25 chars)</td>
+        <td><code>#mi-id</code></td>
+      </tr>
+      <tr>
+        <td><span style="color:#d29922;font-size:16px">🟡</span></td>
+        <td><b style="color:#d29922">Aceptable</b></td>
+        <td>Solo tiene clases CSS (nada de lo anterior)</td>
+        <td><code>.clase-a.clase-b</code></td>
+      </tr>
+      <tr>
+        <td><span style="color:#f85149;font-size:16px">🔴</span></td>
+        <td><b style="color:#f85149">No recomendado</b></td>
+        <td>Solo tag name o <code>style</code> inline</td>
+        <td><code>button</code> / <code>div</code> (frágil)</td>
+      </tr>
+    </table>
+    <div class="card" style="font-size:12px;color:#8b949e;margin-bottom:28px;line-height:1.8">
+      <b style="color:#e6edf3">§5.1</b> — botón sin ningún atributo → picker con todos los ancestros en poor/acceptable.<br>
+      <b style="color:#e6edf3">§5.2</b> — cadena deliberada: <code>data-cy</code> (🟢) → <code>.picker-section</code> (🟡) → <code>#picker-group</code> (🔵) → botón (🔴) → los 4 tiers en una sola demo.
+    </div>
 
     <h2 style="margin-bottom:12px">🔀 Opción A vs Opción B (spec 006)</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
