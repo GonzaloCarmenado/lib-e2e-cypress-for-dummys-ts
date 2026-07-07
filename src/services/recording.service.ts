@@ -454,6 +454,17 @@ export class RecordingService {
         }
         return;
       }
+
+      // Ignore decorative/non-interactive elements (divs, paragraphs, headings…).
+      // Re-target to the nearest interactive ancestor if one exists.
+      if (!this.isInteractiveElement(target)) {
+        const interactive = target.closest<HTMLElement>(
+          'button,a,input,select,textarea,label,summary,mat-option,' +
+          '[role="button"],[role="link"],[role="menuitem"],[role="option"],[role="tab"]'
+        );
+        if (!interactive) return;
+        target = interactive;
+      }
     }
 
     const tag = target.tagName.toLowerCase();

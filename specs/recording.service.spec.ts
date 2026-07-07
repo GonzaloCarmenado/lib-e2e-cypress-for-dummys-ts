@@ -878,12 +878,14 @@ describe('Phase 4 — RecordingService', () => {
   describe('onSelectorNotFound', () => {
     beforeEach(() => service.startRecording());
 
-    it('emits when clicking an element with no testable selector', () => {
-      const plain = makeElement('div'); // no data-cy, no id, no class
+    it('emits when clicking an interactive element with no testable selector', () => {
+      const plain = makeElement('button'); // interactive but no data-cy / id
+      document.body.appendChild(plain);
       let fired = false;
       service.onSelectorNotFound(() => { fired = true; });
       click(plain);
       expect(fired).toBe(true);
+      plain.remove();
     });
 
     it('emits with the clicked element as target', () => {
@@ -895,11 +897,13 @@ describe('Phase 4 — RecordingService', () => {
     });
 
     it('emits action "click"', () => {
-      const plain = makeElement('div');
+      const plain = makeElement('button'); // interactive but no testable selector
+      document.body.appendChild(plain);
       let capturedAction: string | null = null;
       service.onSelectorNotFound((_t, action) => { capturedAction = action; });
       click(plain);
       expect(capturedAction).toBe('click');
+      plain.remove();
     });
 
     it('does NOT emit when element has a valid selector (data-cy)', () => {
@@ -956,13 +960,23 @@ describe('Phase 4 — RecordingService', () => {
     });
 
     it('unsubscribes when the returned function is called', () => {
-      const plain = makeElement('div');
+      const btn = makeElement('button'); // button with no selector triggers selectorNotFound
+      document.body.appendChild(btn);
       let count = 0;
       const unsub = service.onSelectorNotFound(() => { count++; });
-      click(plain);
+      click(btn);
       unsub();
-      click(plain);
+      click(btn);
       expect(count).toBe(1);
+      btn.remove();
+    });
+
+    it('does not emit selectorNotFound for click on a decorative element (div/p/span)', () => {
+      const div = makeElement('div');
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(div);
+      expect(fired).toBe(false);
     });
 
     it('emits for mat-select with no valid selector', () => {
