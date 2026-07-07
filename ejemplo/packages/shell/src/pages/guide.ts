@@ -88,8 +88,8 @@ export function mountGuide(el: HTMLElement) {
       </tr>
     </table>
     <div class="card" style="font-size:12px;color:#8b949e;margin-bottom:28px;line-height:1.8">
-      <b style="color:#e6edf3">§5.1</b> — botón sin ningún atributo → picker con todos los ancestros en poor/acceptable.<br>
-      <b style="color:#e6edf3">§5.2</b> — cadena deliberada: <code>data-cy</code> (🟢) → <code>.picker-section</code> (🟡) → <code>#picker-group</code> (🔵) → botón (🔴) → los 4 tiers en una sola demo.
+      <b style="color:#e6edf3">§5.1</b> — botón sin ningún atributo → picker con los ancestros del contenido en poor/acceptable.<br>
+      <b style="color:#e6edf3">§5.2</b> — cadena deliberada: <code>data-cy</code> (🟢) → <code>#anchor-group</code> (🔵) → <code>.picker-section</code> (🟡) → <code>span</code>/<code>button</code> (🔴) → los 4 tiers en una sola demo.
     </div>
 
     <h2 style="margin-bottom:12px">🔀 Opción A vs Opción B (spec 006)</h2>

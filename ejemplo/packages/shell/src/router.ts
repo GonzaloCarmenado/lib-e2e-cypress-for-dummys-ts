@@ -6,7 +6,7 @@ interface RemoteModule { mount: MountFn; unmount: UnmountFn }
 let currentUnmount: UnmountFn | null = null;
 let currentRecorder: HTMLElement | null = null;
 
-const slot = () => document.getElementById('remote-slot')!;
+const slot = () => document.querySelector<HTMLElement>('.shell-slot')!;
 
 function updateNav(path: string) {
   document.querySelectorAll('nav [data-route]').forEach(a => {

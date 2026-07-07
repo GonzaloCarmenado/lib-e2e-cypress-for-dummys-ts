@@ -75,12 +75,14 @@ function render(el: HTMLElement): void {
       </div>
     `)}
 
-    ${fc({ name: '§5.2 — Smart Selector Picker: cadena con los 4 tiers', how: "Smart selector ON en Config (defecto)|Grabar activo|Click en el botón interior — el picker mostrará los 4 niveles de calidad en la cadena", expected: `🟢 Excelente  → data-cy="picker-demo"\n🟡 Aceptable  → .picker-section\n🔵 Bueno      → #picker-group\n🔴 Poor       → button (solo tag)` }, `
+    ${fc({ name: '§5.2 — Smart Selector Picker: cadena con los 4 tiers', how: "Smart selector ON en Config (defecto)|Grabar activo|Click en el botón interior — el picker mostrará los 4 niveles de calidad en la cadena de ancestros", expected: `🟢 Excelente  → [data-cy="picker-demo"]\n🔵 Bueno      → #anchor-group\n🟡 Aceptable  → .picker-section\n🔴 No recom.  → span / button` }, `
       <div data-cy="picker-demo" style="padding:12px;background:#0d1117;border-radius:6px;display:inline-block">
-        <div class="picker-section" style="padding:8px;border:1px dashed #30363d;border-radius:6px">
-          <span id="picker-group" style="display:inline-block;padding:6px">
-            <button>Botón sin selector (clic para abrir picker)</button>
-          </span>
+        <div id="anchor-group" style="padding:8px;border:1px solid #2f81f7;border-radius:6px">
+          <div class="picker-section" style="padding:6px;border:1px dashed #30363d;border-radius:4px">
+            <span id="cdk-inner-wrap">
+              <button>Botón sin selector (clic para abrir picker)</button>
+            </span>
+          </div>
         </div>
       </div>
     `)}

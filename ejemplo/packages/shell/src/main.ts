@@ -19,17 +19,17 @@ if (recorderMode === 'shell') {
 }
 
 // ── App shell layout ────────────────────────────────────────────────────────
-const app = document.getElementById('app')!;
+const app = document.querySelector<HTMLElement>('.app')!;
 app.innerHTML = `
-  <nav id="nav">
+  <nav>
     <a href="/" data-route="/">🏠 Inicio</a>
     <a href="/store" data-route="/store">🛒 Tienda</a>
     <a href="/forms" data-route="/forms">📋 Checkout</a>
     <a href="/admin" data-route="/admin">⚙️ Panel</a>
     <a href="/guide" data-route="/guide">📖 Guía</a>
-    <span class="recorder-badge" id="recorder-badge"></span>
+    <span class="recorder-badge"></span>
   </nav>
-  <main id="remote-slot"></main>
+  <main class="shell-slot"></main>
   <style>
     nav {
       display: flex; align-items: center; gap: 4px;
@@ -50,7 +50,7 @@ app.innerHTML = `
     main { min-height: calc(100vh - 48px); }
   </style>`;
 
-document.getElementById('recorder-badge')!.textContent =
+document.querySelector<HTMLElement>('.recorder-badge')!.textContent =
   recorderMode === 'shell' ? '🎙 recorder: shell (Opción A)' : '🎙 recorder: mfe (Opción B)';
 
 // ── Router ──────────────────────────────────────────────────────────────────
