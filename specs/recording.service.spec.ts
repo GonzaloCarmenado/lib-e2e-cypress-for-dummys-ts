@@ -927,6 +927,34 @@ describe('Phase 4 — RecordingService', () => {
       expect(hasComment).toBe(false);
     });
 
+    it('emits selectorNotFound for click inside a forbidden-id container (cdk- prefix)', () => {
+      const wrapper = makeElement('span', { id: 'cdk-inner-wrap' });
+      const btn = document.createElement('button');
+      wrapper.appendChild(btn);
+      document.body.appendChild(wrapper);
+
+      let fired = false;
+      service.onSelectorNotFound(() => { fired = true; });
+      click(btn);
+
+      expect(fired).toBe(true);
+      wrapper.remove();
+    });
+
+    it('does not add a command when selectorNotFound fires for forbidden-id container', () => {
+      const wrapper = makeElement('span', { id: 'mat-tab-xyz' });
+      const btn = document.createElement('button');
+      wrapper.appendChild(btn);
+      document.body.appendChild(wrapper);
+
+      const before = service.getCommandsSnapshot().length;
+      service.onSelectorNotFound(() => {});
+      click(btn);
+
+      expect(service.getCommandsSnapshot().length).toBe(before);
+      wrapper.remove();
+    });
+
     it('unsubscribes when the returned function is called', () => {
       const plain = makeElement('div');
       let count = 0;

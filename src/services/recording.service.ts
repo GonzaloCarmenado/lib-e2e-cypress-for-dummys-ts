@@ -491,6 +491,11 @@ export class RecordingService {
       return;
     }
 
+    if (!selector) {
+      this.selectorNotFound$.next({ target, action: 'click' });
+      return;
+    }
+
     this.addGenericCommand({
       selector,
       action: (s) => `cy.get('${s}').click()`,
