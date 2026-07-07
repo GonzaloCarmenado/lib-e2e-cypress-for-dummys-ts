@@ -83,6 +83,24 @@ describe('Phase 4 — RecordingService', () => {
       service.startRecording();
       expect(service.getCommandsSnapshot()).toHaveLength(3);
     });
+
+    it('discards leftover commands from a previous unsaved recording', () => {
+      service.startRecording();
+      service.addCommand('cy.get(".leftover").click()');
+      service.stopRecording();
+      // Simulate user dismissing save dialog without saving (no clearCommands call)
+      service.startRecording();
+      expect(service.getCommandsSnapshot()).toHaveLength(3);
+      expect(service.getCommandsSnapshot()[0]).toMatch(/cy\.viewport\(/);
+    });
+
+    it('discards leftover interceptors from a previous unsaved recording', () => {
+      service.startRecording();
+      service.registerInterceptor('GET', 'https://api.example.com/foo', 'get-api-foo');
+      service.stopRecording();
+      service.startRecording();
+      expect(service.getInterceptorsSnapshot()).toHaveLength(0);
+    });
   });
 
   describe('stopRecording', () => {

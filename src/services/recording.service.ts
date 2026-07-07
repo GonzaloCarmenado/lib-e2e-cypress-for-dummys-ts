@@ -50,6 +50,7 @@ export class RecordingService {
   // ── Public API ────────────────────────────────────────────────────────────
 
   startRecording(): void {
+    this.clearCommands();
     this.sessionId = createSessionId();
     this.startedAt = Date.now();
     this.isPaused$.next(false);
