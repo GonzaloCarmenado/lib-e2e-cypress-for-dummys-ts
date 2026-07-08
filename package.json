@@ -1,13 +1,13 @@
 {
   "name": "lib-e2e-cypress-for-dummys-ts",
-  "version": "0.7.0",
+  "version": "0.9.0",
   "description": "Cypress E2E test recorder — pure TypeScript, zero Angular dependencies",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "lib-e2e-cypress-runner": "./dist/runner.js"
+    "lib-e2e-cypress-runner": "dist/runner.js"
   },
   "exports": {
     ".": {
@@ -23,7 +23,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts.git"
+    "url": "git+https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts.git"
   },
   "homepage": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts#readme",
   "bugs": {
