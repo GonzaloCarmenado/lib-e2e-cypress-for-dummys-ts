@@ -277,6 +277,48 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
       expect(fired).toBe(true);
     });
 
+    it('prepends block comment before it() block when testNotes is set', async () => {
+      const writeMock = vi.fn();
+      const closeMock = vi.fn();
+      const mockHandle = {
+        createWritable: vi.fn().mockResolvedValue({ write: writeMock, close: closeMock }),
+      } as unknown as FileSystemFileHandle;
+
+      el.selectedFileHandle = mockHandle;
+      el.selectedFileContent = "describe('suite', () => {\n});";
+      el.testItBlock = "it('my test', () => { cy.visit('/'); });";
+      el.interceptorsBlock = '';
+      (el as any).testNotes = 'Validates the login flow.';
+
+      await el.saveCommandsToFile();
+
+      const written = writeMock.mock.calls[0][0] as string;
+      const commentIdx = written.indexOf('/**');
+      const itIdx = written.indexOf("it('my test'");
+      expect(commentIdx).toBeGreaterThanOrEqual(0);
+      expect(commentIdx).toBeLessThan(itIdx);
+      expect(written).toContain('* Validates the login flow.');
+    });
+
+    it('does not prepend block comment when testNotes is empty', async () => {
+      const writeMock = vi.fn();
+      const closeMock = vi.fn();
+      const mockHandle = {
+        createWritable: vi.fn().mockResolvedValue({ write: writeMock, close: closeMock }),
+      } as unknown as FileSystemFileHandle;
+
+      el.selectedFileHandle = mockHandle;
+      el.selectedFileContent = "describe('suite', () => {\n});";
+      el.testItBlock = "it('no notes', () => {});";
+      el.interceptorsBlock = '';
+      (el as any).testNotes = '';
+
+      await el.saveCommandsToFile();
+
+      const written = writeMock.mock.calls[0][0] as string;
+      expect(written).not.toContain('/**');
+    });
+
     it('does nothing when insertItBlock returns empty (content has no closing brace)', async () => {
       const mockHandle = { createWritable: vi.fn() } as unknown as FileSystemFileHandle;
 

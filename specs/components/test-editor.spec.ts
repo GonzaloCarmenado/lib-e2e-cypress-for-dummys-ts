@@ -266,6 +266,24 @@ describe('Phase 8.3 — TestEditorElement', () => {
     expect(el.describeName).toBe('My Suite');
   });
 
+  it('expanded row shows .test-notes paragraph when test has notes', async () => {
+    await persistence.insertTest('noted test', [], [], [], 'Validates the login flow.');
+    await el.loadTests();
+    el.toggleExpand(0);
+    (el as any).render();
+    const notesEl = el.shadowRoot!.querySelector('.test-notes');
+    expect(notesEl).not.toBeNull();
+    expect(notesEl!.textContent).toContain('Validates the login flow.');
+  });
+
+  it('expanded row does not show .test-notes when test has no notes', async () => {
+    await persistence.insertTest('no notes test');
+    await el.loadTests();
+    el.toggleExpand(0);
+    (el as any).render();
+    expect(el.shadowRoot!.querySelector('.test-notes')).toBeNull();
+  });
+
   it('#btn-gen-describe click generates describe block', async () => {
     const writeMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText: writeMock }, configurable: true });

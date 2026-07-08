@@ -1,6 +1,6 @@
 # 002 — Test Notes Field
 
-> **Status:** In Progress
+> **Status:** Done ✅
 > **Date:** 2026-05-29
 > **Author:** Gonzalo
 
@@ -29,17 +29,17 @@ This spec adds a free-form **notes** textarea to the save flow so users can docu
 
 ## Acceptance criteria
 
-- [ ] AC-01: `save-test` renders a `<textarea id="notes-input">` below the test-name input.
-- [ ] AC-02: Notes value is included in the `savetest` and `saveandexport` event `detail.notes`.
-- [ ] AC-03: `PersistenceService.insertTest` accepts an optional `notes` parameter and persists it on the test record.
-- [ ] AC-04: `TestRecord` and `TestWithDetails` include `notes?: string`.
-- [ ] AC-05: `getAllTests()` returns `notes` for every test.
-- [ ] AC-06: `getTestById()` returns `notes` in the `TestDetail` object.
-- [ ] AC-07: The test-editor expanded row shows notes text (plain, not code) when `notes` is non-empty.
-- [ ] AC-08: `AdvancedTestTransformationService.buildBlockComment(notes)` returns a correctly formatted `/** … */` string.
-- [ ] AC-09: When `notes` is non-empty, `saveCommandsToFile` inserts the block comment immediately above the `it()` block in the file.
-- [ ] AC-10: All 5 i18n files contain the new keys (`SAVE_TEST.NOTES_LABEL`, `SAVE_TEST.NOTES_PLACEHOLDER`).
-- [ ] AC-11: No DB version bump is required — `notes` is a new optional property on existing records; old records silently have `notes: undefined`.
+- [x] AC-01: `save-test` renders a `<textarea id="notes-input">` below the test-name input.
+- [x] AC-02: Notes value is included in the `savetest` and `saveandexport` event `detail.notes`.
+- [x] AC-03: `PersistenceService.insertTest` accepts an optional `notes` parameter and persists it on the test record.
+- [x] AC-04: `TestRecord` and `TestWithDetails` include `notes?: string`.
+- [x] AC-05: `getAllTests()` returns `notes` for every test.
+- [x] AC-06: `getTestById()` returns `notes` in the `TestDetail` object.
+- [x] AC-07: The test-editor expanded row shows notes text (plain, not code) when `notes` is non-empty.
+- [x] AC-08: `AdvancedTestTransformationService.buildBlockComment(notes)` returns a correctly formatted `/** … */` string.
+- [x] AC-09: When `notes` is non-empty, `saveCommandsToFile` inserts the block comment immediately above the `it()` block in the file.
+- [x] AC-10: All 5 i18n files contain the new keys (`SAVE_TEST.NOTES_LABEL`, `SAVE_TEST.NOTES_PLACEHOLDER`).
+- [x] AC-11: No DB version bump is required — `notes` is a new optional property on existing records; old records silently have `notes: undefined`.
 
 ---
 
@@ -114,3 +114,4 @@ buildBlockComment(notes: string): string;  // NEW — returns /** … */
 | Date       | Change          |
 |------------|-----------------|
 | 2026-05-29 | Initial draft   |
+| 2026-07-08 | All AC verified: implementation already in place; added missing tests for AC-01/AC-07/AC-09. Status → Done ✅ |

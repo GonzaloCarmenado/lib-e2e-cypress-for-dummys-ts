@@ -136,4 +136,11 @@ describe('Phase 8.2 — SaveTestElement', () => {
     el.restartComponent();
     expect(el.notes).toBe('');
   });
+
+  it('renders <textarea id="notes-input"> in the desc step', () => {
+    el.askSave();
+    const textarea = el.shadowRoot!.getElementById('notes-input');
+    expect(textarea).not.toBeNull();
+    expect(textarea!.tagName.toLowerCase()).toBe('textarea');
+  });
 });
