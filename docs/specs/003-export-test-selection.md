@@ -1,6 +1,6 @@
 # 003 — Export Test Selection
 
-> **Status:** In Progress
+> **Status:** Done ✅
 > **Date:** 2026-06-18
 > **Author:** Gonzalo
 
@@ -157,10 +157,9 @@ EXPORT_EMPTY   // "no tests to export"
 
 - [x] Q1: **Tag semantics** — when several tags are selected, export tests
       matching ANY vs ALL? → **Resolved: OR (any selected tag).**
-- [ ] Q2: Should a partial export be importable **without wiping** the existing
-      database (merge vs. replace)? Today import replaces everything; flagged
-      because partial exports make accidental data loss more likely. _Deferred —
-      tracked for a future spec; out of scope here._
+- [x] Q2: Should a partial export be importable **without wiping** the existing
+      database (merge vs. replace)? → **Resolved: Merge — import will fuse
+      imported tests with existing ones. Covered by spec 004.**
 - [x] Q3: UI surface — modal vs inline section? → **Resolved: a modal/dialog
       opened from the existing "⬆️ Exportar tests" button, consistent with the
       other recorder dialogs.**
@@ -176,3 +175,4 @@ EXPORT_EMPTY   // "no tests to export"
 | 2026-06-18 | Initial draft                                                 |
 | 2026-06-18 | Review: confirmed JSON-backup target; resolved Q1 (OR), Q3 (modal), Q4 (out of scope) |
 | 2026-06-18 | Implemented: `selectTestsForExport` util + export dialog in `e2e-configuration`; status → In Progress |
+| 2026-07-08 | Q2 resolved: import will merge (not replace) — covered by spec 004. Status → Done ✅ |
