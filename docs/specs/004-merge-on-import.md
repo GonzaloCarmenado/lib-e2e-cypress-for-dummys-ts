@@ -1,6 +1,6 @@
 # 004 — Merge on Import
 
-> **Status:** In Progress
+> **Status:** Done ✅
 > **Date:** 2026-06-19
 > **Author:** Gonzalo
 
@@ -44,17 +44,17 @@ already stored. Nothing is cleared. Combined with the round-trip fix (commit
 
 ## Acceptance criteria
 
-- [ ] AC-01: `importAllData` no longer calls `clearAllData()`.
-- [ ] AC-02: Tests already present before an import are still present afterwards.
-- [ ] AC-03: After import, the store contains the union of the prior tests and
+- [x] AC-01: `importAllData` no longer calls `clearAllData()`.
+- [x] AC-02: Tests already present before an import are still present afterwards.
+- [x] AC-03: After import, the store contains the union of the prior tests and
       the imported tests.
-- [ ] AC-04: Each imported test keeps its commands/interceptors/tags/notes
+- [x] AC-04: Each imported test keeps its commands/interceptors/tags/notes
       (round-trip, already covered by `ingestFileData`).
-- [ ] AC-05: Invalid JSON and wrong-shape files still throw (unchanged) and
+- [x] AC-05: Invalid JSON and wrong-shape files still throw (unchanged) and
       import nothing.
-- [ ] AC-06: Importing the same file twice appends it twice (no dedup) — this is
+- [x] AC-06: Importing the same file twice appends it twice (no dedup) — this is
       acceptable and documented (see Q1).
-- [ ] AC-07: README reflects the merge behaviour (no longer "replaces").
+- [x] AC-07: README reflects the merge behaviour (no longer "replaces").
 
 ---
 
@@ -99,3 +99,4 @@ internal behaviour changes (drops the `clearAllData()` call).
 | Date       | Change                                                        |
 |------------|---------------------------------------------------------------|
 | 2026-06-19 | Initial draft + implementation (merge: drop clearAllData)     |
+| 2026-07-08 | All AC verified against code and tests; status → Done ✅       |
