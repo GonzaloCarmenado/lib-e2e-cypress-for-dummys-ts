@@ -27,6 +27,7 @@ app.innerHTML = `
     <a href="/forms" data-route="/forms">📋 Checkout</a>
     <a href="/admin" data-route="/admin">⚙️ Panel</a>
     <a href="/guide" data-route="/guide">📖 Guía</a>
+    <a href="/lab" data-route="/lab">🧪 Lab</a>
     <span class="recorder-badge"></span>
   </nav>
   <main class="shell-slot"></main>

@@ -349,4 +349,64 @@ describe('Phase 6 — HttpMonitor', () => {
       expect(generateAlias('GET', ':::invalid')).toContain('get-');
     });
   });
+
+  // ── AC-01 — bracket notation for non-identifier JSON keys ──────────────────
+
+  describe('AC-01 — bracket notation for unsafe JSON keys', () => {
+    beforeEach(() => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      monitor.install();
+    });
+
+    it('uses dot notation for camelCase keys', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ normalKey: 'value', price: 99 }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain('body.normalKey');
+      expect(cmd).toContain('body.price');
+    });
+
+    it('uses bracket notation for a kebab-case key', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ 'user-id': 42 }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['user-id']");
+      expect(cmd).not.toContain('body.user-id');
+    });
+
+    it('uses bracket notation for a key with multiple hyphens', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ 'x-auth-token': 'abc' }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['x-auth-token']");
+    });
+
+    it('uses bracket notation for a key starting with a digit', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ '2fa-enabled': true }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['2fa-enabled']");
+    });
+
+    it('escapes a single quote inside a bracket-notation key', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ "it's-key": 'value' }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      // key "it's-key" is not a safe identifier → bracket notation → ['it\'s-key']
+      expect(cmd).toContain(`body['it\\'s-key']`);
+    });
+
+    it('mixes dot and bracket notation in a single response', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({
+        'user-id': 1,
+        name: 'Alice',
+        'x-token': 'abc',
+      }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['user-id']");
+      expect(cmd).toContain('body.name');
+      expect(cmd).toContain("body['x-token']");
+    });
+  });
 });

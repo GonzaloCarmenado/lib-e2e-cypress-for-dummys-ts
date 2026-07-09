@@ -3,6 +3,7 @@ import type { ActiveSessionState } from '../models/active-session.model';
 import { Subject } from '../utils/subject';
 import { FORBIDDEN_ID_PREFIXES } from '../utils/selector-quality.utils';
 import { inferAssertionCommand } from '../utils/assertion.utils';
+import { escapeSingleQuotes, escapeCssAttrValue } from '../utils/code-format.utils';
 
 const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
 
@@ -56,7 +57,7 @@ export class RecordingService {
     this.isPaused$.next(false);
     this.isRecording$.next(true);
     this.addCommand(`cy.viewport(1900, 1200)`);
-    this.addCommand(`cy.visit('${window.location.pathname}')`);
+    this.addCommand(`cy.visit('${escapeSingleQuotes(window.location.pathname)}')`);
     this.addCommand(`cy.get('[data-cy="lib-e2e-cypress-for-dummys"]').invoke('hide');`);
   }
 
@@ -312,7 +313,8 @@ export class RecordingService {
         const selector = this.resolveSelectorFor(e.target as HTMLElement);
         if (!selector) return;
         // Collapse the up-to-2 single clicks the browser fired before the dblclick.
-        const clickCmd = `cy.get('${selector}').click()`;
+        const safeSelector = escapeSingleQuotes(selector);
+        const clickCmd = `cy.get('${safeSelector}').click()`;
         let cmds = this.commands$.getValue();
         let removed = 0;
         while (removed < 2 && cmds.length > 0 && cmds[cmds.length - 1] === clickCmd) {
@@ -320,7 +322,7 @@ export class RecordingService {
           removed++;
         }
         if (removed > 0) this.commands$.next(cmds);
-        this.addCommand(`cy.get('${selector}').dblclick()`);
+        this.addCommand(`cy.get('${safeSelector}').dblclick()`);
       },
       { signal: this.abort.signal }
     );
@@ -333,7 +335,7 @@ export class RecordingService {
         if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
         const selector = this.resolveSelectorFor(e.target as HTMLElement);
         if (!selector) return;
-        this.addCommand(`cy.get('${selector}').rightclick()`);
+        this.addCommand(`cy.get('${escapeSingleQuotes(selector)}').rightclick()`);
       },
       { signal: this.abort.signal }
     );
@@ -355,7 +357,7 @@ export class RecordingService {
         // Record the field's pending value before the key press.
         this.flushInputDebounce(target);
         const token = key === 'Enter' ? '{enter}' : '{esc}';
-        this.addCommand(`cy.get('${selector}').type('${token}')`);
+        this.addCommand(`cy.get('${escapeSingleQuotes(selector)}').type('${token}')`);
       },
       { signal: this.abort.signal }
     );
@@ -395,7 +397,7 @@ export class RecordingService {
     const addUrlCommand = (newUrl: string): void => {
       if (!this.isRecording$.getValue()) return;
       if (newUrl === lastUrl) return;
-      this.addCommand(`cy.url().should('include', '${newUrl}')`);
+      this.addCommand(`cy.url().should('include', '${escapeSingleQuotes(newUrl)}')`);
       lastUrl = newUrl;
     };
 
@@ -519,7 +521,8 @@ export class RecordingService {
     if (matSelect) dataCy = matSelect.closest('[data-cy]')?.getAttribute('data-cy') ?? null;
     if (!dataCy) dataCy = target.closest('[data-cy]')?.getAttribute('data-cy') ?? null;
     if (dataCy) {
-      this.addCommand(`cy.get('[data-cy="${dataCy}"]').click()`);
+      const safeSel = escapeSingleQuotes(`[data-cy="${escapeCssAttrValue(dataCy)}"]`);
+      this.addCommand(`cy.get('${safeSel}').click()`);
       return;
     }
     if (selector) {
@@ -556,7 +559,7 @@ export class RecordingService {
     const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
     if (!container) return;
     const selector = this.getReliableSelector(container);
-    const value = target.value.replace(/'/g, "\\'");
+    const value = escapeSingleQuotes(target.value);
     this.addGenericCommand({
       selector,
       action: (s) => `cy.get('${s}').clear().type('${value}')`,
@@ -578,7 +581,7 @@ export class RecordingService {
     const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
     if (!container) return;
     const selector = this.getReliableSelector(container);
-    const value = target.value.replace(/'/g, "\\'");
+    const value = escapeSingleQuotes(target.value);
     this.addGenericCommand({
       selector,
       action: (s) => `cy.get('${s}').select('${value}')`,
@@ -592,7 +595,7 @@ export class RecordingService {
     action: (s: string) => string;
   }): void {
     if (!opts.selector || this.isOwnSelector(opts.selector)) return;
-    this.addCommand(opts.action(opts.selector));
+    this.addCommand(opts.action(escapeSingleQuotes(opts.selector)));
   }
 
   private getReliableSelector(el: HTMLElement): string | null {
@@ -611,20 +614,20 @@ export class RecordingService {
 
     switch (strategy) {
       case 'data-testid':
-        if (dataTestid) return `[data-testid="${dataTestid}"]`;
-        if (dataCy)     return `[data-cy="${dataCy}"]`;
+        if (dataTestid) return `[data-testid="${escapeCssAttrValue(dataTestid)}"]`;
+        if (dataCy)     return `[data-cy="${escapeCssAttrValue(dataCy)}"]`;
         return validId  ? `#${validId}` : null;
       case 'aria-label':
-        if (ariaLabel)  return `[aria-label="${ariaLabel}"]`;
-        if (dataCy)     return `[data-cy="${dataCy}"]`;
+        if (ariaLabel)  return `[aria-label="${escapeCssAttrValue(ariaLabel)}"]`;
+        if (dataCy)     return `[data-cy="${escapeCssAttrValue(dataCy)}"]`;
         return validId  ? `#${validId}` : null;
       case 'id':
         if (validId)    return `#${validId}`;
-        if (dataCy)     return `[data-cy="${dataCy}"]`;
-        return dataTestid ? `[data-testid="${dataTestid}"]` : null;
+        if (dataCy)     return `[data-cy="${escapeCssAttrValue(dataCy)}"]`;
+        return dataTestid ? `[data-testid="${escapeCssAttrValue(dataTestid)}"]` : null;
       default: // 'data-cy'
-        if (dataCy)     return `[data-cy="${dataCy}"]`;
-        if (dataDotCy)  return `[data.cy="${dataDotCy}"]`;
+        if (dataCy)     return `[data-cy="${escapeCssAttrValue(dataCy)}"]`;
+        if (dataDotCy)  return `[data.cy="${escapeCssAttrValue(dataDotCy)}"]`;
         return validId  ? `#${validId}` : null;
     }
   }

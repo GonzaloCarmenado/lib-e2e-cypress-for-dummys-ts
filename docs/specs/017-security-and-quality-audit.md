@@ -171,6 +171,31 @@ needed) at every interpolation point in `recording.service.ts` and
 `http-monitor.ts`. A secondary check: JSON keys used as identifiers should be
 validated against `/^[a-zA-Z_$][a-zA-Z0-9_$]*$/` before direct interpolation.
 
+#### Laboratorio de casos extremos (ejemplo app)
+
+A dedicated lab page (`/lab` route in the shell, `packages/shell/src/pages/lab.ts`)
+contains interactive elements that trigger each of the three escape problems:
+
+| Section | Element | Problem exercised |
+|---|---|---|
+| Caso A | `<button data-cy="o'brien-btn">` | Single-quote in selector |
+| Caso A | `<a aria-label="don't click me">` | Single-quote in aria-label |
+| Caso A | `<input data-cy="apostrophe-input">` | Single-quote in typed value |
+| Caso A | `<input data-cy="backslash-input">` | Backslash in typed value |
+| Caso B | `<button data-cy='say "hello"'>` | Double-quote in CSS attribute |
+| Caso B | `<a aria-label='10" screen'>` | Double-quote in aria-label |
+| Caso C | `GET /api/edge-case` (MSW handler) | Kebab-case JSON keys |
+
+Each section includes a "¿Cuándo afecta a tu empresa?" explanation and the
+expected command output so the reviewer knows exactly what to verify.
+
+To use the lab for manual AC-01 verification:
+1. Start the ejemplo app (`npm run dev` from `ejemplo/`)
+2. Navigate to `http://localhost:5000/lab`
+3. Start recording (`Ctrl+R`)
+4. Interact with each element as instructed
+5. Stop recording and inspect the generated commands panel (`Ctrl+2`)
+
 ### AC-03 — Redaction
 
 A pure utility function `redactSensitiveFields(obj: unknown): unknown` in

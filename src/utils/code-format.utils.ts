@@ -13,6 +13,17 @@ export function escapeSingleQuotes(value: string): string {
 }
 
 /**
+ * Escapes double quotes so a value can be safely embedded inside a CSS
+ * double-quoted attribute selector, e.g. [data-cy="VALUE"].
+ * The result must subsequently pass through escapeSingleQuotes when it is
+ * placed inside a single-quoted JS string literal (the JS layer doubles the
+ * backslash introduced here).
+ */
+export function escapeCssAttrValue(value: string): string {
+  return value.replace(/"/g, '\\"');
+}
+
+/**
  * Normalizes indentation in a code block and prefixes every line with baseIndent.
  *
  * Algorithm:

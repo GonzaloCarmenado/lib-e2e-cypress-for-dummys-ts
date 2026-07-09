@@ -1,4 +1,5 @@
 import { type RecordingService } from './recording.service';
+import { escapeSingleQuotes } from '../utils/code-format.utils';
 
 const INTERCEPTED_METHODS = ['GET', 'POST', 'PUT'] as const;
 type InterceptedMethod = (typeof INTERCEPTED_METHODS)[number];
@@ -16,10 +17,17 @@ export function generateAlias(method: string, url: string): string {
   }
 }
 
+const SAFE_IDENTIFIER = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+
 function buildValidations(base: string, obj: Record<string, unknown>): string {
   return Object.keys(obj)
     .filter((key) => key !== 'id' && key !== 'uid')
-    .map((key) => `expect(${base}.${key}).to.equal(${JSON.stringify(obj[key])});`)
+    .map((key) => {
+      const accessor = SAFE_IDENTIFIER.test(key)
+        ? `.${key}`
+        : `['${escapeSingleQuotes(key)}']`;
+      return `expect(${base}${accessor}).to.equal(${JSON.stringify(obj[key])});`;
+    })
     .join('\n');
 }
 

@@ -29,4 +29,14 @@ export const handlers = [
   http.get('/api/users', () =>
     HttpResponse.json({ users: USERS })
   ),
+  // GET /api/edge-case  (laboratorio — claves kebab-case para probar Caso C)
+  http.get('/api/edge-case', () =>
+    HttpResponse.json({
+      'user-id': 42,
+      'x-auth-token': 'abc-123',
+      'Content-Type': 'application/json',
+      normalKey: 'valor normal',
+      price: 99.99,
+    })
+  ),
 ];

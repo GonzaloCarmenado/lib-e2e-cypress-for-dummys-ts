@@ -1128,4 +1128,80 @@ describe('Phase 4 — RecordingService', () => {
       expect(snaps).toHaveLength(0);
     });
   });
+
+  // ── AC-01 — escape injection vectors in generated commands ─────────────────
+
+  describe('AC-01 — escape in generated commands', () => {
+    beforeEach(() => { service.startRecording(); });
+
+    // Problem A — single quote in selector
+
+    it('escapes a single quote in a data-cy click selector', () => {
+      const btn = makeElement('button', { 'data-cy': "o'brien" });
+      click(btn);
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      expect(cmd).toBe(`cy.get('[data-cy="o\\'brien"]').click()`);
+    });
+
+    it('escapes a single quote in a dblclick selector', () => {
+      const btn = makeElement('button', { 'data-cy': "don't" });
+      dblclick(btn);
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      expect(cmd).toBe(`cy.get('[data-cy="don\\'t"]').dblclick()`);
+    });
+
+    it('escapes a single quote in a rightclick selector', () => {
+      const btn = makeElement('button', { 'data-cy': "it's-ok" });
+      rightClick(btn);
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      expect(cmd).toBe(`cy.get('[data-cy="it\\'s-ok"]').rightclick()`);
+    });
+
+    // Problem A — single quote / backslash in input value
+
+    it('escapes a single quote in an input value', () => {
+      vi.useFakeTimers();
+      const inp = makeElement('input', { 'data-cy': 'search' }) as HTMLInputElement;
+      input(inp, "it's");
+      vi.advanceTimersByTime(1100);
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      expect(cmd).toBe(`cy.get('[data-cy="search"]').clear().type('it\\'s')`);
+    });
+
+    it('escapes a backslash in an input value', () => {
+      vi.useFakeTimers();
+      const inp = makeElement('input', { 'data-cy': 'path-inp' }) as HTMLInputElement;
+      // JS string 'a\\b' = runtime: a\b (one backslash)
+      input(inp, 'a\\b');
+      vi.advanceTimersByTime(1100);
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      // escapeSingleQuotes('a\b') = 'a\\b' (two backslashes in file text)
+      expect(cmd).toBe(`cy.get('[data-cy="path-inp"]').clear().type('a\\\\b')`);
+    });
+
+    it('escapes a single quote in a select value', () => {
+      const sel = document.createElement('select');
+      sel.setAttribute('data-cy', 'my-select');
+      const opt = document.createElement('option');
+      opt.value = "O'Brien";
+      opt.text = "O'Brien";
+      sel.appendChild(opt);
+      document.body.appendChild(sel);
+      change(sel as HTMLSelectElement, "O'Brien");
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      expect(cmd).toBe(`cy.get('[data-cy="my-select"]').select('O\\'Brien')`);
+    });
+
+    // Problem B — double quote in CSS attribute value
+
+    it('escapes a double quote in a data-cy CSS attribute selector', () => {
+      const btn = makeElement('button', { 'data-cy': 'say "hi"' });
+      click(btn);
+      const cmd = service.getCommandsSnapshot().at(-1)!;
+      // CSS layer: " → \"   JS layer: \ → \\   →  \\" in the generated file
+      // 'say \\\\"hi\\\\"' in test source = runtime string: say \\"hi\\"
+      expect(cmd).toContain('say \\\\"hi\\\\"');
+      expect(cmd).not.toContain('say "hi"');
+    });
+  });
 });
