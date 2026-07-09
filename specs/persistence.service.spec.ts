@@ -396,6 +396,47 @@ describe('Phase 5 — PersistenceService', () => {
     });
   });
 
+  // ── login setup config ───────────────────────────────────────────────────
+
+  describe('login setup config', () => {
+    const cfg = {
+      enabled: true,
+      filePath: 'cypress/common-services/login.service.ts',
+      fileContent: 'export function fetchAuthToken() {}',
+      detectedFunctions: ['fetchAuthToken'],
+      beforeFn: 'fetchAuthToken',
+      beforeEachFn: null,
+    };
+
+    it('getLoginSetup returns null when nothing is stored', async () => {
+      expect(await service.getLoginSetup()).toBeNull();
+    });
+
+    it('saveLoginSetup then getLoginSetup round-trips the config', async () => {
+      await service.saveLoginSetup(cfg);
+      const stored = await service.getLoginSetup();
+      expect(stored).toEqual(cfg);
+    });
+
+    it('saveLoginSetup overwrites a previous config', async () => {
+      await service.saveLoginSetup(cfg);
+      const updated = { ...cfg, beforeFn: null };
+      await service.saveLoginSetup(updated);
+      const stored = await service.getLoginSetup();
+      expect(stored!.beforeFn).toBeNull();
+    });
+
+    it('clearLoginSetup removes the stored config', async () => {
+      await service.saveLoginSetup(cfg);
+      await service.clearLoginSetup();
+      expect(await service.getLoginSetup()).toBeNull();
+    });
+
+    it('clearLoginSetup is safe to call when nothing is stored', async () => {
+      await expect(service.clearLoginSetup()).resolves.toBeUndefined();
+    });
+  });
+
   // ── tags ─────────────────────────────────────────────────────────────────
 
   describe('insertTest with tags', () => {
