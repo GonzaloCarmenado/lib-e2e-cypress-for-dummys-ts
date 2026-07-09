@@ -2,6 +2,8 @@
 
 > A floating widget that records real browser interactions and generates ready-to-run **Cypress E2E test code** — no setup required, no Cypress knowledge needed.
 
+> **Development and QA environments only.** This is a developer tool for generating test code — it has no place in a production build. Not because of security vulnerabilities or performance problems, but simply because end users have no reason to see a test recorder widget. Load it conditionally (e.g. `if (process.env.NODE_ENV !== 'production')`) or gate it behind a build flag.
+
 ---
 
 ## What it does
