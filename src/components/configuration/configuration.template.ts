@@ -30,6 +30,12 @@ export interface ConfigurationState {
   issueTrackerConfig: IssueTrackerConfig;
   isLoginSetupOpen: boolean;
   loginSetupConfig: LoginSetupConfig | null;
+  // draft state — only populated while the overlay is open
+  loginSetupDraftPath?: string;
+  loginSetupDraftFunctions?: string[];
+  loginSetupDraftBeforeFn?: string | null;
+  loginSetupDraftBeforeEachFn?: string | null;
+  loginSetupDraftHasContent?: boolean;
 }
 
 export function renderExportOverlay(state: ConfigurationState, t: (key: string) => string): string {
@@ -282,58 +288,86 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
 
 function renderLoginSetupOverlay(state: ConfigurationState, t: (key: string) => string): string {
   if (!state.isLoginSetupOpen) return '';
+
   const cfg = state.loginSetupConfig;
-  const fns = cfg?.detectedFunctions ?? [];
+  const path      = state.loginSetupDraftPath      ?? cfg?.filePath          ?? '';
+  const fns       = state.loginSetupDraftFunctions ?? cfg?.detectedFunctions ?? [];
+  const beforeFn  = state.loginSetupDraftBeforeFn  !== undefined
+    ? state.loginSetupDraftBeforeFn  : (cfg?.beforeFn  ?? null);
+  const beforeEachFn = state.loginSetupDraftBeforeEachFn !== undefined
+    ? state.loginSetupDraftBeforeEachFn : (cfg?.beforeEachFn ?? null);
+  const hasContent = state.loginSetupDraftHasContent ?? !!(cfg?.fileContent);
 
   const fnOption = (name: string | null, selected: string | null) =>
     `<option value="${escAttr(name ?? '')}" ${selected === name ? 'selected' : ''}>${name ? escHtml(name) : t('CONFIG.LOGIN_SETUP_NONE_OPTION')}</option>`;
 
-  const fnSelect = (id: string, label: string, selected: string | null) => `
-    <div class="field-row" style="margin-top:10px">
+  const fnDropdown = (id: string, label: string, selected: string | null) => `
+    <div class="ls-field-row">
       <span class="field-label">${escHtml(label)}</span>
-      <select id="${id}" style="flex:1;padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#c9d1d9;font-size:12px">
+      <select id="${id}" class="ls-select">
         ${fnOption(null, selected)}
         ${fns.map((fn) => fnOption(fn, selected)).join('')}
       </select>
     </div>`;
 
-  const summary = cfg
-    ? `<div class="login-setup-summary">
-        <span class="field-label">${t('CONFIG.LOGIN_SETUP_SECTION')}</span>
-        <span style="color:#8b949e;font-size:11px">${escHtml(cfg.filePath)}</span>
+  const functionsSection = hasContent
+    ? (fns.length > 0
+        ? `<div class="ls-fns">${fns.map((fn) => `<span class="ls-fn-chip">${escHtml(fn)}</span>`).join('')}</div>
+           <hr class="ls-divider"/>
+           ${fnDropdown('login-setup-before-fn', t('CONFIG.LOGIN_SETUP_BEFORE_LABEL'), beforeFn)}
+           ${fnDropdown('login-setup-before-each-fn', t('CONFIG.LOGIN_SETUP_BEFORE_EACH_LABEL'), beforeEachFn)}`
+        : `<p class="ls-no-fn">${t('CONFIG.LOGIN_SETUP_NO_FUNCTIONS')}</p>`)
+    : '';
+
+  const fileRow = hasContent
+    ? `<div class="ls-file-row">
+        <span class="ls-file-name">${escHtml(path.split('/').pop() ?? path)}</span>
+        <button id="btn-login-setup-rescan">${t('CONFIG.LOGIN_SETUP_RESCAN')}</button>
       </div>`
     : '';
 
   return `
   <div class="export-overlay" id="login-setup-overlay">
-    <div class="export-modal" style="max-width:520px">
-      <div class="export-modal-title">${t('CONFIG.LOGIN_SETUP_TITLE')}</div>
-      ${summary}
+    <div class="export-modal" style="max-width:540px">
 
-      <div style="margin-top:14px">
-        <div class="field-row">
-          <span class="field-label">${t('CONFIG.LOGIN_SETUP_FILE_NAME_LABEL')}</span>
-          <input id="login-setup-filepath" type="text"
-            placeholder="${escAttr(t('CONFIG.LOGIN_SETUP_FILE_NAME_PH'))}"
-            value="${escAttr(cfg?.filePath ?? '')}"
-            style="flex:1;padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#c9d1d9;font-size:12px;outline:none" />
+      <div class="export-hd">${t('CONFIG.LOGIN_SETUP_TITLE')}</div>
+
+      <div class="ls-body">
+
+        <div class="ls-actions">
+          <button id="btn-login-setup-create-scaffold" class="ls-action-btn">
+            <span class="ls-action-icon">📄</span>
+            <span class="ls-action-label">${t('CONFIG.LOGIN_SETUP_CREATE_SCAFFOLD')}</span>
+            <span class="ls-action-sub">Crea un scaffold vacío</span>
+          </button>
+          <button id="btn-login-setup-pick-file" class="ls-action-btn">
+            <span class="ls-action-icon">📁</span>
+            <span class="ls-action-label">${t('CONFIG.LOGIN_SETUP_SELECT_EXISTING')}</span>
+            <span class="ls-action-sub">Abre el explorador de archivos</span>
+          </button>
         </div>
+
+        ${fileRow}
+
+        <div class="ls-field-row">
+          <span class="field-label">${t('CONFIG.LOGIN_SETUP_FILE_NAME_LABEL')}</span>
+          <input id="login-setup-filepath" type="text" class="ls-input"
+            placeholder="${escAttr(t('CONFIG.LOGIN_SETUP_FILE_NAME_PH'))}"
+            value="${escAttr(path)}" />
+        </div>
+
+        ${functionsSection}
+
       </div>
 
-      ${fns.length === 0 && cfg
-        ? `<p style="color:#8b949e;font-size:12px;margin-top:10px">${t('CONFIG.LOGIN_SETUP_NO_FUNCTIONS')}</p>`
-        : ''}
-
-      ${fns.length > 0
-        ? fnSelect('login-setup-before-fn', t('CONFIG.LOGIN_SETUP_BEFORE_LABEL'), cfg?.beforeFn ?? null)
-          + fnSelect('login-setup-before-each-fn', t('CONFIG.LOGIN_SETUP_BEFORE_EACH_LABEL'), cfg?.beforeEachFn ?? null)
-        : ''}
-
-      <div class="export-actions" style="margin-top:16px">
-        <button id="btn-login-setup-save" class="btn-primary">${t('CONFIG.LOGIN_SETUP_SAVE_BTN')}</button>
-        <button id="btn-login-setup-clear" style="color:#f85149;background:none;border:none;cursor:pointer;font-size:13px">${t('CONFIG.LOGIN_SETUP_CLEAR_BTN')}</button>
-        <button id="btn-login-setup-cancel" class="btn-cancel">${t('CONFIG.LOGIN_SETUP_CANCEL_BTN')}</button>
+      <div class="export-ft">
+        <button id="btn-login-setup-clear" class="btn-danger">${t('CONFIG.LOGIN_SETUP_CLEAR_BTN')}</button>
+        <span class="export-ft-actions">
+          <button id="btn-login-setup-save" class="btn-primary">${t('CONFIG.LOGIN_SETUP_SAVE_BTN')}</button>
+          <button id="btn-login-setup-cancel">${t('CONFIG.LOGIN_SETUP_CANCEL_BTN')}</button>
+        </span>
       </div>
+
     </div>
   </div>`;
 }

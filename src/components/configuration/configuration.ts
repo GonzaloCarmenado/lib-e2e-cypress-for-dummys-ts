@@ -6,6 +6,7 @@ import type { SelectorStrategy } from '../../services/recording.service';
 import { RESUME_TTL_CONFIG_KEY, DEFAULT_RESUME_TTL_MINUTES } from '../../models/active-session.model';
 import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig, type IssueTrackerProvider } from '../../models/issue-tracker.model';
 import type { LoginSetupConfig } from '../../models/login-setup.model';
+import { extractExportedFunctions, buildLoginScaffold } from '../../utils/login-setup.utils';
 import { showToast } from '../../utils/toast.utils';
 import { selectTestsForExport, type ExportMode } from '../../utils/export-selection.utils';
 import { CONFIGURATION_STYLES } from './configuration.styles';
@@ -30,6 +31,13 @@ export class ConfigurationElement extends HTMLElement {
   issueTrackerConfig: IssueTrackerConfig = { ...DEFAULT_ISSUE_TRACKER_CONFIG };
   isLoginSetupOpen = false;
   loginSetupConfig: LoginSetupConfig | null = null;
+  loginSetupDraftPath = '';
+  loginSetupDraftFunctions: string[] = [];
+  loginSetupDraftBeforeFn: string | null = null;
+  loginSetupDraftBeforeEachFn: string | null = null;
+  loginSetupDraftHasContent = false;
+  private loginSetupDraftHandle: FileSystemFileHandle | null = null;
+  private loginSetupDraftContent = '';
   private filesystemGranted = false;
   private cypressFolderName: string | null = null;
 
@@ -155,6 +163,14 @@ export class ConfigurationElement extends HTMLElement {
 
   openLoginSetupPanel(): void {
     this.isLoginSetupOpen = true;
+    const cfg = this.loginSetupConfig;
+    this.loginSetupDraftHandle = null;
+    this.loginSetupDraftContent = cfg?.fileContent ?? '';
+    this.loginSetupDraftPath = cfg?.filePath ?? '';
+    this.loginSetupDraftFunctions = cfg?.detectedFunctions ?? [];
+    this.loginSetupDraftBeforeFn = cfg?.beforeFn ?? null;
+    this.loginSetupDraftBeforeEachFn = cfg?.beforeEachFn ?? null;
+    this.loginSetupDraftHasContent = !!(cfg?.fileContent);
     this.render();
   }
 
@@ -174,6 +190,62 @@ export class ConfigurationElement extends HTMLElement {
     await this.persistence.clearLoginSetup();
     this.loginSetupConfig = null;
     this.render();
+  }
+
+  async loginSetupPickFile(): Promise<void> {
+    type OpenPicker = (opts: object) => Promise<FileSystemFileHandle[]>;
+    const currentPath = (this.shadow.getElementById('login-setup-filepath') as HTMLInputElement | null)?.value.trim() ?? '';
+    try {
+      const [handle] = await (window as unknown as { showOpenFilePicker: OpenPicker }).showOpenFilePicker({
+        types: [{ description: 'TypeScript files', accept: { 'text/plain': ['.ts'] } }],
+        multiple: false,
+      });
+      this.loginSetupDraftHandle = handle;
+      const file = await handle.getFile();
+      this.loginSetupDraftContent = await file.text();
+      this.loginSetupDraftHasContent = true;
+      this.loginSetupDraftPath = currentPath || `cypress/common-services/${handle.name}`;
+      this.loginSetupDraftFunctions = extractExportedFunctions(this.loginSetupDraftContent);
+      this.render();
+    } catch (e) {
+      if ((e as DOMException)?.name !== 'AbortError') showToast(this.t('CONFIG.FOLDER_ERROR_TOAST'), false);
+    }
+  }
+
+  async loginSetupCreateScaffold(): Promise<void> {
+    type SavePicker = (opts: object) => Promise<FileSystemFileHandle>;
+    const currentPath = (this.shadow.getElementById('login-setup-filepath') as HTMLInputElement | null)?.value.trim() ?? '';
+    try {
+      const handle = await (window as unknown as { showSaveFilePicker: SavePicker }).showSaveFilePicker({
+        suggestedName: 'login.service.ts',
+        types: [{ description: 'TypeScript files', accept: { 'text/plain': ['.ts'] } }],
+      });
+      const content = buildLoginScaffold();
+      const writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      this.loginSetupDraftHandle = handle;
+      this.loginSetupDraftContent = content;
+      this.loginSetupDraftHasContent = true;
+      this.loginSetupDraftPath = currentPath || `cypress/common-services/${handle.name}`;
+      this.loginSetupDraftFunctions = extractExportedFunctions(content);
+      this.render();
+    } catch (e) {
+      if ((e as DOMException)?.name !== 'AbortError') showToast(this.t('CONFIG.FOLDER_ERROR_TOAST'), false);
+    }
+  }
+
+  async loginSetupRescan(): Promise<void> {
+    const currentPath = (this.shadow.getElementById('login-setup-filepath') as HTMLInputElement | null)?.value.trim();
+    if (currentPath !== undefined) this.loginSetupDraftPath = currentPath;
+    try {
+      if (this.loginSetupDraftHandle) {
+        const file = await this.loginSetupDraftHandle.getFile();
+        this.loginSetupDraftContent = await file.text();
+      }
+      this.loginSetupDraftFunctions = extractExportedFunctions(this.loginSetupDraftContent);
+      this.render();
+    } catch { /* silently ignore */ }
   }
 
   async changeFolder(): Promise<void> {
@@ -294,6 +366,11 @@ export class ConfigurationElement extends HTMLElement {
       issueTrackerConfig: this.issueTrackerConfig,
       isLoginSetupOpen: this.isLoginSetupOpen,
       loginSetupConfig: this.loginSetupConfig,
+      loginSetupDraftPath: this.loginSetupDraftPath,
+      loginSetupDraftFunctions: this.loginSetupDraftFunctions,
+      loginSetupDraftBeforeFn: this.loginSetupDraftBeforeFn,
+      loginSetupDraftBeforeEachFn: this.loginSetupDraftBeforeEachFn,
+      loginSetupDraftHasContent: this.loginSetupDraftHasContent,
     }, this.t.bind(this))}`;
     ;(this.shadow.getElementById('lang-select') as HTMLSelectElement).addEventListener('change', (e) =>
       this.onLanguageChange((e.target as HTMLSelectElement).value),
@@ -344,6 +421,23 @@ export class ConfigurationElement extends HTMLElement {
     );
     this.shadow.getElementById('btn-open-login-setup')?.addEventListener('click', () => this.openLoginSetupPanel());
     this.shadow.getElementById('btn-login-setup-cancel')?.addEventListener('click', () => this.closeLoginSetupPanel());
+    this.shadow.getElementById('btn-login-setup-pick-file')?.addEventListener('click', () => this.loginSetupPickFile());
+    this.shadow.getElementById('btn-login-setup-create-scaffold')?.addEventListener('click', () => this.loginSetupCreateScaffold());
+    this.shadow.getElementById('btn-login-setup-rescan')?.addEventListener('click', () => this.loginSetupRescan());
+    this.shadow.getElementById('btn-login-setup-clear')?.addEventListener('click', () => this.clearLoginSetupConfig());
+    this.shadow.getElementById('btn-login-setup-save')?.addEventListener('click', async () => {
+      const pathEl        = this.shadow.getElementById('login-setup-filepath')     as HTMLInputElement  | null;
+      const beforeEl      = this.shadow.getElementById('login-setup-before-fn')    as HTMLSelectElement | null;
+      const beforeEachEl  = this.shadow.getElementById('login-setup-before-each-fn') as HTMLSelectElement | null;
+      await this.saveLoginSetupConfig({
+        enabled: true,
+        filePath:          pathEl?.value.trim()   ?? this.loginSetupDraftPath,
+        fileContent:       this.loginSetupDraftContent,
+        detectedFunctions: this.loginSetupDraftFunctions,
+        beforeFn:          beforeEl?.value        || null,
+        beforeEachFn:      beforeEachEl?.value    || null,
+      });
+    });
 
     ;(this.shadow.getElementById('file-input') as HTMLInputElement).addEventListener('change', async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
