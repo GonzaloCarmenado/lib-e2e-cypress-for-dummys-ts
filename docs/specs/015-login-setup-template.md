@@ -109,9 +109,10 @@ generated scaffold structure — the user fills in all the logic.
 - [ ] AC-09: If no exported functions are found, the panel shows an
       informational message ("No exported functions found — fill in the
       scaffold and reopen") and disables the assignment step.
-- [ ] AC-10: A **"Re-scan"** button lets the user refresh the function list
-      after editing their service file externally, without re-selecting the
-      file.
+- [ ] AC-10: A **"Re-scan"** button re-reads the file (via File System Access
+      API if the handle is still valid, otherwise from the cached content) and
+      refreshes the function list and the cache in IndexedDB — no re-picking
+      required after a page reload.
 
 ### Function assignment
 
@@ -191,7 +192,8 @@ generated scaffold structure — the user fills in all the logic.
 // PersistenceService — new settings key alongside existing ones
 interface LoginSetupConfig {
   enabled: boolean;
-  filePath: string;           // absolute or relative path as stored by FSAA
+  filePath: string;            // user-defined path (display only, for the summary)
+  fileContent: string;         // cached file content — enables re-scan without re-picking
   detectedFunctions: string[];
   beforeFn: string | null;
   beforeEachFn: string | null;
@@ -285,14 +287,14 @@ SUMMARY_LABEL
 
 ## Open questions
 
-- [ ] Q1: Should the "Create scaffold" path be free-form (user types the
+- [x] Q1: Should the "Create scaffold" path be free-form (user types the
       filename) or always fixed to `cypress/common-services/login.service.ts`?
-      Fixed path reduces friction; free-form gives flexibility. Leaning toward
-      **fixed default with optional rename**.
-- [ ] Q2: When the user selects an existing file, should its content be
+      → **Free-form from the start** — user types the filename/path they want.
+- [x] Q2: When the user selects an existing file, should its content be
       **cached** in IndexedDB (for re-scan without re-picking) or only the
-      file path stored (requiring re-pick after page reload)? Caching avoids
-      repeated file picker prompts but adds staleness risk.
+      file path stored (requiring re-pick after page reload)?
+      → **Cache the content** — stored in IndexedDB alongside the config so
+      re-scan works after reload without prompting the file picker again.
 
 ---
 
@@ -301,3 +303,4 @@ SUMMARY_LABEL
 | Date       | Change        |
 |------------|---------------|
 | 2026-07-09 | Initial draft |
+| 2026-07-09 | Q1 resolved: free-form path. Q2 resolved: cache file content in IndexedDB. |
