@@ -11,7 +11,9 @@ import {
   runSpec,
   createRunnerServer,
   startRunner,
+  resolveAllowedOrigin,
   DEFAULT_COMMAND,
+  DEFAULT_ALLOW_ORIGIN,
 } from '../../src/runner/runner';
 
 // ── fake spawn ───────────────────────────────────────────────────────────────
@@ -30,9 +32,15 @@ function fakeSpawn(opts: { code?: number; out?: string; errorEvent?: boolean }):
   }) as unknown as typeof spawn;
 }
 
-function httpRequest(port: number, method: string, path: string, body?: string): Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }> {
+function httpRequest(
+  port: number,
+  method: string,
+  path: string,
+  body?: string,
+  headers?: Record<string, string>,
+): Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }> {
   return new Promise((resolve, reject) => {
-    const req = http.request({ host: '127.0.0.1', port, method, path }, (res) => {
+    const req = http.request({ host: '127.0.0.1', port, method, path, headers }, (res) => {
       let data = '';
       res.on('data', (c) => { data += c; });
       res.on('end', () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body: data }));
@@ -129,13 +137,14 @@ describe('runSpec', () => {
 // ── HTTP server ───────────────────────────────────────────────────────────────
 
 describe('createRunnerServer', () => {
-  it('answers OPTIONS preflight with CORS headers', async () => {
+  it('answers OPTIONS preflight with CORS headers (not wildcard)', async () => {
     const server = createRunnerServer({}, fakeSpawn({ code: 0 }));
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
     const port = (server.address() as AddressInfo).port;
     const res = await httpRequest(port, 'OPTIONS', '/run-test');
     expect(res.status).toBe(204);
-    expect(res.headers['access-control-allow-origin']).toBe('*');
+    expect(res.headers['access-control-allow-origin']).toBe(DEFAULT_ALLOW_ORIGIN);
+    expect(res.headers['access-control-allow-origin']).not.toBe('*');
     server.close();
   });
 
@@ -157,6 +166,102 @@ describe('createRunnerServer', () => {
     const port = (server.address() as AddressInfo).port;
     const res = await httpRequest(port, 'GET', '/nope');
     expect(res.status).toBe(404);
+    server.close();
+  });
+});
+
+// ── AC-02 — CORS origin restriction ──────────────────────────────────────────
+
+describe('resolveAllowedOrigin', () => {
+  it('returns the configured origin when no Origin header is sent', () => {
+    expect(resolveAllowedOrigin(undefined, 'http://localhost')).toBe('http://localhost');
+  });
+
+  it('reflects localhost with any port', () => {
+    expect(resolveAllowedOrigin('http://localhost:3000', 'http://localhost')).toBe('http://localhost:3000');
+  });
+
+  it('reflects 127.0.0.1 with any port', () => {
+    expect(resolveAllowedOrigin('http://127.0.0.1:5000', 'http://localhost')).toBe('http://127.0.0.1:5000');
+  });
+
+  it('reflects localhost without explicit port', () => {
+    expect(resolveAllowedOrigin('http://localhost', 'http://localhost')).toBe('http://localhost');
+  });
+
+  it('returns configured origin for an unknown external origin', () => {
+    expect(resolveAllowedOrigin('http://evil.com', 'http://localhost')).toBe('http://localhost');
+  });
+
+  it('reflects a custom allowOrigin when it exactly matches the request', () => {
+    expect(resolveAllowedOrigin('http://myapp.test', 'http://myapp.test')).toBe('http://myapp.test');
+  });
+
+  it('returns configured origin when external origin does not match', () => {
+    expect(resolveAllowedOrigin('http://other.test', 'http://myapp.test')).toBe('http://myapp.test');
+  });
+});
+
+describe('parseRunnerArgs — AC-02 --allow-origin', () => {
+  it('parses --allow-origin space form', () => {
+    expect(parseRunnerArgs(['--allow-origin', 'http://myapp.test'])).toMatchObject({ allowOrigin: 'http://myapp.test' });
+  });
+
+  it('parses --allow-origin= equals form', () => {
+    expect(parseRunnerArgs(['--allow-origin=http://myapp.test'])).toMatchObject({ allowOrigin: 'http://myapp.test' });
+  });
+
+  it('existing flags still parse alongside --allow-origin', () => {
+    const opts = parseRunnerArgs(['--port', '9000', '--allow-origin', 'http://dev.local']);
+    expect(opts).toMatchObject({ port: 9000, allowOrigin: 'http://dev.local' });
+  });
+});
+
+describe('createRunnerServer — AC-02 CORS origin restriction', () => {
+  it('does not reflect unknown origin (not *)', async () => {
+    const server = createRunnerServer({}, fakeSpawn({ code: 0 }));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const port = (server.address() as AddressInfo).port;
+    const res = await httpRequest(port, 'OPTIONS', '/run-test', undefined, { origin: 'http://evil.com' });
+    expect(res.headers['access-control-allow-origin']).not.toBe('http://evil.com');
+    expect(res.headers['access-control-allow-origin']).not.toBe('*');
+    server.close();
+  });
+
+  it('reflects localhost:PORT origin', async () => {
+    const server = createRunnerServer({}, fakeSpawn({ code: 0 }));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const port = (server.address() as AddressInfo).port;
+    const res = await httpRequest(port, 'OPTIONS', '/run-test', undefined, { origin: 'http://localhost:3000' });
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+    server.close();
+  });
+
+  it('reflects 127.0.0.1:PORT origin', async () => {
+    const server = createRunnerServer({}, fakeSpawn({ code: 0 }));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const port = (server.address() as AddressInfo).port;
+    const res = await httpRequest(port, 'OPTIONS', '/run-test', undefined, { origin: 'http://127.0.0.1:5000' });
+    expect(res.headers['access-control-allow-origin']).toBe('http://127.0.0.1:5000');
+    server.close();
+  });
+
+  it('reflects a custom allowOrigin when request matches', async () => {
+    const server = createRunnerServer({ allowOrigin: 'http://myapp.test' }, fakeSpawn({ code: 0 }));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const port = (server.address() as AddressInfo).port;
+    const res = await httpRequest(port, 'OPTIONS', '/run-test', undefined, { origin: 'http://myapp.test' });
+    expect(res.headers['access-control-allow-origin']).toBe('http://myapp.test');
+    server.close();
+  });
+
+  it('POST /run-test also sends the restricted CORS header', async () => {
+    const server = createRunnerServer({}, fakeSpawn({ code: 0, out: 'ok' }));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const port = (server.address() as AddressInfo).port;
+    const res = await httpRequest(port, 'POST', '/run-test', JSON.stringify({ specPath: 'a.cy.ts' }), { origin: 'http://localhost:4200' });
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:4200');
+    expect(res.headers['access-control-allow-origin']).not.toBe('*');
     server.close();
   });
 });

@@ -354,6 +354,21 @@ Options:
 | `--command` | `npx cypress run --spec {spec}` | Command to run. `{spec}` is replaced by the spec (passed as a single argv, never through a shell). |
 | `--cwd` | current dir | Working directory the command runs in. |
 | `--host` | `127.0.0.1` | Bind address (local only). |
+| `--allow-origin` | `http://localhost` | Allowed CORS origin. Any `http://localhost:*` / `http://127.0.0.1:*` origin is always allowed regardless of this flag. Use this only when your app runs on a custom domain or a non-localhost IP. |
+
+The allowed origin can also be set via the `RUNNER_ALLOW_ORIGIN` environment variable (CLI flag takes precedence):
+
+```bash
+# Default — app on localhost (any port)
+npx lib-e2e-cypress-runner
+
+# App on a custom domain or shared dev IP
+npx lib-e2e-cypress-runner --allow-origin=http://myapp.test
+npx lib-e2e-cypress-runner --allow-origin=http://192.168.1.10:3000
+
+# Via env-var (useful for Docker / CI scripts)
+RUNNER_ALLOW_ORIGIN=http://myapp.test npx lib-e2e-cypress-runner
+```
 
 The widget POSTs `{ specPath }` to `http://localhost:8123/run-test`; configure a
 different endpoint via the `runnerUrl` property of `<file-preview>` if needed.

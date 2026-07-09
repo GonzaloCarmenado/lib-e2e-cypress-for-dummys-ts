@@ -124,8 +124,18 @@ export function mountGuide(el: HTMLElement) {
         <li>Para las fixtures: activa "🧪 Fixtures HTTP" en Config → graba un test con
             llamadas GET → "Guardar y editar" → los <code>.json</code> se escriben en
             <code>ejemplo/cypress/fixtures/</code>.</li>
-        <li>Para lanzar el test: ejecuta <code>npx lib-e2e-cypress-runner</code> desde
-            <code>ejemplo/</code>, luego pulsa <b>▶ Lanzar test</b> en el editor.</li>
+        <li>Para lanzar el test: ejecuta el runner desde <code>ejemplo/</code>, luego pulsa
+            <b>▶ Lanzar test</b> en el editor.
+          <pre style="background:#161b22;border-radius:6px;padding:10px 14px;margin:8px 0 0;font-size:12px;color:#e6edf3;overflow-x:auto"># Caso habitual — app en localhost (cualquier puerto)
+npx lib-e2e-cypress-runner
+
+# App en dominio custom o IP de red (entorno de dev compartido)
+npx lib-e2e-cypress-runner --allow-origin=http://myapp.test
+npx lib-e2e-cypress-runner --allow-origin=http://192.168.1.10:3000
+
+# Variable de entorno (útil en Docker o scripts de CI)
+RUNNER_ALLOW_ORIGIN=http://myapp.test npx lib-e2e-cypress-runner</pre>
+        </li>
       </ol>
     </div>
   </div>`;
