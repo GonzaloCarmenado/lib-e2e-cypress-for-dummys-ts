@@ -1,6 +1,6 @@
 # 015 — Login Setup Template
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Date:** 2026-07-09
 > **Author:** Gonzalo
 

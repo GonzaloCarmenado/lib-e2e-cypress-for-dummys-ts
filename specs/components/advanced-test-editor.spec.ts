@@ -386,6 +386,43 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
       expect(written).toContain("it('should '");
     });
 
+    it('injects import + before + beforeEach when loginSetupConfig is configured', async () => {
+      const write = vi.fn();
+      const close = vi.fn();
+      const getFileHandle = vi.fn().mockResolvedValue({ createWritable: vi.fn().mockResolvedValue({ write, close }) });
+      (el as any)._e2eHandle = { getFileHandle, name: 'e2e' };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      await persistence.saveLoginSetup({
+        enabled: true,
+        filePath: 'cypress/common-services/login.service.ts',
+        fileContent: 'export function fetchAuthToken() {} export function setupInterceptors() {}',
+        detectedFunctions: ['fetchAuthToken', 'setupInterceptors'],
+        beforeFn: 'fetchAuthToken',
+        beforeEachFn: 'setupInterceptors',
+      });
+      el.loginSetupConfig = await persistence.getLoginSetup();
+      await el.createNewFile('my-test');
+      const written = write.mock.calls[0][0] as string;
+      expect(written).toContain('fetchAuthToken');
+      expect(written).toContain('setupInterceptors');
+      expect(written).toContain('before(');
+      expect(written).toContain('beforeEach(');
+      expect(written).toContain('import {');
+    });
+
+    it('does not inject login blocks when loginSetupConfig is null', async () => {
+      const write = vi.fn();
+      const close = vi.fn();
+      const getFileHandle = vi.fn().mockResolvedValue({ createWritable: vi.fn().mockResolvedValue({ write, close }) });
+      (el as any)._e2eHandle = { getFileHandle };
+      vi.spyOn(el, 'getFoldersData').mockResolvedValue(undefined);
+      el.loginSetupConfig = null;
+      await el.createNewFile('my-test');
+      const written = write.mock.calls[0][0] as string;
+      expect(written).not.toContain('import {');
+      expect(written).not.toContain('before(');
+    });
+
     it('strips a trailing .cy.ts from the typed name', async () => {
       const getFileHandle = vi.fn().mockResolvedValue({ createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }) });
       (el as any)._e2eHandle = { getFileHandle };

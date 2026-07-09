@@ -2,6 +2,7 @@ import { escHtml, escAttr } from '../../utils/html.utils';
 import { selectTestsForExport, type ExportMode } from '../../utils/export-selection.utils';
 import type { TestWithDetails } from '../../services/persistence.service';
 import { ISSUE_TRACKER_PRESETS, type IssueTrackerConfig } from '../../models/issue-tracker.model';
+import type { LoginSetupConfig } from '../../models/login-setup.model';
 
 export const LANGS = [
   { value: 'es', label: 'Español' },
@@ -27,6 +28,8 @@ export interface ConfigurationState {
   exportSelectedIds: Set<number>;
   exportSelectedTags: Set<string>;
   issueTrackerConfig: IssueTrackerConfig;
+  isLoginSetupOpen: boolean;
+  loginSetupConfig: LoginSetupConfig | null;
 }
 
 export function renderExportOverlay(state: ConfigurationState, t: (key: string) => string): string {
@@ -252,6 +255,15 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
         </div>` : ''}
       </div>
 
+      <!-- Login Setup -->
+      <div class="card card-wide">
+        <div class="card-hd">${t('CONFIG.LOGIN_SETUP_SECTION')}</div>
+        ${state.loginSetupConfig
+          ? `<p style="font-size:12px;color:#8b949e;margin:0 0 8px">${escHtml(state.loginSetupConfig.filePath)}</p>`
+          : `<p style="font-size:12px;color:#8b949e;margin:0 0 8px">${t('CONFIG.LOGIN_SETUP_NOT_CONFIGURED')}</p>`}
+        <button id="btn-open-login-setup" class="btn-sm">${t('CONFIG.LOGIN_SETUP_SET_UP_BTN')}</button>
+      </div>
+
       <!-- Data -->
       <div class="card card-wide">
         <div class="card-hd">${t('CONFIG.DATA_SECTION')}</div>
@@ -265,5 +277,63 @@ export function renderConfiguration(state: ConfigurationState, t: (key: string) 
         </div>
       </div>
 
-    </div>${renderExportOverlay(state, t)}`;
+    </div>${renderExportOverlay(state, t)}${renderLoginSetupOverlay(state, t)}`;
+}
+
+function renderLoginSetupOverlay(state: ConfigurationState, t: (key: string) => string): string {
+  if (!state.isLoginSetupOpen) return '';
+  const cfg = state.loginSetupConfig;
+  const fns = cfg?.detectedFunctions ?? [];
+
+  const fnOption = (name: string | null, selected: string | null) =>
+    `<option value="${escAttr(name ?? '')}" ${selected === name ? 'selected' : ''}>${name ? escHtml(name) : t('CONFIG.LOGIN_SETUP_NONE_OPTION')}</option>`;
+
+  const fnSelect = (id: string, label: string, selected: string | null) => `
+    <div class="field-row" style="margin-top:10px">
+      <span class="field-label">${escHtml(label)}</span>
+      <select id="${id}" style="flex:1;padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#c9d1d9;font-size:12px">
+        ${fnOption(null, selected)}
+        ${fns.map((fn) => fnOption(fn, selected)).join('')}
+      </select>
+    </div>`;
+
+  const summary = cfg
+    ? `<div class="login-setup-summary">
+        <span class="field-label">${t('CONFIG.LOGIN_SETUP_SECTION')}</span>
+        <span style="color:#8b949e;font-size:11px">${escHtml(cfg.filePath)}</span>
+      </div>`
+    : '';
+
+  return `
+  <div class="export-overlay" id="login-setup-overlay">
+    <div class="export-modal" style="max-width:520px">
+      <div class="export-modal-title">${t('CONFIG.LOGIN_SETUP_TITLE')}</div>
+      ${summary}
+
+      <div style="margin-top:14px">
+        <div class="field-row">
+          <span class="field-label">${t('CONFIG.LOGIN_SETUP_FILE_NAME_LABEL')}</span>
+          <input id="login-setup-filepath" type="text"
+            placeholder="${escAttr(t('CONFIG.LOGIN_SETUP_FILE_NAME_PH'))}"
+            value="${escAttr(cfg?.filePath ?? '')}"
+            style="flex:1;padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#c9d1d9;font-size:12px;outline:none" />
+        </div>
+      </div>
+
+      ${fns.length === 0 && cfg
+        ? `<p style="color:#8b949e;font-size:12px;margin-top:10px">${t('CONFIG.LOGIN_SETUP_NO_FUNCTIONS')}</p>`
+        : ''}
+
+      ${fns.length > 0
+        ? fnSelect('login-setup-before-fn', t('CONFIG.LOGIN_SETUP_BEFORE_LABEL'), cfg?.beforeFn ?? null)
+          + fnSelect('login-setup-before-each-fn', t('CONFIG.LOGIN_SETUP_BEFORE_EACH_LABEL'), cfg?.beforeEachFn ?? null)
+        : ''}
+
+      <div class="export-actions" style="margin-top:16px">
+        <button id="btn-login-setup-save" class="btn-primary">${t('CONFIG.LOGIN_SETUP_SAVE_BTN')}</button>
+        <button id="btn-login-setup-clear" style="color:#f85149;background:none;border:none;cursor:pointer;font-size:13px">${t('CONFIG.LOGIN_SETUP_CLEAR_BTN')}</button>
+        <button id="btn-login-setup-cancel" class="btn-cancel">${t('CONFIG.LOGIN_SETUP_CANCEL_BTN')}</button>
+      </div>
+    </div>
+  </div>`;
 }
