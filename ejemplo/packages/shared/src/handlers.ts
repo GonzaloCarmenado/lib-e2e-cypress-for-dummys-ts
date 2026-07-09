@@ -39,4 +39,20 @@ export const handlers = [
       price: 99.99,
     })
   ),
+  // GET /api/sensitive  (laboratorio — campos sensibles para probar Caso D)
+  http.get('/api/sensitive', () =>
+    HttpResponse.json({
+      userId: 1,
+      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.super-secret-value',
+      name: 'Alice',
+    })
+  ),
+  // POST /api/login  (laboratorio — body con contraseña + respuesta con tokens, Caso D)
+  http.post('/api/login', () =>
+    HttpResponse.json({
+      access_token: 'bearer-abc-xyz-secret',
+      refresh_token: 'refresh-def-456-secret',
+      userId: 42,
+    })
+  ),
 ];

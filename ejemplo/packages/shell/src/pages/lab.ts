@@ -142,6 +142,52 @@ export function mountLab(el: HTMLElement) {
       </div>
     </div>
 
+    <!-- ── Caso D ── -->
+    <h2 class="lab-h2">Caso D — Campos sensibles en respuestas HTTP (contraseñas, tokens)</h2>
+    <div class="lab-context">
+      <b>¿Cuándo afecta a tu empresa?</b>
+      <ul>
+        <li>Tu API de autenticación devuelve el token en el body:
+            <code>{ "token": "eyJhbGci…" }</code> — sin redacción, la credencial real
+            quedaría <b>hardcodeada en el repositorio</b> dentro del test generado.</li>
+        <li>Usas <b>Fixtures HTTP</b> y el <code>.json</code> del fixture contendría
+            la contraseña en texto plano.</li>
+        <li><b>No te afecta</b> si tus APIs nunca devuelven tokens ni credenciales en el body,
+            o si no activas "Validaciones de body HTTP" ni "Fixtures HTTP".</li>
+      </ul>
+      <b>Con el fix:</b> cualquier clave que coincida con
+      <code>password</code>, <code>token</code>, <code>secret</code>, <code>authorization</code>,
+      <code>cookie</code>, <code>access_token</code> o <code>refresh_token</code>
+      (sin distinguir mayúsculas) se sustituye por <code>[REDACTED]</code> antes de
+      escribir el test. Los demás campos pasan intactos.
+    </div>
+    <div class="lab-section">
+      <p class="lab-step">
+        1. Activa "Validaciones de body HTTP" en Configuración (Ctrl+3) ·
+        2. Inicia grabación · 3. Pulsa un botón · 4. Detén grabación
+      </p>
+      <div class="lab-demo">
+        <button id="lab-sensitive-get" data-cy="btn-sensitive-get" class="lab-btn">
+          <span class="lab-action">GET /api/sensitive</span>
+          <span class="lab-attr">Respuesta: token + userId</span>
+        </button>
+        <button id="lab-sensitive-post" data-cy="btn-sensitive-post" class="lab-btn">
+          <span class="lab-action">POST /api/login</span>
+          <span class="lab-attr">Body: password · Respuesta: access_token</span>
+        </button>
+      </div>
+      <div id="lab-sensitive-result" class="lab-result" style="display:none"></div>
+      <div class="lab-check">
+        <b>✅ Resultado esperado (GET):</b><br>
+        <code>expect(body.token).to.equal("[REDACTED]");</code><br>
+        <code>expect(body.userId).to.equal(1);</code><br>
+        <b>✅ Resultado esperado (POST):</b><br>
+        <code>expect(body.access_token).to.equal("[REDACTED]");</code><br>
+        <code>expect(body.userId).to.equal(42);</code><br>
+        <span class="lab-note">Los campos sensibles se redactan. <code>userId</code> pasa intacto.</span>
+      </div>
+    </div>
+
   </div>
 
   <style>
@@ -215,6 +261,46 @@ export function mountLab(el: HTMLElement) {
         if (resultEl) {
           resultEl.style.display = 'block';
           resultEl.textContent = `Error: ${String(e)}`;
+        }
+      }
+    });
+
+  const sensitiveResultEl = el.querySelector<HTMLElement>('#lab-sensitive-result');
+
+  el.querySelector<HTMLButtonElement>('#lab-sensitive-get')
+    ?.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/sensitive');
+        const data = await res.json() as unknown;
+        if (sensitiveResultEl) {
+          sensitiveResultEl.style.display = 'block';
+          sensitiveResultEl.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (e: unknown) {
+        if (sensitiveResultEl) {
+          sensitiveResultEl.style.display = 'block';
+          sensitiveResultEl.textContent = `Error: ${String(e)}`;
+        }
+      }
+    });
+
+  el.querySelector<HTMLButtonElement>('#lab-sensitive-post')
+    ?.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'alice', password: 'hunter2' }),
+        });
+        const data = await res.json() as unknown;
+        if (sensitiveResultEl) {
+          sensitiveResultEl.style.display = 'block';
+          sensitiveResultEl.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (e: unknown) {
+        if (sensitiveResultEl) {
+          sensitiveResultEl.style.display = 'block';
+          sensitiveResultEl.textContent = `Error: ${String(e)}`;
         }
       }
     });

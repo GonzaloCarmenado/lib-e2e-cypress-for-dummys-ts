@@ -1,5 +1,6 @@
 import { type RecordingService } from './recording.service';
 import { escapeSingleQuotes } from '../utils/code-format.utils';
+import { redactSensitiveFields } from '../utils/redact.utils';
 
 const INTERCEPTED_METHODS = ['GET', 'POST', 'PUT'] as const;
 type InterceptedMethod = (typeof INTERCEPTED_METHODS)[number];
@@ -221,10 +222,17 @@ export class HttpMonitor {
     // Capture response JSON for potential fixture use at save-and-export time.
     if (fixtureMode && method === 'GET' && responseText !== null) {
       const pretty = prettyJsonOrNull(responseText);
-      if (pretty !== null) this.recording.registerFixture(`${alias}.json`, pretty);
+      if (pretty !== null) {
+        const redacted = redactSensitiveFields(JSON.parse(pretty));
+        this.recording.registerFixture(`${alias}.json`, JSON.stringify(redacted, null, 2));
+      }
     }
 
-    const cmd = buildCyWaitCommand(method, alias, extendedHttp, requestBody, responseBody);
+    const cmd = buildCyWaitCommand(
+      method, alias, extendedHttp,
+      requestBody ? redactSensitiveFields(requestBody) as Record<string, unknown> : null,
+      responseBody ? redactSensitiveFields(responseBody) as Record<string, unknown> : null,
+    );
     this.recording.addCommand(cmd);
   }
 
@@ -244,13 +252,20 @@ export class HttpMonitor {
     // Capture response JSON for potential fixture use at save-and-export time.
     if (this.isFixtureModeEnabled() && method === 'GET') {
       const pretty = prettyJsonOrNull(responseText);
-      if (pretty !== null) this.recording.registerFixture(`${alias}.json`, pretty);
+      if (pretty !== null) {
+        const redacted = redactSensitiveFields(JSON.parse(pretty));
+        this.recording.registerFixture(`${alias}.json`, JSON.stringify(redacted, null, 2));
+      }
     }
 
     const extendedHttp = this.isExtendedHttpEnabled();
     const responseBody = extendedHttp ? parseJsonObject(responseText) : null;
 
-    const cmd = buildCyWaitCommand(method, alias, extendedHttp, requestBody, responseBody);
+    const cmd = buildCyWaitCommand(
+      method, alias, extendedHttp,
+      requestBody ? redactSensitiveFields(requestBody) as Record<string, unknown> : null,
+      responseBody ? redactSensitiveFields(responseBody) as Record<string, unknown> : null,
+    );
     this.recording.addCommand(cmd);
   }
 }

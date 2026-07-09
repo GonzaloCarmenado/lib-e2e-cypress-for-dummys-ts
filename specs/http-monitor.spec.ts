@@ -409,4 +409,67 @@ describe('Phase 6 — HttpMonitor', () => {
       expect(cmd).toContain("body['x-token']");
     });
   });
+
+  // ── AC-03 — sensitive-field redaction ────────────────────────────────────────
+
+  describe('AC-03 — sensitive-field redaction', () => {
+    it('redacts token in GET response body validations', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ token: 'super-secret', name: 'Alice' }));
+      monitor.install();
+      await fetch('/api/login');
+      const cmd = lastCommand(recording);
+      expect(cmd).not.toContain('super-secret');
+      expect(cmd).toContain('"[REDACTED]"');
+      expect(cmd).toContain('.name');
+    });
+
+    it('redacts password in POST request body validations', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ id: 1 }));
+      monitor.install();
+      await fetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ username: 'alice', password: 'hunter2' }),
+      });
+      const cmd = lastCommand(recording);
+      expect(cmd).not.toContain('hunter2');
+      expect(cmd).toContain('"[REDACTED]"');
+      expect(cmd).toContain('.username');
+    });
+
+    it('redacts access_token and refresh_token in GET response', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ access_token: 'at', refresh_token: 'rt', userId: 1 }));
+      monitor.install();
+      await fetch('/api/auth');
+      const cmd = lastCommand(recording);
+      expect(cmd).not.toContain('"at"');
+      expect(cmd).not.toContain('"rt"');
+      expect(cmd).toContain('.userId');
+    });
+
+    it('passes non-sensitive fields through unchanged', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ name: 'Alice', role: 'admin', price: 9.99 }));
+      monitor.install();
+      await fetch('/api/users');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain('"Alice"');
+      expect(cmd).toContain('"admin"');
+      expect(cmd).toContain('9.99');
+    });
+
+    it('redacts sensitive fields in fixture content', async () => {
+      localStorage.setItem('fixtureMode', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ token: 'leaked-secret', data: 'public' }));
+      monitor.install();
+      await fetch('/api/me');
+      const fixtures = recording.getFixturesSnapshot();
+      expect(fixtures).toHaveLength(1);
+      expect(fixtures[0].content).not.toContain('leaked-secret');
+      expect(fixtures[0].content).toContain('[REDACTED]');
+      expect(fixtures[0].content).toContain('public');
+    });
+  });
 });
