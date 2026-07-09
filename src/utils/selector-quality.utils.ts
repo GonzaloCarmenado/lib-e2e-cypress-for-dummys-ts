@@ -1,3 +1,5 @@
+import { escapeCssAttrValue } from './code-format.utils';
+
 export type SelectorQuality = 'excellent' | 'good' | 'acceptable' | 'poor';
 
 export const FORBIDDEN_ID_PREFIXES = [
@@ -35,13 +37,13 @@ export function getSelectorQuality(el: HTMLElement): SelectorQuality {
 /** Returns the best cy.get() selector string for a given element. */
 export function buildPickerSelector(el: HTMLElement): string {
   const dataCy = el.getAttribute('data-cy');
-  if (dataCy) return `[data-cy="${dataCy}"]`;
+  if (dataCy) return `[data-cy="${escapeCssAttrValue(dataCy)}"]`;
 
   const dataTestid = el.getAttribute('data-testid');
-  if (dataTestid) return `[data-testid="${dataTestid}"]`;
+  if (dataTestid) return `[data-testid="${escapeCssAttrValue(dataTestid)}"]`;
 
   const ariaLabel = el.getAttribute('aria-label');
-  if (ariaLabel) return `[aria-label="${ariaLabel}"]`;
+  if (ariaLabel) return `[aria-label="${escapeCssAttrValue(ariaLabel)}"]`;
 
   const rawId = el.id;
   if (

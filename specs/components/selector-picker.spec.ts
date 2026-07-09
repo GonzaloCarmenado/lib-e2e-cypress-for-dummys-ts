@@ -263,6 +263,49 @@ describe('Phase 10 — SelectorPickerElement', () => {
     });
   });
 
+  // ── AC-01: selector escaping in generated commands ────────────────────────
+
+  describe('AC-01 — selector escaping in generated commands', () => {
+    beforeEach(() => {
+      recording.startRecording();
+    });
+
+    it('escapes single quotes in aria-label selector (JS safety)', () => {
+      const btn = makeAncestor('button', { 'aria-label': "don't click me" });
+      document.body.appendChild(btn);
+
+      picker = buildPicker();
+      picker.targetElement = btn;
+      picker.recording = recording;
+      picker.translation = translation;
+      document.body.appendChild(picker);
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+      const clickCmd = recording.getCommandsSnapshot().find((c) => c.includes('.click()'));
+      expect(clickCmd).toContain("don\\'t");
+      btn.remove();
+    });
+
+    it('escapes double quotes in aria-label selector (CSS + JS two-layer safety)', () => {
+      const btn = makeAncestor('button', { 'aria-label': '10" screen' });
+      document.body.appendChild(btn);
+
+      picker = buildPicker();
+      picker.targetElement = btn;
+      picker.recording = recording;
+      picker.translation = translation;
+      document.body.appendChild(picker);
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+      const clickCmd = recording.getCommandsSnapshot().find((c) => c.includes('.click()'));
+      // CSS layer " → \" then JS layer \ → \\ → appears as \\"
+      expect(clickCmd).toContain('\\\\"');
+      btn.remove();
+    });
+  });
+
   // ── AC-09: cancel ──────────────────────────────────────────────────────────
 
   describe('cancel (Escape / outside click)', () => {
