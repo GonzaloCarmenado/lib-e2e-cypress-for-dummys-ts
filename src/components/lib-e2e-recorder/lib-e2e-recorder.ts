@@ -250,10 +250,10 @@ export class LibE2eRecorderElement extends HTMLElement {
 
   private showSelectorPicker(target: HTMLElement): void {
     import('../../components/selector-picker/selector-picker').then(() => {
-      const existing = document.querySelector('selector-picker');
+      const existing = document.querySelector('lib-e2e-selector-picker');
       if (existing) existing.remove();
 
-      const picker = document.createElement('selector-picker') as unknown as SelectorPickerEl;
+      const picker = document.createElement('lib-e2e-selector-picker') as unknown as SelectorPickerEl;
       picker.targetElement = target;
       picker.recording = this.recording;
       picker.translation = this.translation;
@@ -625,7 +625,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           const container = document.getElementById('commands-modal-content');
           if (!container) return;
 
-          const child = document.createElement('test-previsualizer') as unknown as PrevisualizerEl;
+          const child = document.createElement('lib-e2e-test-previsualizer') as unknown as PrevisualizerEl;
           child.translation = this.translation;
           child.commands = this.cypressCommands;
           child.interceptors = this.interceptors;
@@ -721,7 +721,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('saved-tests-modal-content');
           if (!container) return;
-          const child = document.createElement('test-editor') as unknown as TestEditorEl;
+          const child = document.createElement('lib-e2e-test-editor') as unknown as TestEditorEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
           child.issueTrackerConfig = this.issueTrackerConfig;
@@ -747,7 +747,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('save-test-modal-content');
           if (!container) return;
-          const child = document.createElement('save-test') as unknown as SaveTestEl;
+          const child = document.createElement('lib-e2e-save-test') as unknown as SaveTestEl;
           child.translation = this.translation;
           child.issueTrackerConfig = this.issueTrackerConfig;
           container.appendChild(child as unknown as Node);
@@ -781,7 +781,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('settings-modal-content');
           if (!container) return;
-          const child = document.createElement('e2e-configuration') as unknown as ConfigEl;
+          const child = document.createElement('lib-e2e-configuration') as unknown as ConfigEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
           container.appendChild(child as unknown as Node);
@@ -817,7 +817,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           setSwal2DataCyAttribute();
           const container = document.getElementById('help-modal-content');
           if (!container) return;
-          const child = document.createElement('help-panel') as unknown as HelpPanelEl;
+          const child = document.createElement('lib-e2e-help-panel') as unknown as HelpPanelEl;
           child.translation = this.translation;
           container.appendChild(child as unknown as Node);
         },
@@ -856,7 +856,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           }
           const container = document.getElementById('advanced-editor-modal-content');
           if (!container) return;
-          const child = document.createElement('advanced-test-editor') as unknown as AdvancedEditorEl;
+          const child = document.createElement('lib-e2e-advanced-test-editor') as unknown as AdvancedEditorEl;
           child.persistence = this.persistence;
           child.translation = this.translation;
           if (testId !== undefined) child.testId = testId;
@@ -920,7 +920,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         }
         const container = document.getElementById('file-editor-modal-content');
         if (!container) return;
-        const child = document.createElement('file-preview') as unknown as FilePreviewEl;
+        const child = document.createElement('lib-e2e-file-preview') as unknown as FilePreviewEl;
         child.translation = this.translation;
         child.fileContent = content;
         child.fileName = fileName;

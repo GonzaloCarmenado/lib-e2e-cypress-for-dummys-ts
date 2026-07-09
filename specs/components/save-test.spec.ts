@@ -6,7 +6,7 @@ describe('Phase 8.2 — SaveTestElement', () => {
   let el: SaveTestElement;
 
   beforeEach(() => {
-    el = document.createElement('save-test') as SaveTestElement;
+    el = document.createElement('lib-e2e-save-test') as SaveTestElement;
     document.body.appendChild(el);
   });
 
@@ -15,7 +15,7 @@ describe('Phase 8.2 — SaveTestElement', () => {
   });
 
   it('registers as <save-test> custom element', () => {
-    expect(customElements.get('save-test')).toBeDefined();
+    expect(customElements.get('lib-e2e-save-test')).toBeDefined();
   });
 
   it('initial step is "ask"', () => {

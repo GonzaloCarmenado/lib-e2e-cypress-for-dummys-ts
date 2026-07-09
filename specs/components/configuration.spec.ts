@@ -15,7 +15,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     vi.stubGlobal('alert', vi.fn());
     persistence = new PersistenceService(`config_db_${++dbCounter}`);
     translation = new TranslationService();
-    el = document.createElement('e2e-configuration') as ConfigurationElement;
+    el = document.createElement('lib-e2e-configuration') as ConfigurationElement;
     el.persistence = persistence;
     el.translation = translation;
     document.body.appendChild(el);
@@ -29,7 +29,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
   });
 
   it('registers as <e2e-configuration> custom element', () => {
-    expect(customElements.get('e2e-configuration')).toBeDefined();
+    expect(customElements.get('lib-e2e-configuration')).toBeDefined();
   });
 
   it('default selectedLanguage is "es"', () => {
@@ -55,7 +55,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
 
   it('advancedHttpConfig reads from localStorage on init', () => {
     localStorage.setItem('extendedHttpCommands', 'true');
-    const el2 = document.createElement('e2e-configuration') as ConfigurationElement;
+    const el2 = document.createElement('lib-e2e-configuration') as ConfigurationElement;
     el2.persistence = persistence;
     el2.translation = translation;
     document.body.appendChild(el2);
@@ -492,7 +492,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
 
     it('loadConfig reads a previously stored TTL', async () => {
       await persistence.setConfig({ resumeRecencyTtlMinutes: 12 });
-      const el2 = document.createElement('e2e-configuration') as ConfigurationElement;
+      const el2 = document.createElement('lib-e2e-configuration') as ConfigurationElement;
       el2.persistence = persistence;
       el2.translation = translation;
       document.body.appendChild(el2);

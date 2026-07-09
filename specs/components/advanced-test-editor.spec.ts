@@ -14,7 +14,7 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
   beforeEach(() => {
     persistence = new PersistenceService(`adv_editor_db_${++dbCounter}`);
     translation = new TranslationService();
-    el = document.createElement('advanced-test-editor') as AdvancedTestEditorElement;
+    el = document.createElement('lib-e2e-advanced-test-editor') as AdvancedTestEditorElement;
     el.persistence = persistence;
     el.translation = translation;
     document.body.appendChild(el);
@@ -25,7 +25,7 @@ describe('Phase 8.5 — AdvancedTestEditorElement', () => {
   });
 
   it('registers as <advanced-test-editor> custom element', () => {
-    expect(customElements.get('advanced-test-editor')).toBeDefined();
+    expect(customElements.get('lib-e2e-advanced-test-editor')).toBeDefined();
   });
 
   it('initial e2eTree is an empty array', () => {

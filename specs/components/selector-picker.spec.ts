@@ -12,7 +12,7 @@ function makeAncestor(tag: string, attrs: Record<string, string> = {}, cls = '')
 }
 
 function buildPicker(): SelectorPickerElement {
-  return document.createElement('selector-picker') as SelectorPickerElement;
+  return document.createElement('lib-e2e-selector-picker') as SelectorPickerElement;
 }
 
 describe('Phase 10 — SelectorPickerElement', () => {
@@ -37,7 +37,7 @@ describe('Phase 10 — SelectorPickerElement', () => {
   });
 
   it('registers as <selector-picker> custom element', () => {
-    expect(customElements.get('selector-picker')).toBeDefined();
+    expect(customElements.get('lib-e2e-selector-picker')).toBeDefined();
   });
 
   // ── AC-04: ancestor chain ──────────────────────────────────────────────────

@@ -11,7 +11,7 @@ describe('Phase 8.3 — TestEditorElement', () => {
 
   beforeEach(async () => {
     persistence = new PersistenceService(`test_editor_db_${++dbCounter}`);
-    el = document.createElement('test-editor') as TestEditorElement;
+    el = document.createElement('lib-e2e-test-editor') as TestEditorElement;
     el.persistence = persistence;
     document.body.appendChild(el);
   });
@@ -21,7 +21,7 @@ describe('Phase 8.3 — TestEditorElement', () => {
   });
 
   it('registers as <test-editor> custom element', () => {
-    expect(customElements.get('test-editor')).toBeDefined();
+    expect(customElements.get('lib-e2e-test-editor')).toBeDefined();
   });
 
   it('initial tests list is empty', () => {

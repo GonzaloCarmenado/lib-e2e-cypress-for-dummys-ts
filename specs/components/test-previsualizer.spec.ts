@@ -6,7 +6,7 @@ describe('Phase 8.1 — TestPrevisualizerElement', () => {
   let el: TestPrevisualizerElement;
 
   beforeEach(() => {
-    el = document.createElement('test-previsualizer') as TestPrevisualizerElement;
+    el = document.createElement('lib-e2e-test-previsualizer') as TestPrevisualizerElement;
     document.body.appendChild(el);
   });
 
@@ -15,7 +15,7 @@ describe('Phase 8.1 — TestPrevisualizerElement', () => {
   });
 
   it('registers as <test-previsualizer> custom element', () => {
-    expect(customElements.get('test-previsualizer')).toBeDefined();
+    expect(customElements.get('lib-e2e-test-previsualizer')).toBeDefined();
   });
 
   it('has a shadow root after connecting', () => {

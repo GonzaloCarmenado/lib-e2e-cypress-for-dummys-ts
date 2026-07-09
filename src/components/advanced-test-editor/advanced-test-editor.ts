@@ -356,6 +356,6 @@ export class AdvancedTestEditorElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('advanced-test-editor')) {
-  customElements.define('advanced-test-editor', AdvancedTestEditorElement);
+if (!customElements.get('lib-e2e-advanced-test-editor')) {
+  customElements.define('lib-e2e-advanced-test-editor', AdvancedTestEditorElement);
 }

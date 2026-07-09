@@ -165,6 +165,6 @@ export class SelectorPickerElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('selector-picker')) {
-  customElements.define('selector-picker', SelectorPickerElement);
+if (!customElements.get('lib-e2e-selector-picker')) {
+  customElements.define('lib-e2e-selector-picker', SelectorPickerElement);
 }

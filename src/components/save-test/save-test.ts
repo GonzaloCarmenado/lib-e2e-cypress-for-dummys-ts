@@ -96,6 +96,6 @@ export class SaveTestElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('save-test')) {
-  customElements.define('save-test', SaveTestElement);
+if (!customElements.get('lib-e2e-save-test')) {
+  customElements.define('lib-e2e-save-test', SaveTestElement);
 }

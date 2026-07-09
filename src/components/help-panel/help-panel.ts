@@ -34,6 +34,6 @@ export class HelpPanelElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('help-panel')) {
-  customElements.define('help-panel', HelpPanelElement);
+if (!customElements.get('lib-e2e-help-panel')) {
+  customElements.define('lib-e2e-help-panel', HelpPanelElement);
 }

@@ -328,6 +328,6 @@ export class ConfigurationElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('e2e-configuration')) {
-  customElements.define('e2e-configuration', ConfigurationElement);
+if (!customElements.get('lib-e2e-configuration')) {
+  customElements.define('lib-e2e-configuration', ConfigurationElement);
 }

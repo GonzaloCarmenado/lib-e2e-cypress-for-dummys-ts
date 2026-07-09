@@ -6,7 +6,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   let el: FilePreviewElement;
 
   beforeEach(() => {
-    el = document.createElement('file-preview') as FilePreviewElement;
+    el = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     document.body.appendChild(el);
   });
 
@@ -16,7 +16,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('registers as <file-preview> custom element', () => {
-    expect(customElements.get('file-preview')).toBeDefined();
+    expect(customElements.get('lib-e2e-file-preview')).toBeDefined();
   });
 
   it('renders fileContent in the editor area', () => {
@@ -140,7 +140,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('launch button is disabled with a hint when not on localhost', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.isLocal = false;
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('#btn-launch')).toBeNull();
@@ -164,7 +164,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('fileContent defaults to null', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     expect(fresh.fileContent).toBeNull();
     fresh.remove();
   });
@@ -179,7 +179,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('closeLabel set before mount renders custom text in close button', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.closeLabel = '← Volver al editor';
     document.body.appendChild(fresh);
     const btn = fresh.shadowRoot!.querySelector('#btn-close');
@@ -192,7 +192,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('blocks panel appears when itBlock is set before mount', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('test', () => { cy.visit('/'); });";
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('.blocks-panel')).not.toBeNull();
@@ -201,7 +201,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('blocks panel appears when only interceptorsBlock is set', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.interceptorsBlock = "beforeEach(() => { cy.intercept('GET', '*'); });";
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('.blocks-panel')).not.toBeNull();
@@ -210,7 +210,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('interceptorsBlock copy button appears when both blocks are set', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('test', () => {});";
     fresh.interceptorsBlock = "beforeEach(() => { cy.intercept('GET', '*'); });";
     document.body.appendChild(fresh);
@@ -220,7 +220,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('interceptorsBlock copy button is absent when only itBlock is set', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('test', () => {});";
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('#btn-copy-icp')).toBeNull();
@@ -228,7 +228,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('it() copy button is absent when only interceptorsBlock is set', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.interceptorsBlock = 'beforeEach(() => {});';
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('#btn-copy-it')).toBeNull();
@@ -330,7 +330,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insert button appears when itBlock is set', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('a', () => {});";
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('#btn-insert')).not.toBeNull();
@@ -338,7 +338,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insert button appears when only interceptorsBlock is set', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.interceptorsBlock = "    cy.intercept('GET', '*').as('x');\n";
     document.body.appendChild(fresh);
     expect(fresh.shadowRoot!.querySelector('#btn-insert')).not.toBeNull();
@@ -346,7 +346,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insert button is hidden in diff mode', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('a', () => {});";
     document.body.appendChild(fresh);
     fresh.toggleDiff();
@@ -355,7 +355,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insertBlocks() injects the it() block inside the describe body', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('does a thing', () => { cy.visit('/'); });";
     document.body.appendChild(fresh);
     fresh.fileContent = "describe('suite', () => {\n});\n";
@@ -367,7 +367,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insertBlocks() wraps interceptors in a beforeEach() after describe', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.interceptorsBlock = "    cy.intercept('GET', '*').as('get-x');\n";
     document.body.appendChild(fresh);
     fresh.fileContent = "describe('suite', () => {\n});\n";
@@ -379,7 +379,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insertBlocks() places the notes as a block comment directly above the it()', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('noted test', () => {});";
     fresh.notes = 'Validates the login flow.';
     document.body.appendChild(fresh);
@@ -397,7 +397,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insertBlocks() omits the comment when there are no notes', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('no notes', () => {});";
     document.body.appendChild(fresh);
     fresh.fileContent = "describe('suite', () => {\n});\n";
@@ -412,7 +412,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insertBlocks() injects both blocks at once', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('combined', () => {});";
     fresh.interceptorsBlock = "    cy.intercept('GET', '*').as('get-x');\n";
     document.body.appendChild(fresh);
@@ -425,7 +425,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('insertBlocks() leaves content untouched when there is no describe block', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('a', () => {});";
     document.body.appendChild(fresh);
     fresh.fileContent = 'const noDescribe = 1;\n';
@@ -436,7 +436,7 @@ describe('Phase 8.6 — FilePreviewElement', () => {
   });
 
   it('clicking the insert button merges the blocks into the editor', () => {
-    const fresh = document.createElement('file-preview') as FilePreviewElement;
+    const fresh = document.createElement('lib-e2e-file-preview') as FilePreviewElement;
     fresh.itBlock = "it('clicked', () => {});";
     document.body.appendChild(fresh);
     fresh.fileContent = "describe('suite', () => {\n});\n";
