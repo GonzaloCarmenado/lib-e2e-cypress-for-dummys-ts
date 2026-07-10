@@ -4,6 +4,8 @@ import {
   buildLoginScaffold,
   buildLoginImportPath,
   buildLoginBlocks,
+  hasLoginBlocks,
+  injectLoginBlocksIntoExisting,
 } from '../../src/utils/login-setup.utils';
 
 describe('login-setup.utils', () => {
@@ -190,6 +192,58 @@ describe('login-setup.utils', () => {
       const result = buildLoginBlocks('../svc', 'doLogin', 'doLogin');
       const matches = (result.importLine.match(/doLogin/g) ?? []).length;
       expect(matches).toBe(1);
+    });
+  });
+
+  // ── hasLoginBlocks ──────────────────────────────────────────────────────
+
+  describe('hasLoginBlocks', () => {
+    it('returns true when a function name appears as a call in the content', () => {
+      const content = `import { fetchAuthToken } from '../login.service';\ndescribe('x', () => {\n  before(() => { fetchAuthToken(); });\n});`;
+      expect(hasLoginBlocks(content, ['fetchAuthToken'])).toBe(true);
+    });
+
+    it('returns false when no function name appears', () => {
+      const content = `describe('x', () => {\n  it('y', () => {});\n});`;
+      expect(hasLoginBlocks(content, ['fetchAuthToken'])).toBe(false);
+    });
+
+    it('returns true when any of the provided names is found', () => {
+      const content = `setupInterceptors();\n`;
+      expect(hasLoginBlocks(content, ['fetchAuthToken', 'setupInterceptors'])).toBe(true);
+    });
+  });
+
+  // ── injectLoginBlocksIntoExisting ───────────────────────────────────────
+
+  describe('injectLoginBlocksIntoExisting', () => {
+    const base = `describe('suite', () => {\n  it('test', () => {});\n});\n`;
+
+    it('prepends the import line', () => {
+      const importLine = `import { fn } from './svc';`;
+      const result = injectLoginBlocksIntoExisting(base, importLine, '', '');
+      expect(result.startsWith(`${importLine}\n\n`)).toBe(true);
+    });
+
+    it('injects before block after describe opening', () => {
+      const beforeBlock = '  before(() => { fn(); });\n';
+      const result = injectLoginBlocksIntoExisting(base, '', beforeBlock, '');
+      expect(result).toContain(`describe('suite', () => {\n${beforeBlock}`);
+    });
+
+    it('injects both before and beforeEach blocks', () => {
+      const beforeBlock = '  before(() => { a(); });\n';
+      const beforeEachBlock = '  beforeEach(() => { b(); });\n';
+      const result = injectLoginBlocksIntoExisting(base, '', beforeBlock, beforeEachBlock);
+      expect(result).toContain(`${beforeBlock}${beforeEachBlock}`);
+    });
+
+    it('does not duplicate the import if already present', () => {
+      const importLine = `import { fn } from './svc';`;
+      const withImport = `${importLine}\n\n${base}`;
+      const result = injectLoginBlocksIntoExisting(withImport, importLine, '', '');
+      const count = (result.match(/import \{ fn \}/g) ?? []).length;
+      expect(count).toBe(1);
     });
   });
 });

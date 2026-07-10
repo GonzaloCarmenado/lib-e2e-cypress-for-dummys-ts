@@ -124,6 +124,9 @@ export const I18N_EN = {
     LOGIN_SETUP_SAVE_BTN: '💾 Save',
     LOGIN_SETUP_CLEAR_BTN: 'Remove configuration',
     LOGIN_SETUP_CANCEL_BTN: 'Cancel',
+    LOGIN_SETUP_INJECT_TITLE: 'Add login blocks?',
+    LOGIN_SETUP_INJECT_TEXT: 'This file does not have the configured login blocks. Do you want to add the import and before/beforeEach blocks now?',
+    LOGIN_SETUP_INJECT_CONFIRM: 'Yes, add them',
   },
   SELECTOR_PICKER: {
     TITLE: 'Select a DOM element',

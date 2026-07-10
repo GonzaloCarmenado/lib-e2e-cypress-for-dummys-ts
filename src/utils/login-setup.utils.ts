@@ -52,6 +52,34 @@ export function buildLoginImportPath(fromFilePath: string, toServiceFilePath: st
   return [prefix, ...middle, serviceFile].join('/');
 }
 
+export function hasLoginBlocks(content: string, fnNames: string[]): boolean {
+  return fnNames.some(fn => new RegExp(`\\b${fn}\\s*\\(`).test(content));
+}
+
+export function injectLoginBlocksIntoExisting(
+  content: string,
+  importLine: string,
+  beforeBlock: string,
+  beforeEachBlock: string,
+): string {
+  let result = content;
+
+  if (importLine && !content.includes(importLine)) {
+    result = `${importLine}\n\n${result}`;
+  }
+
+  const blocks = [beforeBlock, beforeEachBlock].filter(Boolean).join('');
+  if (blocks) {
+    const describeMatch = result.match(/(describe\s*\(.*?{)/s);
+    if (describeMatch) {
+      const insertPos = (describeMatch.index ?? 0) + describeMatch[0].length;
+      result = result.slice(0, insertPos) + '\n' + blocks + result.slice(insertPos);
+    }
+  }
+
+  return result;
+}
+
 export function buildLoginBlocks(
   importPath: string,
   beforeFn: string | null,

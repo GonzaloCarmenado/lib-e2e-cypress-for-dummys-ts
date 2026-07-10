@@ -124,6 +124,9 @@ export const I18N_DE = {
     LOGIN_SETUP_SAVE_BTN: '💾 Speichern',
     LOGIN_SETUP_CLEAR_BTN: 'Konfiguration entfernen',
     LOGIN_SETUP_CANCEL_BTN: 'Abbrechen',
+    LOGIN_SETUP_INJECT_TITLE: 'Login-Blöcke hinzufügen?',
+    LOGIN_SETUP_INJECT_TEXT: 'Diese Datei enthält die konfigurierten Login-Blöcke nicht. Möchten Sie jetzt den Import und die before/beforeEach-Blöcke hinzufügen?',
+    LOGIN_SETUP_INJECT_CONFIRM: 'Ja, hinzufügen',
   },
   SELECTOR_PICKER: {
     TITLE: 'DOM-Element auswählen',

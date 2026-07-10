@@ -171,6 +171,17 @@ generated scaffold structure — the user fills in all the logic.
         a `// TODO: implement` comment inside each.
       - No imports, no credentials, no project-specific logic.
 
+### Injection into existing files
+
+- [ ] AC-24: When saving commands to an **existing** `.cy.ts` file via the
+      advanced editor, if login setup is enabled and the file does not already
+      contain the configured function calls, the library presents a confirmation
+      dialog ("Add login blocks?"). If the user confirms, the import line is
+      prepended to the file and the `before()`/`beforeEach()` blocks are
+      inserted right after the `describe(` opening — identical content to what
+      `createNewFile()` would generate. If the file already contains the
+      function calls, no dialog is shown and the save proceeds silently.
+
 ### Settings card (summary view)
 
 - [ ] AC-21: When login setup is configured, the settings card shows a

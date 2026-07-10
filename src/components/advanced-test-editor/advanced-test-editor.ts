@@ -1,8 +1,9 @@
+import Swal from 'sweetalert2';
 import { PersistenceService } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import { AdvancedTestTransformationService } from '../../services/advanced-test.transformation.service';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
-import { buildLoginBlocks, buildLoginImportPath } from '../../utils/login-setup.utils';
+import { buildLoginBlocks, buildLoginImportPath, hasLoginBlocks, injectLoginBlocksIntoExisting } from '../../utils/login-setup.utils';
 import type { LoginSetupConfig } from '../../models/login-setup.model';
 import { ADVANCED_TEST_EDITOR_STYLES } from './advanced-test-editor.styles';
 import { renderNoPermission, renderAdvancedEditor, findFileHandleRecursive } from './advanced-test-editor.template';
@@ -155,6 +156,32 @@ export class AdvancedTestEditorElement extends HTMLElement {
     const comment = this.testNotes ? this.transformationService.buildBlockComment(this.testNotes) + '\n' : '';
     content = this.transformationService.insertItBlock(content, comment + this.testItBlock);
     if (!content) return;
+
+    const cfg = this.loginSetupConfig;
+    if (cfg?.enabled && (cfg.beforeFn || cfg.beforeEachFn)) {
+      const fns = [cfg.beforeFn, cfg.beforeEachFn].filter(Boolean) as string[];
+      if (!hasLoginBlocks(content, fns)) {
+        const e2eName = this._e2eHandle?.name ?? 'e2e';
+        const fileName = (this.selectedFile as { name: string } | null)?.name ?? '';
+        const fromPath = `cypress/${e2eName}/${fileName}`;
+        const importPath = buildLoginImportPath(fromPath, cfg.filePath);
+        const { importLine, beforeBlock, beforeEachBlock } = buildLoginBlocks(importPath, cfg.beforeFn, cfg.beforeEachFn);
+        const result = await Swal.fire({
+          title: this.t('CONFIG.LOGIN_SETUP_INJECT_TITLE'),
+          text: this.t('CONFIG.LOGIN_SETUP_INJECT_TEXT'),
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: this.t('CONFIG.LOGIN_SETUP_INJECT_CONFIRM'),
+          cancelButtonText: this.t('CONFIG.LOGIN_SETUP_CANCEL_BTN'),
+          color: '#e6edf3',
+          background: '#161b22',
+        });
+        if (result.isConfirmed) {
+          content = injectLoginBlocksIntoExisting(content, importLine, beforeBlock, beforeEachBlock);
+        }
+      }
+    }
+
     const writable = await this.selectedFileHandle.createWritable();
     await writable.write(content);
     await writable.close();
