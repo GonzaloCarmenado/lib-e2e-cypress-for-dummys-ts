@@ -16,7 +16,6 @@ export * from './services/transformation.service';
 export * from './services/advanced-test.transformation.service';
 
 // Phase 4 — RecordingService
-export * from './utils/subject';
 export * from './services/recording.service';
 
 // Phase 5 — PersistenceService

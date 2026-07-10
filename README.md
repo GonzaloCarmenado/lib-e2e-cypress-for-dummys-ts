@@ -695,6 +695,14 @@ class PersistenceService {
 
 ---
 
+## Breaking changes
+
+### v0.9.0
+
+- **`Subject` removed from public exports.** `Subject<T>` (`src/utils/subject.ts`) is an internal reactive primitive used by the library's services. It was accidentally re-exported from the package root. If your code imports it as `import { Subject } from 'lib-e2e-cypress-for-dummys-ts'`, copy the class into your own codebase or use a reactive library (RxJS, signals, etc.) instead.
+
+---
+
 ## Technical notes
 
 - **Storage:** IndexedDB via [`idb`](https://github.com/jakearchibald/idb). Data survives page reloads and browser restarts.
