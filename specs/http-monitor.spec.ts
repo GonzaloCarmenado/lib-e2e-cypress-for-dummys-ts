@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
-import { HttpMonitor, generateAlias } from '../src/services/http-monitor';
+import { HttpMonitor, generateAlias, _resetHttpMonitorState } from '../src/services/http-monitor';
 import { RecordingService } from '../src/services/recording.service';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -44,6 +44,7 @@ describe('Phase 6 — HttpMonitor', () => {
     recording.destroy();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    _resetHttpMonitorState();
   });
 
   // ── install / uninstall ──────────────────────────────────────────────────
@@ -470,6 +471,39 @@ describe('Phase 6 — HttpMonitor', () => {
       expect(fixtures[0].content).not.toContain('leaked-secret');
       expect(fixtures[0].content).toContain('[REDACTED]');
       expect(fixtures[0].content).toContain('public');
+    });
+  });
+
+  // ── AC-06 — ref-count singleton ──────────────────────────────────────────
+
+  describe('AC-06 — ref-count singleton', () => {
+    it('two installs → one uninstall leaves fetch patched', () => {
+      const originalFetch = window.fetch;
+      const r2 = new RecordingService();
+      const m2 = new HttpMonitor(r2);
+
+      monitor.install();
+      m2.install();
+      monitor.uninstall();
+
+      expect(window.fetch).not.toBe(originalFetch);
+
+      m2.uninstall();
+      r2.destroy();
+    });
+
+    it('two installs → two uninstalls restores original fetch', () => {
+      const originalFetch = window.fetch;
+      const r2 = new RecordingService();
+      const m2 = new HttpMonitor(r2);
+
+      monitor.install();
+      m2.install();
+      monitor.uninstall();
+      m2.uninstall();
+
+      expect(window.fetch).toBe(originalFetch);
+      r2.destroy();
     });
   });
 });

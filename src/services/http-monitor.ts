@@ -91,20 +91,194 @@ function resolveMethod(input: RequestInfo | URL, init?: RequestInit): string {
   return 'GET';
 }
 
-export class HttpMonitor {
-  private originalFetch: typeof window.fetch | null = null;
-  private originalXHR: typeof XMLHttpRequest | null = null;
+// ─── module-level interception handlers ──────────────────────────────────────
 
+async function _handleFetchInterception(
+  recording: RecordingService,
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  responseClone: Response
+): Promise<void> {
+  const method = resolveMethod(input, init);
+  if (!(INTERCEPTED_METHODS as readonly string[]).includes(method)) return;
+
+  const url = resolveUrl(input);
+  const alias = generateAlias(method, url);
+
+  recording.registerInterceptor(method, url, alias);
+
+  const extendedHttp = localStorage.getItem('extendedHttpCommands') === 'true';
+  const fixtureMode = localStorage.getItem('fixtureMode') === 'true';
+  const requestBody = extendedHttp ? parseRequestBody(init) : null;
+
+  let responseText: string | null = null;
+  let responseBody: Record<string, unknown> | null = null;
+
+  if (extendedHttp || (fixtureMode && method === 'GET')) {
+    try {
+      responseText = await responseClone.text();
+      if (extendedHttp) responseBody = parseJsonObject(responseText);
+    } catch {
+      // Unreadable body — continue without validations
+    }
+  }
+
+  if (fixtureMode && method === 'GET' && responseText !== null) {
+    const pretty = prettyJsonOrNull(responseText);
+    if (pretty !== null) {
+      const redacted = redactSensitiveFields(JSON.parse(pretty));
+      recording.registerFixture(`${alias}.json`, JSON.stringify(redacted, null, 2));
+    }
+  }
+
+  const cmd = buildCyWaitCommand(
+    method, alias, extendedHttp,
+    requestBody ? redactSensitiveFields(requestBody) as Record<string, unknown> : null,
+    responseBody ? redactSensitiveFields(responseBody) as Record<string, unknown> : null,
+  );
+  recording.addCommand(cmd);
+}
+
+function _handleXhrInterception(
+  recording: RecordingService,
+  method: string,
+  url: string,
+  requestBody: Record<string, unknown> | null,
+  responseText: string
+): void {
+  if (!(INTERCEPTED_METHODS as readonly string[]).includes(method as InterceptedMethod)) return;
+
+  const alias = generateAlias(method, url);
+
+  recording.registerInterceptor(method, url, alias);
+
+  if (localStorage.getItem('fixtureMode') === 'true' && method === 'GET') {
+    const pretty = prettyJsonOrNull(responseText);
+    if (pretty !== null) {
+      const redacted = redactSensitiveFields(JSON.parse(pretty));
+      recording.registerFixture(`${alias}.json`, JSON.stringify(redacted, null, 2));
+    }
+  }
+
+  const extendedHttp = localStorage.getItem('extendedHttpCommands') === 'true';
+  const responseBody = extendedHttp ? parseJsonObject(responseText) : null;
+
+  const cmd = buildCyWaitCommand(
+    method, alias, extendedHttp,
+    requestBody ? redactSensitiveFields(requestBody) as Record<string, unknown> : null,
+    responseBody ? redactSensitiveFields(responseBody) as Record<string, unknown> : null,
+  );
+  recording.addCommand(cmd);
+}
+
+// ─── module-level singleton state ────────────────────────────────────────────
+
+let _refCount = 0;
+let _originalFetch: typeof window.fetch | null = null;
+let _originalXHR: typeof XMLHttpRequest | null = null;
+const _recordings = new Set<RecordingService>();
+
+function _patchFetch(): void {
+  const orig = window.fetch;
+  _originalFetch = orig;
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const response = await orig(input, init);
+    try {
+      const active = [..._recordings];
+      if (active.length > 0) {
+        await Promise.all(
+          active.map((rec) => _handleFetchInterception(rec, input, init, response.clone()).catch(() => {}))
+        );
+      }
+    } catch {
+      // Never let monitoring errors break the actual request
+    }
+    return response;
+  };
+}
+
+function _restoreFetch(): void {
+  if (!_originalFetch) return;
+  window.fetch = _originalFetch;
+  _originalFetch = null;
+}
+
+function _patchXhr(): void {
+  const OrigXHR = window.XMLHttpRequest;
+  _originalXHR = OrigXHR;
+
+  window.XMLHttpRequest = class extends OrigXHR {
+    private _xhrMethod = 'GET';
+    private _xhrUrl = '';
+    private _xhrRequestBody: Record<string, unknown> | null = null;
+
+    override open(
+      method: string,
+      url: string | URL,
+      async = true,
+      user?: string | null,
+      password?: string | null
+    ): void {
+      this._xhrMethod = method.toUpperCase();
+      this._xhrUrl = url instanceof URL ? url.href : url;
+      super.open(method, url as string, async, user, password);
+    }
+
+    override send(body?: Document | XMLHttpRequestBodyInit | null): void {
+      if (typeof body === 'string') {
+        this._xhrRequestBody = parseJsonObject(body);
+      }
+      this.addEventListener('load', () => {
+        try {
+          for (const rec of _recordings) {
+            _handleXhrInterception(rec, this._xhrMethod, this._xhrUrl, this._xhrRequestBody, this.responseText);
+          }
+        } catch {
+          // Never let monitoring errors surface
+        }
+      });
+      super.send(body);
+    }
+  } as unknown as typeof XMLHttpRequest;
+}
+
+function _restoreXhr(): void {
+  if (!_originalXHR) return;
+  window.XMLHttpRequest = _originalXHR;
+  _originalXHR = null;
+}
+
+/** @internal — resets singleton state between test suites; do not use in production code */
+export function _resetHttpMonitorState(): void {
+  _refCount = 0;
+  _originalFetch = null;
+  _originalXHR = null;
+  _recordings.clear();
+}
+
+// ─── HttpMonitor — public API (thin wrapper over the module-level singleton) ─
+
+export class HttpMonitor {
   constructor(private readonly recording: RecordingService) {}
 
   install(): void {
-    this.installFetch();
-    this.installXhr();
+    _recordings.add(this.recording);
+    _refCount++;
+    if (_refCount === 1) {
+      _patchFetch();
+      _patchXhr();
+    }
   }
 
   uninstall(): void {
-    this.uninstallFetch();
-    this.uninstallXhr();
+    _recordings.delete(this.recording);
+    if (_refCount <= 0) return;
+    _refCount--;
+    if (_refCount === 0) {
+      _restoreFetch();
+      _restoreXhr();
+    }
   }
 
   isExtendedHttpEnabled(): boolean {
@@ -114,159 +288,4 @@ export class HttpMonitor {
   isFixtureModeEnabled(): boolean {
     return localStorage.getItem('fixtureMode') === 'true';
   }
-
-  private installFetch(): void {
-    if (this.originalFetch) return;
-    const originalFetch = window.fetch;
-    this.originalFetch = originalFetch;
-
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const response = await originalFetch(input, init);
-      try {
-        await this.handleFetchInterception(input, init, response.clone());
-      } catch {
-        // Never let monitoring errors break the actual request
-      }
-      return response;
-    };
-  }
-
-  private uninstallFetch(): void {
-    if (!this.originalFetch) return;
-    window.fetch = this.originalFetch;
-    this.originalFetch = null;
-  }
-
-  private installXhr(): void {
-    if (this.originalXHR) return;
-    this.originalXHR = window.XMLHttpRequest;
-    const OrigXHR = this.originalXHR;
-    const handleXhrInterception = this.handleXhrInterception.bind(this);
-
-    window.XMLHttpRequest = class extends OrigXHR {
-      private _xhrMethod = 'GET';
-      private _xhrUrl = '';
-      private _xhrRequestBody: Record<string, unknown> | null = null;
-
-      override open(
-        method: string,
-        url: string | URL,
-        async = true,
-        user?: string | null,
-        password?: string | null
-      ): void {
-        this._xhrMethod = method.toUpperCase();
-        this._xhrUrl = url instanceof URL ? url.href : url;
-        super.open(method, url as string, async, user, password);
-      }
-
-      override send(body?: Document | XMLHttpRequestBodyInit | null): void {
-        if (typeof body === 'string') {
-          this._xhrRequestBody = parseJsonObject(body);
-        }
-        this.addEventListener('load', () => {
-          try {
-            handleXhrInterception(
-              this._xhrMethod,
-              this._xhrUrl,
-              this._xhrRequestBody,
-              this.responseText
-            );
-          } catch {
-            // Never let monitoring errors surface
-          }
-        });
-        super.send(body);
-      }
-    } as unknown as typeof XMLHttpRequest;
-  }
-
-  private uninstallXhr(): void {
-    if (!this.originalXHR) return;
-    window.XMLHttpRequest = this.originalXHR;
-    this.originalXHR = null;
-  }
-
-  private async handleFetchInterception(
-    input: RequestInfo | URL,
-    init: RequestInit | undefined,
-    responseClone: Response
-  ): Promise<void> {
-    const method = resolveMethod(input, init);
-    if (!(INTERCEPTED_METHODS as readonly string[]).includes(method)) return;
-
-    const url = resolveUrl(input);
-    const alias = generateAlias(method, url);
-
-    // Always register a spy interceptor — the fixture-stub form is applied at
-    // save time (spec 012) so we don't lock the format before knowing which
-    // save action the user will choose.
-    this.recording.registerInterceptor(method, url, alias);
-
-    const extendedHttp = this.isExtendedHttpEnabled();
-    const fixtureMode = this.isFixtureModeEnabled();
-    const requestBody = extendedHttp ? parseRequestBody(init) : null;
-
-    let responseText: string | null = null;
-    let responseBody: Record<string, unknown> | null = null;
-
-    if (extendedHttp || (fixtureMode && method === 'GET')) {
-      try {
-        responseText = await responseClone.text();
-        if (extendedHttp) responseBody = parseJsonObject(responseText);
-      } catch {
-        // Unreadable body — continue without validations
-      }
-    }
-
-    // Capture response JSON for potential fixture use at save-and-export time.
-    if (fixtureMode && method === 'GET' && responseText !== null) {
-      const pretty = prettyJsonOrNull(responseText);
-      if (pretty !== null) {
-        const redacted = redactSensitiveFields(JSON.parse(pretty));
-        this.recording.registerFixture(`${alias}.json`, JSON.stringify(redacted, null, 2));
-      }
-    }
-
-    const cmd = buildCyWaitCommand(
-      method, alias, extendedHttp,
-      requestBody ? redactSensitiveFields(requestBody) as Record<string, unknown> : null,
-      responseBody ? redactSensitiveFields(responseBody) as Record<string, unknown> : null,
-    );
-    this.recording.addCommand(cmd);
-  }
-
-  private handleXhrInterception(
-    method: string,
-    url: string,
-    requestBody: Record<string, unknown> | null,
-    responseText: string
-  ): void {
-    if (!(INTERCEPTED_METHODS as readonly string[]).includes(method as InterceptedMethod)) return;
-
-    const alias = generateAlias(method, url);
-
-    // Always register a spy interceptor (fixture-stub form is applied at save time).
-    this.recording.registerInterceptor(method, url, alias);
-
-    // Capture response JSON for potential fixture use at save-and-export time.
-    if (this.isFixtureModeEnabled() && method === 'GET') {
-      const pretty = prettyJsonOrNull(responseText);
-      if (pretty !== null) {
-        const redacted = redactSensitiveFields(JSON.parse(pretty));
-        this.recording.registerFixture(`${alias}.json`, JSON.stringify(redacted, null, 2));
-      }
-    }
-
-    const extendedHttp = this.isExtendedHttpEnabled();
-    const responseBody = extendedHttp ? parseJsonObject(responseText) : null;
-
-    const cmd = buildCyWaitCommand(
-      method, alias, extendedHttp,
-      requestBody ? redactSensitiveFields(requestBody) as Record<string, unknown> : null,
-      responseBody ? redactSensitiveFields(responseBody) as Record<string, unknown> : null,
-    );
-    this.recording.addCommand(cmd);
-  }
 }
-
