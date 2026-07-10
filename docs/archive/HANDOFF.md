@@ -1,3 +1,5 @@
+> **Archived.** This document describes a completed migration and is kept for historical reference only.
+
 # lib-e2e-cypress-for-dummys — Handoff para nuevo chat
 
 ## Contexto general
