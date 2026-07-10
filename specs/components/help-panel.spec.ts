@@ -9,7 +9,7 @@ describe('Phase 8.8 — HelpPanelElement (spec 011)', () => {
 
   beforeEach(() => {
     translation = new TranslationService();
-    el = document.createElement('help-panel') as HelpPanelElement;
+    el = document.createElement('lib-e2e-help-panel') as HelpPanelElement;
     el.translation = translation;
     document.body.appendChild(el);
   });
@@ -17,7 +17,7 @@ describe('Phase 8.8 — HelpPanelElement (spec 011)', () => {
   afterEach(() => { el.remove(); });
 
   it('registers as <help-panel> custom element', () => {
-    expect(customElements.get('help-panel')).toBeDefined();
+    expect(customElements.get('lib-e2e-help-panel')).toBeDefined();
   });
 
   it('renders the 8 categorised sections', () => {
@@ -40,7 +40,7 @@ describe('Phase 8.8 — HelpPanelElement (spec 011)', () => {
   });
 
   it('falls back to a default translation service when none is injected', () => {
-    const el2 = document.createElement('help-panel') as HelpPanelElement;
+    const el2 = document.createElement('lib-e2e-help-panel') as HelpPanelElement;
     document.body.appendChild(el2);
     expect(el2.shadowRoot!.querySelectorAll('.help-sec').length).toBe(8);
     el2.remove();

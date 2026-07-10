@@ -117,6 +117,6 @@ export class TestPrevisualizerElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('test-previsualizer')) {
-  customElements.define('test-previsualizer', TestPrevisualizerElement);
+if (!customElements.get('lib-e2e-test-previsualizer')) {
+  customElements.define('lib-e2e-test-previsualizer', TestPrevisualizerElement);
 }

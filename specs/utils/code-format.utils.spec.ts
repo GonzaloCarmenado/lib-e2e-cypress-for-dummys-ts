@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeBlock, escapeSingleQuotes } from '../../src/utils/code-format.utils';
+import { normalizeBlock, escapeSingleQuotes, escapeCssAttrValue } from '../../src/utils/code-format.utils';
 
 describe('normalizeBlock', () => {
   it('adds base indent to a single-line zero-indent command', () => {
@@ -89,5 +89,29 @@ describe('escapeSingleQuotes', () => {
 
   it('returns an empty string for empty input', () => {
     expect(escapeSingleQuotes('')).toBe('');
+  });
+});
+
+describe('escapeCssAttrValue', () => {
+  it('leaves a plain value unchanged', () => {
+    expect(escapeCssAttrValue('my-button')).toBe('my-button');
+  });
+
+  it('escapes a double quote', () => {
+    // CSS [attr="VALUE"]: a literal " inside VALUE must be written as \"
+    // 'say "hello"' → 'say \\"hello\\"'  (runtime: say \"hello\")
+    expect(escapeCssAttrValue('say "hello"')).toBe('say \\"hello\\"');
+  });
+
+  it('escapes multiple double quotes', () => {
+    expect(escapeCssAttrValue('"wrap"')).toBe('\\"wrap\\"');
+  });
+
+  it('does not escape single quotes (those are safe inside double-quoted CSS attributes)', () => {
+    expect(escapeCssAttrValue("o'brien")).toBe("o'brien");
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(escapeCssAttrValue('')).toBe('');
   });
 });

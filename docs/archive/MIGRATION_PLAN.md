@@ -1,3 +1,5 @@
+> **Archived.** This document describes a completed migration and is kept for historical reference only.
+
 # Plan de Migración: Angular → TypeScript Puro
 ## Metodología: Spec-Driven Development (SDD)
 

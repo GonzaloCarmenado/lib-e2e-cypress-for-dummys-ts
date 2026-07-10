@@ -487,7 +487,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     it('deletecommand event calls recording.removeCommand', () => {
       recording.startRecording();
       el.showCommandsDialog();
-      const child = container.querySelector('test-previsualizer')!;
+      const child = container.querySelector('lib-e2e-test-previsualizer')!;
       child.dispatchEvent(new CustomEvent('deletecommand', { detail: 0 }));
       expect(recording.getCommandsSnapshot().length).toBe(2); // 3 initial → remove index 0 → 2
     });
@@ -496,7 +496,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       recording.startRecording();
       el.showCommandsDialog();
       const [first, second] = recording.getCommandsSnapshot();
-      const child = container.querySelector('test-previsualizer')!;
+      const child = container.querySelector('lib-e2e-test-previsualizer')!;
       child.dispatchEvent(new CustomEvent('movecommand', { detail: { from: 0, to: 1 } }));
       expect(recording.getCommandsSnapshot()[0]).toBe(second);
       expect(recording.getCommandsSnapshot()[1]).toBe(first);
@@ -506,7 +506,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       recording.startRecording();
       recording.registerInterceptor('GET', '/api/users', 'get-api-users');
       el.showCommandsDialog();
-      const child = container.querySelector('test-previsualizer')!;
+      const child = container.querySelector('lib-e2e-test-previsualizer')!;
       child.dispatchEvent(new CustomEvent('deleteinterceptor', { detail: 0 }));
       expect(recording.getInterceptorsSnapshot()).toHaveLength(0);
     });
@@ -531,7 +531,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('appends a test-editor child element', () => {
       el.showSavedTestsDialog();
-      expect(container.querySelector('test-editor')).not.toBeNull();
+      expect(container.querySelector('lib-e2e-test-editor')).not.toBeNull();
     });
   });
 
@@ -552,19 +552,19 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('appends a save-test child element', () => {
       el.showSaveTestDialog();
-      expect(container.querySelector('save-test')).not.toBeNull();
+      expect(container.querySelector('lib-e2e-save-test')).not.toBeNull();
     });
 
     it('savetest event calls Swal.close', () => {
       el.showSaveTestDialog();
-      const child = container.querySelector('save-test')!;
+      const child = container.querySelector('lib-e2e-save-test')!;
       child.dispatchEvent(new CustomEvent('savetest', { detail: { description: 'from-event', tags: [] } }));
       expect(Swal.close).toHaveBeenCalled();
     });
 
     it('saveandexport event calls Swal.close', () => {
       el.showSaveTestDialog();
-      const child = container.querySelector('save-test')!;
+      const child = container.querySelector('lib-e2e-save-test')!;
       child.dispatchEvent(new CustomEvent('saveandexport', { detail: { description: 'export', tags: [] } }));
       expect(Swal.close).toHaveBeenCalled();
     });
@@ -587,7 +587,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('appends an e2e-configuration child element', () => {
       el.showSettingsDialog();
-      expect(container.querySelector('e2e-configuration')).not.toBeNull();
+      expect(container.querySelector('lib-e2e-configuration')).not.toBeNull();
     });
   });
 
@@ -608,7 +608,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('appends a help-panel child element', () => {
       el.showHelpDialog();
-      expect(container.querySelector('help-panel')).not.toBeNull();
+      expect(container.querySelector('lib-e2e-help-panel')).not.toBeNull();
     });
   });
 
@@ -629,19 +629,19 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('appends an advanced-test-editor child element', () => {
       el.showAdvancedEditorDialog();
-      expect(container.querySelector('advanced-test-editor')).not.toBeNull();
+      expect(container.querySelector('lib-e2e-advanced-test-editor')).not.toBeNull();
     });
 
     it('closemodal event on child calls Swal.close', () => {
       el.showAdvancedEditorDialog();
-      const child = container.querySelector('advanced-test-editor')!;
+      const child = container.querySelector('lib-e2e-advanced-test-editor')!;
       child.dispatchEvent(new CustomEvent('closemodal'));
       expect(Swal.close).toHaveBeenCalled();
     });
 
     it('selectorstrategychange event updates recording.selectorStrategy', () => {
       el.showAdvancedEditorDialog();
-      const child = container.querySelector('advanced-test-editor')!;
+      const child = container.querySelector('lib-e2e-advanced-test-editor')!;
       child.dispatchEvent(new CustomEvent('selectorstrategychange', { detail: 'aria-label' }));
       expect(recording.selectorStrategy).toBe('aria-label');
     });
@@ -658,7 +658,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('openfileeditor event on child closes Swal (reopens the file editor)', () => {
       el.showAdvancedEditorDialog();
-      const child = container.querySelector('advanced-test-editor')!;
+      const child = container.querySelector('lib-e2e-advanced-test-editor')!;
       child.dispatchEvent(new CustomEvent('openfileeditor', {
         detail: { handle: {}, content: 'x', fileName: 'f.cy.ts', testId: 1, itBlock: '', interceptorsBlock: '', notes: '' },
       }));
@@ -683,12 +683,12 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
 
     it('appends a file-preview child element', () => {
       (el as any).showFileEditorDialog({}, 'content', 'f.cy.ts', 1, 'it', 'icp', 'notes');
-      expect(container.querySelector('file-preview')).not.toBeNull();
+      expect(container.querySelector('lib-e2e-file-preview')).not.toBeNull();
     });
 
     it('close event on child calls Swal.close', () => {
       (el as any).showFileEditorDialog({}, 'content', 'f.cy.ts', 1);
-      const child = container.querySelector('file-preview')!;
+      const child = container.querySelector('lib-e2e-file-preview')!;
       child.dispatchEvent(new CustomEvent('close'));
       expect(Swal.close).toHaveBeenCalled();
     });
@@ -698,7 +698,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       const close = vi.fn();
       const handle = { createWritable: vi.fn().mockResolvedValue({ write, close }) };
       (el as any).showFileEditorDialog(handle, 'content', 'f.cy.ts', 1);
-      const child = container.querySelector('file-preview')!;
+      const child = container.querySelector('lib-e2e-file-preview')!;
       child.dispatchEvent(new CustomEvent('save', { detail: 'new content' }));
       await Promise.resolve();
       await Promise.resolve();
@@ -709,7 +709,7 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     it('save event does not throw when writing fails', async () => {
       const handle = { createWritable: vi.fn().mockRejectedValue(new Error('denied')) };
       (el as any).showFileEditorDialog(handle, 'content', 'f.cy.ts', 1);
-      const child = container.querySelector('file-preview')!;
+      const child = container.querySelector('lib-e2e-file-preview')!;
       child.dispatchEvent(new CustomEvent('save', { detail: 'x' }));
       await Promise.resolve();
       await Promise.resolve();

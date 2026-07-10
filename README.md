@@ -2,6 +2,8 @@
 
 > A floating widget that records real browser interactions and generates ready-to-run **Cypress E2E test code** — no setup required, no Cypress knowledge needed.
 
+> **Development and QA environments only.** This is a developer tool for generating test code — it has no place in a production build. Not because of security vulnerabilities or performance problems, but simply because end users have no reason to see a test recorder widget. Load it conditionally (e.g. `if (process.env.NODE_ENV !== 'production')`) or gate it behind a build flag.
+
 ---
 
 ## What it does
@@ -354,6 +356,21 @@ Options:
 | `--command` | `npx cypress run --spec {spec}` | Command to run. `{spec}` is replaced by the spec (passed as a single argv, never through a shell). |
 | `--cwd` | current dir | Working directory the command runs in. |
 | `--host` | `127.0.0.1` | Bind address (local only). |
+| `--allow-origin` | `http://localhost` | Allowed CORS origin. Any `http://localhost:*` / `http://127.0.0.1:*` origin is always allowed regardless of this flag. Use this only when your app runs on a custom domain or a non-localhost IP. |
+
+The allowed origin can also be set via the `RUNNER_ALLOW_ORIGIN` environment variable (CLI flag takes precedence):
+
+```bash
+# Default — app on localhost (any port)
+npx lib-e2e-cypress-runner
+
+# App on a custom domain or shared dev IP
+npx lib-e2e-cypress-runner --allow-origin=http://myapp.test
+npx lib-e2e-cypress-runner --allow-origin=http://192.168.1.10:3000
+
+# Via env-var (useful for Docker / CI scripts)
+RUNNER_ALLOW_ORIGIN=http://myapp.test npx lib-e2e-cypress-runner
+```
 
 The widget POSTs `{ specPath }` to `http://localhost:8123/run-test`; configure a
 different endpoint via the `runnerUrl` property of `<file-preview>` if needed.
@@ -675,6 +692,14 @@ class PersistenceService {
   requestDirectoryPermissions(): Promise<void>;
 }
 ```
+
+---
+
+## Breaking changes
+
+### v0.9.0
+
+- **`Subject` removed from public exports.** `Subject<T>` (`src/utils/subject.ts`) is an internal reactive primitive used by the library's services. It was accidentally re-exported from the package root. If your code imports it as `import { Subject } from 'lib-e2e-cypress-for-dummys-ts'`, copy the class into your own codebase or use a reactive library (RxJS, signals, etc.) instead.
 
 ---
 

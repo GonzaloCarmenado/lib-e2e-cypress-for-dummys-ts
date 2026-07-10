@@ -199,6 +199,6 @@ export class TestEditorElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('test-editor')) {
-  customElements.define('test-editor', TestEditorElement);
+if (!customElements.get('lib-e2e-test-editor')) {
+  customElements.define('lib-e2e-test-editor', TestEditorElement);
 }

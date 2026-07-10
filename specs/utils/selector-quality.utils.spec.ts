@@ -129,6 +129,20 @@ describe('selector-quality.utils', () => {
     it('returns tag selector for poor element', () => {
       expect(buildPickerSelector(el('span'))).toBe('span');
     });
+
+    describe('AC-01 — CSS attribute value escaping', () => {
+      it('escapes double quotes in data-cy value', () => {
+        expect(buildPickerSelector(el('div', { 'data-cy': 'say "hello"' }))).toBe('[data-cy="say \\"hello\\""]');
+      });
+
+      it('escapes double quotes in data-testid value', () => {
+        expect(buildPickerSelector(el('div', { 'data-testid': '10" monitor' }))).toBe('[data-testid="10\\" monitor"]');
+      });
+
+      it('escapes double quotes in aria-label value', () => {
+        expect(buildPickerSelector(el('button', { 'aria-label': '10" screen' }))).toBe('[aria-label="10\\" screen"]');
+      });
+    });
   });
 
   // ── keyAttrDisplay ─────────────────────────────────────────────────────────

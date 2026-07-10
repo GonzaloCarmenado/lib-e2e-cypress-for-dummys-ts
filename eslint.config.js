@@ -16,12 +16,8 @@ export default tseslint.config(
     files: ['src/**/*.ts', 'specs/**/*.ts'],
     rules: {
       // ── TypeScript ────────────────────────────────────────────────────────
-      // 'any' permitido con warning: la File System Access API y SweetAlert2
-      // no tienen tipos completos, así que algunos 'as any' son inevitables
-      '@typescript-eslint/no-explicit-any': 'warn',
-
-      // '!' non-null assertion: usamos con frecuencia en querySelector, warn
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
 
       // Fuerza import type para imports que solo se usan como tipos
       '@typescript-eslint/consistent-type-imports': [

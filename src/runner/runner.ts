@@ -17,6 +17,13 @@ export interface RunnerOptions {
   host?: string;
   /** Working directory the command runs in (default process.cwd()). */
   cwd?: string;
+  /**
+   * Allowed CORS origin. Any http://localhost:* or http://127.0.0.1:* origin
+   * is always reflected back regardless of this setting.
+   * Defaults to DEFAULT_ALLOW_ORIGIN ('http://localhost').
+   * Can also be set via the RUNNER_ALLOW_ORIGIN env-var (CLI flag takes precedence).
+   */
+  allowOrigin?: string;
 }
 
 export interface RunResult {
@@ -28,6 +35,27 @@ export interface RunResult {
 export const DEFAULT_COMMAND = 'npx cypress run --spec {spec}';
 export const DEFAULT_PORT = 8123;
 export const DEFAULT_HOST = '127.0.0.1';
+export const DEFAULT_ALLOW_ORIGIN = 'http://localhost';
+
+const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+/**
+ * Resolves the Access-Control-Allow-Origin value for a given request.
+ * Any http://localhost:* or http://127.0.0.1:* origin is reflected back
+ * directly (dev apps run on arbitrary ports). An explicitly configured
+ * origin is reflected when it matches exactly. All other origins receive
+ * the configured origin (browser blocks cross-origin requests that don't
+ * match, no wildcard is ever sent).
+ */
+export function resolveAllowedOrigin(
+  requestOrigin: string | undefined,
+  configuredOrigin: string,
+): string {
+  if (!requestOrigin) return configuredOrigin;
+  if (LOCALHOST_PATTERN.test(requestOrigin)) return requestOrigin;
+  if (requestOrigin === configuredOrigin) return requestOrigin;
+  return configuredOrigin;
+}
 
 /**
  * Turns a spec name or path into a `--spec` glob. A bare file name is matched
@@ -87,9 +115,10 @@ export function runSpec(
 
 /** Creates the runner HTTP server (does not listen). Injectable spawn for testing. */
 export function createRunnerServer(opts: RunnerOptions = {}, spawnFn: typeof spawn = spawn): Server {
+  const configuredOrigin = opts.allowOrigin ?? DEFAULT_ALLOW_ORIGIN;
   return createServer((req, res) => {
-    // The app under test runs on a different localhost port → allow cross-origin.
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const corsOrigin = resolveAllowedOrigin(req.headers['origin'], configuredOrigin);
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -113,7 +142,7 @@ export function createRunnerServer(opts: RunnerOptions = {}, spawnFn: typeof spa
   });
 }
 
-/** Parses CLI flags (`--port`, `--command`, `--cwd`, `--host`, with `=` form too). */
+/** Parses CLI flags (`--port`, `--command`, `--cwd`, `--host`, `--allow-origin`, with `=` form too). */
 export function parseRunnerArgs(argv: string[]): RunnerOptions {
   const opts: RunnerOptions = {};
   for (let i = 0; i < argv.length; i++) {
@@ -122,10 +151,12 @@ export function parseRunnerArgs(argv: string[]): RunnerOptions {
     else if (a === '--command') opts.command = argv[++i];
     else if (a === '--cwd') opts.cwd = argv[++i];
     else if (a === '--host') opts.host = argv[++i];
+    else if (a === '--allow-origin') opts.allowOrigin = argv[++i];
     else if (a.startsWith('--port=')) opts.port = Number(a.slice('--port='.length));
     else if (a.startsWith('--command=')) opts.command = a.slice('--command='.length);
     else if (a.startsWith('--cwd=')) opts.cwd = a.slice('--cwd='.length);
     else if (a.startsWith('--host=')) opts.host = a.slice('--host='.length);
+    else if (a.startsWith('--allow-origin=')) opts.allowOrigin = a.slice('--allow-origin='.length);
   }
   return opts;
 }
@@ -134,7 +165,11 @@ export function parseRunnerArgs(argv: string[]): RunnerOptions {
 export function startRunner(opts: RunnerOptions = {}): Server {
   const port = opts.port ?? DEFAULT_PORT;
   const host = opts.host ?? DEFAULT_HOST;
-  const server = createRunnerServer(opts);
+  const mergedOpts: RunnerOptions = {
+    ...opts,
+    allowOrigin: opts.allowOrigin ?? process.env['RUNNER_ALLOW_ORIGIN'] ?? DEFAULT_ALLOW_ORIGIN,
+  };
+  const server = createRunnerServer(mergedOpts);
   server.listen(port, host, () => {
     // eslint-disable-next-line no-console
     console.log(`[lib-e2e-cypress] runner listening on http://${host}:${port}  (command: ${opts.command ?? DEFAULT_COMMAND})`);

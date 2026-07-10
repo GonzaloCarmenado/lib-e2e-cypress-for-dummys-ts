@@ -50,6 +50,11 @@ async function loadRemote(path: string, recorderMode: string) {
       mountGuide(slot());
       updateNav(path);
       return;
+    } else if (path === '/lab') {
+      const { mountLab } = await import('./pages/lab.js');
+      mountLab(slot());
+      updateNav(path);
+      return;
     } else {
       mountHome(slot());
       updateNav(path);
@@ -102,6 +107,11 @@ function mountHome(el: HTMLElement) {
           <div style="font-size:24px">📖</div>
           <b>Guía</b>
           <small>Todas las features y cómo activarlas</small>
+        </a>
+        <a href="/lab" data-route="/lab" class="nav-card">
+          <div style="font-size:24px">🧪</div>
+          <b>Laboratorio</b>
+          <small>Casos extremos · edge cases de escape y selectores</small>
         </a>
       </div>
       <div class="card" style="font-size:12px;color:#8b949e;line-height:1.8">

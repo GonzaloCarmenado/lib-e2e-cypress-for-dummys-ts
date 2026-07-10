@@ -11,7 +11,7 @@ describe('Phase 8.3 — TestEditorElement', () => {
 
   beforeEach(async () => {
     persistence = new PersistenceService(`test_editor_db_${++dbCounter}`);
-    el = document.createElement('test-editor') as TestEditorElement;
+    el = document.createElement('lib-e2e-test-editor') as TestEditorElement;
     el.persistence = persistence;
     document.body.appendChild(el);
   });
@@ -21,7 +21,7 @@ describe('Phase 8.3 — TestEditorElement', () => {
   });
 
   it('registers as <test-editor> custom element', () => {
-    expect(customElements.get('test-editor')).toBeDefined();
+    expect(customElements.get('lib-e2e-test-editor')).toBeDefined();
   });
 
   it('initial tests list is empty', () => {
@@ -294,5 +294,24 @@ describe('Phase 8.3 — TestEditorElement', () => {
     const btn = el.shadowRoot!.getElementById('btn-gen-describe') as HTMLButtonElement;
     btn.click();
     expect(writeMock).toHaveBeenCalled();
+  });
+
+  // ── AC-13 — branch coverage gaps ─────────────────────────────────────────
+
+  it('toggleGroupByTicket() toggles the groupByTicket flag and re-renders', async () => {
+    expect(el.groupByTicket).toBe(false);
+    el.toggleGroupByTicket();
+    expect(el.groupByTicket).toBe(true);
+    el.toggleGroupByTicket();
+    expect(el.groupByTicket).toBe(false);
+  });
+
+  it('clicking [data-action="expand"] when selectMode is false expands the row', async () => {
+    await persistence.insertTest('expandable');
+    await el.loadTests();
+    expect(el.expandedIndex).toBeNull();
+    const expandBtn = el.shadowRoot!.querySelector('[data-action="expand"]') as HTMLElement;
+    expandBtn.click();
+    expect(el.expandedIndex).toBe(0);
   });
 });

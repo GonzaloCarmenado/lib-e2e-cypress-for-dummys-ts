@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
-import { HttpMonitor, generateAlias } from '../src/services/http-monitor';
+import { HttpMonitor, generateAlias, _resetHttpMonitorState } from '../src/services/http-monitor';
 import { RecordingService } from '../src/services/recording.service';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -44,6 +44,7 @@ describe('Phase 6 — HttpMonitor', () => {
     recording.destroy();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    _resetHttpMonitorState();
   });
 
   // ── install / uninstall ──────────────────────────────────────────────────
@@ -347,6 +348,162 @@ describe('Phase 6 — HttpMonitor', () => {
 
     it('fallback for invalid URL', () => {
       expect(generateAlias('GET', ':::invalid')).toContain('get-');
+    });
+  });
+
+  // ── AC-01 — bracket notation for non-identifier JSON keys ──────────────────
+
+  describe('AC-01 — bracket notation for unsafe JSON keys', () => {
+    beforeEach(() => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      monitor.install();
+    });
+
+    it('uses dot notation for camelCase keys', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ normalKey: 'value', price: 99 }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain('body.normalKey');
+      expect(cmd).toContain('body.price');
+    });
+
+    it('uses bracket notation for a kebab-case key', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ 'user-id': 42 }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['user-id']");
+      expect(cmd).not.toContain('body.user-id');
+    });
+
+    it('uses bracket notation for a key with multiple hyphens', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ 'x-auth-token': 'abc' }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['x-auth-token']");
+    });
+
+    it('uses bracket notation for a key starting with a digit', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ '2fa-enabled': true }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['2fa-enabled']");
+    });
+
+    it('escapes a single quote inside a bracket-notation key', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({ "it's-key": 'value' }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      // key "it's-key" is not a safe identifier → bracket notation → ['it\'s-key']
+      expect(cmd).toContain(`body['it\\'s-key']`);
+    });
+
+    it('mixes dot and bracket notation in a single response', async () => {
+      mockFetch.mockResolvedValue(makeJsonResponse({
+        'user-id': 1,
+        name: 'Alice',
+        'x-token': 'abc',
+      }));
+      await fetch('/api/data');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain("body['user-id']");
+      expect(cmd).toContain('body.name');
+      expect(cmd).toContain("body['x-token']");
+    });
+  });
+
+  // ── AC-03 — sensitive-field redaction ────────────────────────────────────────
+
+  describe('AC-03 — sensitive-field redaction', () => {
+    it('redacts token in GET response body validations', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ token: 'super-secret', name: 'Alice' }));
+      monitor.install();
+      await fetch('/api/login');
+      const cmd = lastCommand(recording);
+      expect(cmd).not.toContain('super-secret');
+      expect(cmd).toContain('"[REDACTED]"');
+      expect(cmd).toContain('.name');
+    });
+
+    it('redacts password in POST request body validations', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ id: 1 }));
+      monitor.install();
+      await fetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ username: 'alice', password: 'hunter2' }),
+      });
+      const cmd = lastCommand(recording);
+      expect(cmd).not.toContain('hunter2');
+      expect(cmd).toContain('"[REDACTED]"');
+      expect(cmd).toContain('.username');
+    });
+
+    it('redacts access_token and refresh_token in GET response', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ access_token: 'at', refresh_token: 'rt', userId: 1 }));
+      monitor.install();
+      await fetch('/api/auth');
+      const cmd = lastCommand(recording);
+      expect(cmd).not.toContain('"at"');
+      expect(cmd).not.toContain('"rt"');
+      expect(cmd).toContain('.userId');
+    });
+
+    it('passes non-sensitive fields through unchanged', async () => {
+      localStorage.setItem('extendedHttpCommands', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ name: 'Alice', role: 'admin', price: 9.99 }));
+      monitor.install();
+      await fetch('/api/users');
+      const cmd = lastCommand(recording);
+      expect(cmd).toContain('"Alice"');
+      expect(cmd).toContain('"admin"');
+      expect(cmd).toContain('9.99');
+    });
+
+    it('redacts sensitive fields in fixture content', async () => {
+      localStorage.setItem('fixtureMode', 'true');
+      mockFetch.mockResolvedValue(makeJsonResponse({ token: 'leaked-secret', data: 'public' }));
+      monitor.install();
+      await fetch('/api/me');
+      const fixtures = recording.getFixturesSnapshot();
+      expect(fixtures).toHaveLength(1);
+      expect(fixtures[0].content).not.toContain('leaked-secret');
+      expect(fixtures[0].content).toContain('[REDACTED]');
+      expect(fixtures[0].content).toContain('public');
+    });
+  });
+
+  // ── AC-06 — ref-count singleton ──────────────────────────────────────────
+
+  describe('AC-06 — ref-count singleton', () => {
+    it('two installs → one uninstall leaves fetch patched', () => {
+      const originalFetch = window.fetch;
+      const r2 = new RecordingService();
+      const m2 = new HttpMonitor(r2);
+
+      monitor.install();
+      m2.install();
+      monitor.uninstall();
+
+      expect(window.fetch).not.toBe(originalFetch);
+
+      m2.uninstall();
+      r2.destroy();
+    });
+
+    it('two installs → two uninstalls restores original fetch', () => {
+      const originalFetch = window.fetch;
+      const r2 = new RecordingService();
+      const m2 = new HttpMonitor(r2);
+
+      monitor.install();
+      m2.install();
+      monitor.uninstall();
+      m2.uninstall();
+
+      expect(window.fetch).toBe(originalFetch);
+      r2.destroy();
     });
   });
 });

@@ -163,6 +163,6 @@ export class FilePreviewElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('file-preview')) {
-  customElements.define('file-preview', FilePreviewElement);
+if (!customElements.get('lib-e2e-file-preview')) {
+  customElements.define('lib-e2e-file-preview', FilePreviewElement);
 }

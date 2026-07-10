@@ -1,6 +1,7 @@
 import type { RecordingService } from '../../services/recording.service';
 import type { TranslationService } from '../../services/translation.service';
 import { describePickerRow, type PickerRow } from '../../utils/selector-quality.utils';
+import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { SELECTOR_PICKER_STYLES } from './selector-picker.styles';
 import { renderPicker } from './selector-picker.template';
 
@@ -143,7 +144,7 @@ export class SelectorPickerElement extends HTMLElement {
   private confirm(index: number): void {
     const row = this.rows[index];
     if (!row) return;
-    const command = `cy.get('${row.selector}').click()`;
+    const command = `cy.get('${escapeSingleQuotes(row.selector)}').click()`;
     this.recording.appendCommand(command);
     this.dispatchEvent(new CustomEvent('selectorchosen', { detail: command, bubbles: true, composed: true }));
     this.closeSilently();
@@ -164,6 +165,6 @@ export class SelectorPickerElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('selector-picker')) {
-  customElements.define('selector-picker', SelectorPickerElement);
+if (!customElements.get('lib-e2e-selector-picker')) {
+  customElements.define('lib-e2e-selector-picker', SelectorPickerElement);
 }

@@ -131,35 +131,35 @@ describe('Phase 9 — Public API & Build', () => {
     });
 
     it('<test-previsualizer> is registered in customElements registry', () => {
-      expect(customElements.get('test-previsualizer')).toBeDefined();
+      expect(customElements.get('lib-e2e-test-previsualizer')).toBeDefined();
     });
 
     it('<save-test> is registered in customElements registry', () => {
-      expect(customElements.get('save-test')).toBeDefined();
+      expect(customElements.get('lib-e2e-save-test')).toBeDefined();
     });
 
     it('<test-editor> is registered in customElements registry', () => {
-      expect(customElements.get('test-editor')).toBeDefined();
+      expect(customElements.get('lib-e2e-test-editor')).toBeDefined();
     });
 
     it('<e2e-configuration> is registered in customElements registry', () => {
-      expect(customElements.get('e2e-configuration')).toBeDefined();
+      expect(customElements.get('lib-e2e-configuration')).toBeDefined();
     });
 
     it('<advanced-test-editor> is registered in customElements registry', () => {
-      expect(customElements.get('advanced-test-editor')).toBeDefined();
+      expect(customElements.get('lib-e2e-advanced-test-editor')).toBeDefined();
     });
 
     it('<file-preview> is registered in customElements registry', () => {
-      expect(customElements.get('file-preview')).toBeDefined();
+      expect(customElements.get('lib-e2e-file-preview')).toBeDefined();
     });
 
     it('<selector-picker> is registered in customElements registry', () => {
-      expect(customElements.get('selector-picker')).toBeDefined();
+      expect(customElements.get('lib-e2e-selector-picker')).toBeDefined();
     });
 
     it('<help-panel> is registered in customElements registry', () => {
-      expect(customElements.get('help-panel')).toBeDefined();
+      expect(customElements.get('lib-e2e-help-panel')).toBeDefined();
     });
   });
 
