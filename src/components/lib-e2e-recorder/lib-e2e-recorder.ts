@@ -861,6 +861,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           child.translation = this.translation;
           if (testId !== undefined) child.testId = testId;
           container.appendChild(child as unknown as Node);
+          void this.persistence.getLoginSetup().then(cfg => { child.loginSetupConfig = cfg; });
           child.addEventListener('selectorstrategychange', (e: CustomEvent) => {
             this.recording.selectorStrategy = e.detail;
           });
