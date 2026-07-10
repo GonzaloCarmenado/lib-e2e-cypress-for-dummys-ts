@@ -19,6 +19,11 @@ live in `docs/specs/`.
 | 008 | Lifecycle & fidelity fixes (reconnect rebuild, interceptor gate, drag-click, assertion escaping) |
 | 009 | Assertion capture while recording (**Alt+click** → auto `should(...)`) |
 | 010 | Richer interactions (dblclick, right-click, checkbox/radio, Enter/Escape) |
+| 011 | In-app help panel (shortcut cheat-sheet, discoverable features) |
+| 012 | HTTP responses → Cypress fixtures (`cy.intercept` with `{ fixture }`) |
+| 013 | *(reserved / void — intentionally skipped)* |
+| 014 | Ticket reference & grouping (Jira/Linear ticket field in settings) |
+| 016 | Example microfrontend showcase (Module Federation demo app with lab page) |
 
 Other capabilities: HTTP monitoring (`cy.intercept`/`cy.wait`, optional body
 validations), advanced editor + File System Access (insert into `.cy.ts`),
@@ -29,32 +34,22 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Release status
 
-- **0.7.0** (spec 009, assertions): on `main`, tagged `v0.7.0`, pushed — **not yet
-  published to npm** (held for manual testing).
-- **spec 010** (interactions): done + green, on branch `feat/010-richer-interactions`
-  — not merged/published yet.
-- **Plan (recommended):** merge 010 → `main` and cut a single **0.8.0** that ships
-  assertions + interactions (npm jumps 0.6.1 → 0.8.0; `v0.7.0` stays an internal
-  milestone). Decide after testing.
+- **0.9.0** — current version on `main`. Includes specs 001–012, 014, 016.
+- **spec 015** (Login Setup Template): implemented on `feat/015-login-setup-template`,
+  pending visual validation by the user before merge.
+- **spec 017** (Security & Quality Audit): in progress on
+  `fix/017-security-and-quality-audit` — hardening injection escaping, CORS,
+  sensitive-field redaction, CE namespacing, singleton cleanup, coverage gates, CI.
 
 ---
 
 ## Backlog (prioritised)
 
-1. **In-app Help modal** — a discoverable "what can this do?" panel (shortcuts +
-   features cheat-sheet), because the app has grown a lot. *(candidate spec 011)*
-2. **HTTP → fixtures** — save captured responses to `cypress/fixtures/*.json` and
-   generate `cy.intercept(..., { fixture })`.
-3. **More interactions (part 2)** — file upload (`<input type=file>` →
-   `.selectFile(...)`); drag & drop / hover.
-4. **Auto-login generator** — generate a programmatic login `beforeEach`/command
+1. **Auto-login generator** — generate a programmatic login `beforeEach`/command
    from the captured auth request (real call, reusable). *Deferred (complex).*
-
-## Tech debt (from the general review)
-
-- Runner CORS `*` + no auth (dev-only, but tighten).
-- `extendedHttpCommands` dual source of truth (IndexedDB + localStorage).
-- `alert()` → `showToast` in configuration import feedback.
-- `lib-e2e-recorder.ts` is large (≈1000 lines) — extract the duplicated Swal
-  dialog scaffold + inline HTML/styles.
-- Optional: redact sensitive typed values / HTTP bodies before persist/export.
+2. **More interactions (part 2)** — file upload (`<input type=file>` →
+   `.selectFile(...)`); drag & drop / hover.
+3. **Runner hardening** — `extendedHttpCommands` dual source of truth
+   (IndexedDB + localStorage); `alert()` → `showToast` in config import feedback.
+4. **Recorder refactor** — `lib-e2e-recorder.ts` is ≈1000 lines; extract duplicated
+   Swal dialog scaffold + inline HTML/styles into sub-services.
