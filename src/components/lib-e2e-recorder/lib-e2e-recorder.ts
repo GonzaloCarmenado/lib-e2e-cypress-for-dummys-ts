@@ -16,6 +16,7 @@ import {
   setSwal2DataCyAttribute,
 } from '../../utils/modal.utils';
 import type { Lang } from '../../models/lang.model';
+import type { LoginSetupConfig } from '../../models/login-setup.model';
 import {
   type ActiveSessionState,
   ACTIVE_SESSION_BREADCRUMB_KEY,
@@ -57,6 +58,7 @@ interface ConfigEl {
 }
 interface AdvancedEditorEl {
   persistence: PersistenceService; translation: TranslationService; testId?: number;
+  loginSetupConfig: LoginSetupConfig | null;
   addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
 }
 interface FilePreviewEl {
