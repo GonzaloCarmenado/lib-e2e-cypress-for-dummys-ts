@@ -610,7 +610,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
         beforeEachFn: null,
       };
       await persistence.saveLoginSetup(cfg);
-      const el2 = document.createElement('e2e-configuration') as ConfigurationElement;
+      const el2 = document.createElement('lib-e2e-configuration') as ConfigurationElement;
       el2.persistence = persistence;
       el2.translation = translation;
       document.body.appendChild(el2);
