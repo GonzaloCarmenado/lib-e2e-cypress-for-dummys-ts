@@ -23,7 +23,7 @@ export class SaveTestElement extends HTMLElement {
 
   connectedCallback(): void { this.render(); }
 
-  get step(): 'ask' | 'desc' { return this._step; }
+  get step(): 'ask' | 'desc' | 'confirm-discard' { return this._step; }
 
   askSave(): void { this._step = 'desc'; this.render(); }
 
