@@ -44,6 +44,7 @@ export class ConfigurationElement extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
+    // Read from localStorage (sync cache) — see initHttpConfig() in the recorder.
     this.advancedHttpConfig = localStorage.getItem('extendedHttpCommands') === 'true';
     this.fixtureMode = localStorage.getItem('fixtureMode') === 'true';
   }
@@ -96,6 +97,8 @@ export class ConfigurationElement extends HTMLElement {
 
   onAdvancedHttpConfigChange(checked: boolean): void {
     this.advancedHttpConfig = checked;
+    // Write to both: localStorage for immediate sync access by HttpMonitor,
+    // IndexedDB as persistent source of truth mirrored on recorder mount.
     localStorage.setItem('extendedHttpCommands', checked ? 'true' : 'false');
     this.persistence.setConfig({ extendedHttpCommands: checked ? 'true' : 'false' });
     this.render();
@@ -103,6 +106,7 @@ export class ConfigurationElement extends HTMLElement {
 
   onFixtureModeChange(checked: boolean): void {
     this.fixtureMode = checked;
+    // Same dual-write pattern as extendedHttpCommands — see above.
     localStorage.setItem('fixtureMode', checked ? 'true' : 'false');
     this.persistence.setConfig({ fixtureMode: checked ? 'true' : 'false' });
     this.render();

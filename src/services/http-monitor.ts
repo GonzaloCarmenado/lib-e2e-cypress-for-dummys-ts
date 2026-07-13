@@ -107,6 +107,9 @@ async function _handleFetchInterception(
 
   recording.registerInterceptor(method, url, alias);
 
+  // Must be synchronous — we are inside an active fetch interception handler.
+  // IndexedDB would require await and is not viable here; localStorage is the
+  // sync cache kept fresh by initHttpConfig() on recorder mount.
   const extendedHttp = localStorage.getItem('extendedHttpCommands') === 'true';
   const fixtureMode = localStorage.getItem('fixtureMode') === 'true';
   const requestBody = extendedHttp ? parseRequestBody(init) : null;
@@ -152,6 +155,7 @@ function _handleXhrInterception(
 
   recording.registerInterceptor(method, url, alias);
 
+  // Same sync-cache rationale as in _handleFetchInterception above.
   if (localStorage.getItem('fixtureMode') === 'true' && method === 'GET') {
     const pretty = prettyJsonOrNull(responseText);
     if (pretty !== null) {

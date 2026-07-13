@@ -196,6 +196,10 @@ export class LibE2eRecorderElement extends HTMLElement {
     this._needsRecordingRebuild = true;
   }
 
+  // HttpMonitor reads extendedHttpCommands and fixtureMode synchronously inside
+  // fetch/XHR interception handlers, so they must live in localStorage (sync).
+  // IndexedDB is the persistent source of truth; this method mirrors it into
+  // localStorage on every mount so the sync cache is always fresh.
   private async initHttpConfig(): Promise<void> {
     const config = await this.persistence.getConfig('extendedHttpCommands');
     if (config === null) {
@@ -204,7 +208,6 @@ export class LibE2eRecorderElement extends HTMLElement {
     } else {
       localStorage.setItem('extendedHttpCommands', (config['extendedHttpCommands'] as string) ?? 'true');
     }
-    // Mirror the fixture-mode flag to localStorage so HttpMonitor can read it (spec 012).
     const fx = await this.persistence.getConfig('fixtureMode');
     localStorage.setItem('fixtureMode', (fx?.['fixtureMode'] as string) ?? 'false');
   }
