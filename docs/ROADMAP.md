@@ -23,6 +23,7 @@ live in `docs/specs/`.
 | 012 | HTTP responses → Cypress fixtures (`cy.intercept` with `{ fixture }`) |
 | 013 | *(reserved / void — intentionally skipped)* |
 | 014 | Ticket reference & grouping (Jira/Linear ticket field in settings) |
+| 015 | Login Setup Template (scaffold or link existing login service, auto-inject before/beforeEach) |
 | 016 | Example microfrontend showcase (Module Federation demo app with lab page) |
 
 Other capabilities: HTTP monitoring (`cy.intercept`/`cy.wait`, optional body
@@ -34,12 +35,7 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Release status
 
-- **0.9.0** — current version on `main`. Includes specs 001–012, 014, 016.
-- **spec 015** (Login Setup Template): implemented on `feat/015-login-setup-template`,
-  pending visual validation by the user before merge.
-- **spec 017** (Security & Quality Audit): in progress on
-  `fix/017-security-and-quality-audit` — hardening injection escaping, CORS,
-  sensitive-field redaction, CE namespacing, singleton cleanup, coverage gates, CI.
+- **0.10.0** — current version on `main`. Includes specs 001–012, 014, 015, 016, 017.
 
 ---
 
