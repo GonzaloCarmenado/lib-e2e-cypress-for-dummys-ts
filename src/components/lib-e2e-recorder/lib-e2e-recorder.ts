@@ -16,6 +16,7 @@ import {
   setSwal2DataCyAttribute,
 } from '../../utils/modal.utils';
 import type { Lang } from '../../models/lang.model';
+import type { LoginSetupConfig } from '../../models/login-setup.model';
 import {
   type ActiveSessionState,
   ACTIVE_SESSION_BREADCRUMB_KEY,
@@ -57,6 +58,7 @@ interface ConfigEl {
 }
 interface AdvancedEditorEl {
   persistence: PersistenceService; translation: TranslationService; testId?: number;
+  loginSetupConfig: LoginSetupConfig | null;
   addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
 }
 interface FilePreviewEl {
@@ -861,6 +863,7 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
           child.translation = this.translation;
           if (testId !== undefined) child.testId = testId;
           container.appendChild(child as unknown as Node);
+          void this.persistence.getLoginSetup().then(cfg => { child.loginSetupConfig = cfg; });
           child.addEventListener('selectorstrategychange', (e: CustomEvent) => {
             this.recording.selectorStrategy = e.detail;
           });

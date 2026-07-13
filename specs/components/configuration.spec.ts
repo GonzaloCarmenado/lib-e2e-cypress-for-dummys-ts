@@ -528,6 +528,98 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     });
   });
 
+  // ── login setup (spec 015) ────────────────────────────────────────────────
+
+  describe('login setup panel', () => {
+    it('isLoginSetupOpen is false initially', () => {
+      expect(el.isLoginSetupOpen).toBe(false);
+    });
+
+    it('loginSetupConfig is null initially', () => {
+      expect(el.loginSetupConfig).toBeNull();
+    });
+
+    it('openLoginSetupPanel() sets isLoginSetupOpen to true and renders the panel', () => {
+      el.openLoginSetupPanel();
+      expect(el.isLoginSetupOpen).toBe(true);
+      expect(el.shadowRoot!.getElementById('login-setup-overlay')).not.toBeNull();
+    });
+
+    it('closeLoginSetupPanel() sets isLoginSetupOpen to false', () => {
+      el.openLoginSetupPanel();
+      el.closeLoginSetupPanel();
+      expect(el.isLoginSetupOpen).toBe(false);
+    });
+
+    it('saveLoginSetupConfig persists config and updates loginSetupConfig', async () => {
+      const cfg = {
+        enabled: true,
+        filePath: 'cypress/common-services/login.service.ts',
+        fileContent: 'export function fetchAuthToken() {}',
+        detectedFunctions: ['fetchAuthToken'],
+        beforeFn: 'fetchAuthToken',
+        beforeEachFn: null,
+      };
+      await el.saveLoginSetupConfig(cfg);
+      expect(el.loginSetupConfig).toEqual(cfg);
+      const stored = await persistence.getLoginSetup();
+      expect(stored).toEqual(cfg);
+    });
+
+    it('clearLoginSetupConfig removes config from persistence and resets state', async () => {
+      const cfg = {
+        enabled: true,
+        filePath: 'cypress/common-services/login.service.ts',
+        fileContent: 'export function fetchAuthToken() {}',
+        detectedFunctions: ['fetchAuthToken'],
+        beforeFn: 'fetchAuthToken',
+        beforeEachFn: null,
+      };
+      await el.saveLoginSetupConfig(cfg);
+      await el.clearLoginSetupConfig();
+      expect(el.loginSetupConfig).toBeNull();
+      expect(await persistence.getLoginSetup()).toBeNull();
+    });
+
+    it('renders the login setup card in the settings panel', () => {
+      expect(el.shadowRoot!.getElementById('btn-open-login-setup')).not.toBeNull();
+    });
+
+    it('clicking btn-open-login-setup opens the panel', () => {
+      const btn = el.shadowRoot!.getElementById('btn-open-login-setup') as HTMLElement;
+      btn.click();
+      expect(el.isLoginSetupOpen).toBe(true);
+    });
+
+    it('clicking cancel button in panel closes it', () => {
+      el.openLoginSetupPanel();
+      (el as any).render();
+      const btn = el.shadowRoot!.getElementById('btn-login-setup-cancel') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+      expect(el.isLoginSetupOpen).toBe(false);
+    });
+
+    it('loads persisted login setup config on init', async () => {
+      const cfg = {
+        enabled: true,
+        filePath: 'cypress/common-services/login.service.ts',
+        fileContent: 'export function fetchAuthToken() {}',
+        detectedFunctions: ['fetchAuthToken'],
+        beforeFn: 'fetchAuthToken',
+        beforeEachFn: null,
+      };
+      await persistence.saveLoginSetup(cfg);
+      const el2 = document.createElement('lib-e2e-configuration') as ConfigurationElement;
+      el2.persistence = persistence;
+      el2.translation = translation;
+      document.body.appendChild(el2);
+      await new Promise(r => setTimeout(r, 50));
+      expect(el2.loginSetupConfig).toEqual(cfg);
+      el2.remove();
+    });
+  });
+
   // ── widget position reset (spec 007) ──────────────────────────────────────
 
   describe('widget position reset', () => {

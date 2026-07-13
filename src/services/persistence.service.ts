@@ -1,6 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { DB_SCHEMA } from '../models/db-schema.model';
 import type { ActiveSessionState } from '../models/active-session.model';
+import type { LoginSetupConfig } from '../models/login-setup.model';
 import { normalizeBlock, escapeSingleQuotes } from '../utils/code-format.utils';
 
 /** Fixed primary key for the single active-session record. */
@@ -177,6 +178,31 @@ export class PersistenceService {
     const db      = await this.getDB();
     const records = await db.getAll('configuration') as ConfigRecord[];
     return records[0] ?? null;
+  }
+
+  // ── Login setup config ───────────────────────────────────────────────────
+
+  private static readonly LOGIN_SETUP_KEY = 'loginSetupConfig';
+
+  async saveLoginSetup(config: LoginSetupConfig): Promise<void> {
+    await this.setConfigKey(PersistenceService.LOGIN_SETUP_KEY, JSON.stringify(config));
+  }
+
+  async getLoginSetup(): Promise<LoginSetupConfig | null> {
+    const record = await this.getConfig(PersistenceService.LOGIN_SETUP_KEY);
+    if (!record) return null;
+    const raw = record[PersistenceService.LOGIN_SETUP_KEY];
+    if (typeof raw !== 'string') return null;
+    try { return JSON.parse(raw) as LoginSetupConfig; } catch { return null; }
+  }
+
+  async clearLoginSetup(): Promise<void> {
+    const db      = await this.getDB();
+    const records = await db.getAll('configuration') as ConfigRecord[];
+    if (!records.length) return;
+    const current = { ...records[0] };
+    delete current[PersistenceService.LOGIN_SETUP_KEY];
+    await db.put('configuration', current);
   }
 
   // ── Active recording session ──────────────────────────────────────────────

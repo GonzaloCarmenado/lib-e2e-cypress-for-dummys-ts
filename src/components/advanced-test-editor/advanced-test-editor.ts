@@ -1,7 +1,10 @@
+import Swal from 'sweetalert2';
 import { PersistenceService } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import { AdvancedTestTransformationService } from '../../services/advanced-test.transformation.service';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
+import { buildLoginBlocks, buildLoginImportPath, hasLoginBlocks, injectLoginBlocksIntoExisting } from '../../utils/login-setup.utils';
+import type { LoginSetupConfig } from '../../models/login-setup.model';
 import { ADVANCED_TEST_EDITOR_STYLES } from './advanced-test-editor.styles';
 import { renderNoPermission, renderAdvancedEditor, findFileHandleRecursive } from './advanced-test-editor.template';
 import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
@@ -29,6 +32,7 @@ export class AdvancedTestEditorElement extends HTMLElement {
   isCreatingFolder = false;
   collapsedDirs: Set<string> = new Set();
   sidebarWidth = 220;
+  loginSetupConfig: LoginSetupConfig | null = null;
   private hasPermission = false;
   private needsReauth = false;
   private _dirHandle: FileSystemDirectoryHandle | null = null;
@@ -97,13 +101,33 @@ export class AdvancedTestEditorElement extends HTMLElement {
     const name = rawName.trim().replace(/\.cy\.ts$/, '');
     if (!name) return;
     const fileName = `${name}.cy.ts`;
-    const template = `describe('${escapeSingleQuotes(name)}', () => {\n\n  it('should ', () => {\n\n  });\n\n});\n`;
-    try {
-      const fileHandle = await this._e2eHandle.getFileHandle(fileName, { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(template);
-      await writable.close();
-    } catch { /* silently ignore if file already exists or permission denied */ }
+
+    const cfg = this.loginSetupConfig;
+    if (cfg?.enabled && (cfg.beforeFn || cfg.beforeEachFn)) {
+      const e2eName = this._e2eHandle.name ?? 'e2e';
+      const fromPath = `cypress/${e2eName}/${fileName}`;
+      const importPath = buildLoginImportPath(fromPath, cfg.filePath);
+      const { importLine, beforeBlock, beforeEachBlock } = buildLoginBlocks(
+        importPath, cfg.beforeFn, cfg.beforeEachFn,
+      );
+      const header = importLine ? `${importLine}\n\n` : '';
+      const inner = [beforeBlock, beforeEachBlock].filter(Boolean).join('');
+      const template = `${header}describe('${escapeSingleQuotes(name)}', () => {\n${inner}\n  it('should ', () => {\n\n  });\n\n});\n`;
+      try {
+        const fileHandle = await this._e2eHandle.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(template);
+        await writable.close();
+      } catch { /* silently ignore */ }
+    } else {
+      const template = `describe('${escapeSingleQuotes(name)}', () => {\n\n  it('should ', () => {\n\n  });\n\n});\n`;
+      try {
+        const fileHandle = await this._e2eHandle.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(template);
+        await writable.close();
+      } catch { /* silently ignore */ }
+    }
     this.isCreatingFile = false;
     await this.getFoldersData();
   }
@@ -132,6 +156,32 @@ export class AdvancedTestEditorElement extends HTMLElement {
     const comment = this.testNotes ? this.transformationService.buildBlockComment(this.testNotes) + '\n' : '';
     content = this.transformationService.insertItBlock(content, comment + this.testItBlock);
     if (!content) return;
+
+    const cfg = this.loginSetupConfig;
+    if (cfg?.enabled && (cfg.beforeFn || cfg.beforeEachFn)) {
+      const fns = [cfg.beforeFn, cfg.beforeEachFn].filter(Boolean) as string[];
+      if (!hasLoginBlocks(content, fns)) {
+        const e2eName = this._e2eHandle?.name ?? 'e2e';
+        const fileName = (this.selectedFile as { name: string } | null)?.name ?? '';
+        const fromPath = `cypress/${e2eName}/${fileName}`;
+        const importPath = buildLoginImportPath(fromPath, cfg.filePath);
+        const { importLine, beforeBlock, beforeEachBlock } = buildLoginBlocks(importPath, cfg.beforeFn, cfg.beforeEachFn);
+        const result = await Swal.fire({
+          title: this.t('CONFIG.LOGIN_SETUP_INJECT_TITLE'),
+          html: `<div style="padding:10px 18px 14px;color:#8b949e;font-size:13px;line-height:1.6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${this.t('CONFIG.LOGIN_SETUP_INJECT_TEXT')}</div>`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: this.t('CONFIG.LOGIN_SETUP_INJECT_CONFIRM'),
+          cancelButtonText: this.t('CONFIG.LOGIN_SETUP_CANCEL_BTN'),
+          confirmButtonColor: '#1f6feb',
+          width: 460,
+        });
+        if (result.isConfirmed) {
+          content = injectLoginBlocksIntoExisting(content, importLine, beforeBlock, beforeEachBlock);
+        }
+      }
+    }
+
     const writable = await this.selectedFileHandle.createWritable();
     await writable.write(content);
     await writable.close();

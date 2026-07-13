@@ -155,4 +155,97 @@ export const CONFIGURATION_STYLES = `
   .btn-export-confirm { background: #238636; border-color: #238636; color: #fff; }
   .btn-export-confirm:hover:not(:disabled) { background: #2ea043; border-color: #2ea043; }
   .btn-export-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Form-element font reset ──────────────────────────────── */
+  input, select, button, textarea { font-family: inherit; }
+
+  /* ── Primary action button ────────────────────────────────── */
+  .btn-primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  .btn-primary:hover { background: #388bfd; border-color: #388bfd; color: #fff; }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Login Setup overlay ──────────────────────────────────── */
+  .ls-modal { max-width: 500px; }
+  .ls-hd { display: flex; align-items: center; gap: 8px; }
+  .ls-hd-icon { font-size: 15px; }
+
+  .ls-body {
+    padding: 20px; overflow-y: auto; flex: 1;
+    display: flex; flex-direction: column; gap: 20px;
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
+  }
+
+  .ls-section { display: flex; flex-direction: column; gap: 8px; }
+  .ls-section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: #484f58;
+  }
+
+  .ls-actions { display: flex; gap: 10px; }
+  .ls-action-btn {
+    flex: 1; padding: 14px 12px; border-radius: 8px;
+    background: #0d1117; border: 1px solid #21262d; color: #8b949e;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .ls-action-btn:hover { background: #161b22; color: #e6edf3; border-color: #388bfd; }
+  .ls-action-icon { font-size: 22px; line-height: 1; }
+  .ls-action-label { font-size: 12px; font-weight: 600; color: #c9d1d9; }
+  .ls-action-btn:hover .ls-action-label { color: #e6edf3; }
+  .ls-action-sub { font-size: 10px; color: #484f58; line-height: 1.4; text-align: center; }
+
+  .ls-file-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: #0d1117;
+    border: 1px solid #21262d; border-radius: 8px;
+  }
+  .ls-file-icon { font-size: 14px; flex-shrink: 0; }
+  .ls-file-name {
+    flex: 1; font-size: 11px; color: #c9d1d9;
+    font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    min-width: 0;
+  }
+  .ls-btn-rescan {
+    flex-shrink: 0; padding: 4px 10px; font-size: 11px;
+    background: #161b22; border-color: #30363d; color: #8b949e;
+  }
+  .ls-btn-rescan:hover { background: #21262d; color: #e6edf3; }
+
+  .ls-input {
+    width: 100%; padding: 8px 10px; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 6px;
+    color: #c9d1d9; font-size: 12px; outline: none; font-family: inherit;
+  }
+  .ls-input:focus { border-color: #2f81f7; box-shadow: 0 0 0 3px rgba(47,129,247,0.12); }
+
+  .ls-fns {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 10px; background: #0d1117;
+    border: 1px solid #21262d; border-radius: 6px; min-height: 38px;
+  }
+  .ls-fn-chip {
+    padding: 3px 10px; font-size: 11px; color: #79c0ff;
+    background: rgba(47,129,247,0.1); border: 1px solid rgba(47,129,247,0.2);
+    border-radius: 12px; font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+  }
+
+  .ls-field-block { display: flex; flex-direction: column; gap: 6px; }
+  .ls-field-block + .ls-field-block { margin-top: 12px; }
+  .ls-label { font-size: 11px; color: #8b949e; }
+  .ls-select {
+    width: 100%; padding: 8px 10px; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 6px;
+    color: #c9d1d9; font-size: 12px; outline: none; cursor: pointer;
+  }
+  .ls-select:focus { border-color: #2f81f7; box-shadow: 0 0 0 3px rgba(47,129,247,0.12); }
+
+  .ls-empty-state {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px; background: #0d1117; border: 1px solid #21262d;
+    border-radius: 8px; font-size: 12px; color: #484f58;
+  }
+  .ls-empty-icon { font-size: 16px; }
+
+  .ls-ft { padding: 14px 20px; }
 `;
