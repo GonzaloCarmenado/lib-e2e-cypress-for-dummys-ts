@@ -168,13 +168,13 @@ export class AdvancedTestEditorElement extends HTMLElement {
         const { importLine, beforeBlock, beforeEachBlock } = buildLoginBlocks(importPath, cfg.beforeFn, cfg.beforeEachFn);
         const result = await Swal.fire({
           title: this.t('CONFIG.LOGIN_SETUP_INJECT_TITLE'),
-          text: this.t('CONFIG.LOGIN_SETUP_INJECT_TEXT'),
+          html: `<div style="padding:10px 18px 14px;color:#8b949e;font-size:13px;line-height:1.6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${this.t('CONFIG.LOGIN_SETUP_INJECT_TEXT')}</div>`,
           icon: 'question',
           showCancelButton: true,
           confirmButtonText: this.t('CONFIG.LOGIN_SETUP_INJECT_CONFIRM'),
           cancelButtonText: this.t('CONFIG.LOGIN_SETUP_CANCEL_BTN'),
-          color: '#e6edf3',
-          background: '#161b22',
+          confirmButtonColor: '#1f6feb',
+          width: 460,
         });
         if (result.isConfirmed) {
           content = injectLoginBlocksIntoExisting(content, importLine, beforeBlock, beforeEachBlock);
