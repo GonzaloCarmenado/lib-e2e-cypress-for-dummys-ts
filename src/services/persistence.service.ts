@@ -3,6 +3,7 @@ import { DB_SCHEMA } from '../models/db-schema.model';
 import type { ActiveSessionState } from '../models/active-session.model';
 import type { LoginSetupConfig } from '../models/login-setup.model';
 import { normalizeBlock, escapeSingleQuotes } from '../utils/code-format.utils';
+import { buildTicketComment } from '../utils/ticket.utils';
 
 /** Fixed primary key for the single active-session record. */
 const ACTIVE_SESSION_ID = 1;
@@ -80,7 +81,8 @@ export class PersistenceService {
 
     const commands     = await this.getCommandStrings(testId);
     const interceptors = await this.getInterceptorStrings(testId);
-    const itBlock = `it('${escapeSingleQuotes(record.name)}', () => {\n${commands.map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
+    const ticketComment = record.ticketId ? buildTicketComment(record.ticketId) + '\n' : '';
+    const itBlock = `${ticketComment}it('${escapeSingleQuotes(record.name)}', () => {\n${commands.map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
     const interceptorsBlock = interceptors.length
       ? '  // Auto-generated Cypress interceptors\n' +
         interceptors.map(i => normalizeBlock(i, '  ')).join('\n') + '\n'

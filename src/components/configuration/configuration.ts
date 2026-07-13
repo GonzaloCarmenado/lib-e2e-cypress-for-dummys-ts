@@ -444,9 +444,9 @@ export class ConfigurationElement extends HTMLElement {
       if (!file) return;
       try {
         await this.importAllData(file);
-        alert(this.t('CONFIG.IMPORT_SUCCESS'));
+        showToast(this.t('CONFIG.IMPORT_SUCCESS'));
       } catch (err: unknown) {
-        alert((err as Error).message ?? this.t('CONFIG.IMPORT_ERROR'));
+        showToast((err as Error).message ?? this.t('CONFIG.IMPORT_ERROR'), false);
       }
       const target = e.target as HTMLInputElement | null;
       if (target) target.value = '';

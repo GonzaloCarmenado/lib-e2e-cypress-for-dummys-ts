@@ -1,7 +1,7 @@
 import { escHtml, escAttr } from '../../utils/html.utils';
 import { syntaxHighlight } from '../../utils/syntax-highlight.utils';
 import { normalizeBlock, escapeSingleQuotes } from '../../utils/code-format.utils';
-import { buildTicketUrl } from '../../utils/ticket.utils';
+import { buildTicketUrl, buildTicketComment } from '../../utils/ticket.utils';
 import type { TestWithDetails } from '../../services/persistence.service';
 import type { IssueTrackerConfig } from '../../models/issue-tracker.model';
 
@@ -32,13 +32,13 @@ function renderTestRow(test: TestWithDetails, i: number, state: TestEditorState,
     ? `<input type="checkbox" ${selectedIds.has(test.id) ? 'checked' : ''} data-select="${test.id}" />`
     : '';
   const hasIcps = (test.interceptors ?? []).length > 0;
-  const itBlockCode = `it('${escapeSingleQuotes(test.name)}', () => {\n${(test.commands ?? []).map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
+  const ticketId = (test as TestWithDetails & { ticketId?: string }).ticketId;
+  const ticketComment = ticketId ? buildTicketComment(ticketId) + '\n' : '';
+  const itBlockCode = `${ticketComment}it('${escapeSingleQuotes(test.name)}', () => {\n${(test.commands ?? []).map(c => normalizeBlock(c, '  ')).join('\n')}\n});`;
   const icpBlockCode = icps.length ? `beforeEach(() => {\n  // Auto-generated Cypress interceptors\n${icps.map(c => normalizeBlock(c, '  ')).join('\n')}\n});` : '';
   const notesHtml = (expanded && test.notes)
     ? `<p class="test-notes">${escHtml(test.notes)}</p>`
     : '';
-
-  const ticketId = (test as TestWithDetails & { ticketId?: string }).ticketId;
   const ticketUrl = ticketId ? buildTicketUrl(ticketId, issueTrackerConfig) : null;
   const ticketHtml = ticketId
     ? ticketUrl

@@ -3,6 +3,7 @@ import '../../src/components/configuration/configuration';
 import type { ConfigurationElement } from '../../src/components/configuration/configuration';
 import { PersistenceService } from '../../src/services/persistence.service';
 import { TranslationService } from '../../src/services/translation.service';
+import * as toastUtils from '../../src/utils/toast.utils';
 
 let dbCounter = 0;
 
@@ -12,7 +13,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
   let translation: TranslationService;
 
   beforeEach(() => {
-    vi.stubGlobal('alert', vi.fn());
+    vi.spyOn(toastUtils, 'showToast').mockImplementation(() => {});
     persistence = new PersistenceService(`config_db_${++dbCounter}`);
     translation = new TranslationService();
     el = document.createElement('lib-e2e-configuration') as ConfigurationElement;
@@ -23,6 +24,7 @@ describe('Phase 8.4 — ConfigurationElement', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     el.remove();
     localStorage.clear();
@@ -392,23 +394,23 @@ describe('Phase 8.4 — ConfigurationElement', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('file-input change with valid JSON file calls importAllData and alerts success', async () => {
+  it('file-input change with valid JSON file calls importAllData and shows success toast', async () => {
     const jsonData = JSON.stringify({ tests: [], interceptors: [] });
     const mockFile = { text: vi.fn().mockResolvedValue(jsonData) } as unknown as File;
     const fileInput = el.shadowRoot!.getElementById('file-input') as HTMLInputElement;
     Object.defineProperty(fileInput, 'files', { get: () => [mockFile], configurable: true });
 
     fileInput.dispatchEvent(new Event('change'));
-    await vi.waitFor(() => expect(vi.mocked(window.alert)).toHaveBeenCalled());
+    await vi.waitFor(() => expect(toastUtils.showToast).toHaveBeenCalledWith(expect.any(String)));
   });
 
-  it('file-input change with invalid JSON alerts the error message', async () => {
+  it('file-input change with invalid JSON shows error toast', async () => {
     const mockFile = { text: vi.fn().mockResolvedValue('not-json') } as unknown as File;
     const fileInput = el.shadowRoot!.getElementById('file-input') as HTMLInputElement;
     Object.defineProperty(fileInput, 'files', { get: () => [mockFile], configurable: true });
 
     fileInput.dispatchEvent(new Event('change'));
-    await vi.waitFor(() => expect(vi.mocked(window.alert)).toHaveBeenCalled());
+    await vi.waitFor(() => expect(toastUtils.showToast).toHaveBeenCalledWith(expect.any(String), false));
   });
 
   it('file-input resets value to "" after processing', async () => {
