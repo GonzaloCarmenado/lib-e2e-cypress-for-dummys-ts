@@ -188,6 +188,65 @@ export function mountLab(el: HTMLElement) {
       </div>
     </div>
 
+    <!-- ── Caso E ── -->
+    <h2 class="lab-h2">Caso E — Subida de ficheros (<code>input[type="file"]</code> → <code>.selectFile()</code>)</h2>
+    <div class="lab-context">
+      <b>¿Cuándo afecta a tu empresa?</b>
+      <ul>
+        <li>Formularios con adjuntos: facturas, contratos, imágenes de perfil.</li>
+        <li>Importadores de datos que aceptan <code>.csv</code> o <code>.xlsx</code>.</li>
+        <li><b>No te afecta</b> si tu app no tiene ningún campo de subida de fichero.</li>
+      </ul>
+      <b>Dos bifurcaciones a probar:</b>
+      <ul>
+        <li><b>Guardar en IndexedDB</b> → se genera el comando y aparece un toast avisando de que debes añadir el fichero a <code>cypress/fixtures/</code> manualmente antes de ejecutar el test.</li>
+        <li><b>Guardar y editar (FSAA)</b> → el fichero se copia automáticamente a <code>cypress/fixtures/</code> y un toast confirma la copia.</li>
+      </ul>
+    </div>
+    <div class="lab-section">
+      <p class="lab-step">
+        1. Inicia grabación ·
+        2. Selecciona un fichero en cada input ·
+        3. Detén grabación ·
+        4. Prueba <b>guardar en IndexedDB</b> (debes ver el toast de aviso) ·
+        5. Repite y prueba <b>Guardar y editar</b> con la carpeta Cypress configurada (debes ver el toast de confirmación de copia)
+      </p>
+      <div class="lab-demo" style="flex-direction:column;gap:16px">
+        <div class="lab-file-row">
+          <label class="lab-file-label" for="lab-file-single">
+            Fichero único
+            <span class="lab-attr">input[type="file"] · data-cy="lab-file-single"</span>
+          </label>
+          <input id="lab-file-single"
+                 data-cy="lab-file-single"
+                 type="file"
+                 class="lab-file-input" />
+          <span id="lab-file-single-name" class="lab-file-name">— ninguno —</span>
+        </div>
+        <div class="lab-file-row">
+          <label class="lab-file-label" for="lab-file-multiple">
+            Múltiples ficheros
+            <span class="lab-attr">input[type="file"][multiple] · data-cy="lab-file-multiple"</span>
+          </label>
+          <input id="lab-file-multiple"
+                 data-cy="lab-file-multiple"
+                 type="file"
+                 multiple
+                 class="lab-file-input" />
+          <span id="lab-file-multiple-name" class="lab-file-name">— ninguno —</span>
+        </div>
+      </div>
+      <div class="lab-check">
+        <b>✅ Resultado esperado (fichero único: factura.pdf):</b><br>
+        <code>cy.get('[data-cy="lab-file-single"]').selectFile('cypress/fixtures/factura.pdf')</code><br>
+        <b>✅ Resultado esperado (múltiples: a.csv + b.xlsx):</b><br>
+        <code>cy.get('[data-cy="lab-file-multiple"]').selectFile(['cypress/fixtures/a.csv', 'cypress/fixtures/b.xlsx'])</code><br>
+        <b>✅ Toast IndexedDB:</b> aviso de que debes añadir el fichero manualmente a <code>cypress/fixtures/</code><br>
+        <b>✅ Toast FSAA:</b> confirmación de que el fichero ha sido copiado a <code>cypress/fixtures/</code><br>
+        <span class="lab-note">No debe generarse ningún <code>.click()</code> previo — <code>.selectFile()</code> reemplaza toda la interacción.</span>
+      </div>
+    </div>
+
   </div>
 
   <style>
@@ -245,7 +304,39 @@ export function mountLab(el: HTMLElement) {
       padding: 10px 14px; font-size: 12px; color: #3fb950; font-family: monospace;
       margin-bottom: 12px; white-space: pre-wrap;
     }
+    .lab-file-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .lab-file-label {
+      display: flex; flex-direction: column; gap: 3px;
+      font-size: 12px; font-weight: 600; color: #e6edf3; min-width: 180px;
+    }
+    .lab-file-input {
+      font-size: 12px; color: #c9d1d9;
+      background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+      padding: 6px 10px; cursor: pointer;
+    }
+    .lab-file-name {
+      font-size: 11px; color: #8b949e; font-family: monospace;
+    }
   </style>`;
+
+  el.querySelector<HTMLInputElement>('#lab-file-single')
+    ?.addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      const nameEl = el.querySelector<HTMLElement>('#lab-file-single-name');
+      if (nameEl) nameEl.textContent = input.files?.[0]?.name ?? '— ninguno —';
+    });
+
+  el.querySelector<HTMLInputElement>('#lab-file-multiple')
+    ?.addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      const nameEl = el.querySelector<HTMLElement>('#lab-file-multiple-name');
+      if (nameEl) {
+        const names = input.files ? Array.from(input.files).map(f => f.name).join(', ') : '';
+        nameEl.textContent = names || '— ninguno —';
+      }
+    });
 
   el.querySelector<HTMLButtonElement>('#lab-edge-fetch')
     ?.addEventListener('click', async () => {
