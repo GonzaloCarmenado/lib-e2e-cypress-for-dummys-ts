@@ -45,7 +45,6 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
    from the captured auth request (real call, reusable). *Deferred (complex).*
 2. **More interactions (part 2)** — file upload (`<input type=file>` →
    `.selectFile(...)`); drag & drop / hover.
-3. **Runner hardening** — `extendedHttpCommands` dual source of truth
-   (IndexedDB + localStorage); `alert()` → `showToast` in config import feedback.
+3. **Runner hardening** — ~~`extendedHttpCommands` dual source~~ (intentional: localStorage = sync cache for real-time interception, IndexedDB = persistence; mirrored on mount by `initHttpConfig()`); ~~`alert()` → `showToast` in config import~~ (fixed).
 4. **Recorder refactor** — `lib-e2e-recorder.ts` is ≈1000 lines; extract duplicated
    Swal dialog scaffold + inline HTML/styles into sub-services.
