@@ -270,7 +270,7 @@ export const I18N_IT = {
     SEC_PANELS: '🗂 Pannelli',
     PANEL_TESTS: '📋 Test — salvati: filtra per tag, copia, combina, esporta.',
     PANEL_COMMANDS: '⌨️ Comandi — registrazione corrente: riordina, elimina, aggiungi asserzioni.',
-    PANEL_CONFIG: '⚙️ Config — lingua, selettore, HTTP, cartella Cypress, dati, visibilità, posizione.',
+    PANEL_CONFIG: '⚙️ Config — lingua, selettore, HTTP, cartella Cypress, login setup, dati, visibilità, posizione.',
     PANEL_FILES: '📁 File — inserisci test nei tuoi .cy.ts e avvia il runner.',
     SEC_SELECTOR: '🔎 Selettori',
     SELECTOR_1: 'Scegli l\'attributo preferito (data-cy, data-testid, aria-label, id) in Config.',
@@ -283,6 +283,7 @@ export const I18N_IT = {
     ADV_RUNNER: 'Runner locale: npx lib-e2e-cypress-runner per eseguire uno spec headless dall\'editor.',
     ADV_CROSSAPP: 'Cross-app: la registrazione sopravvive al cambio di micro-frontend (stessa origine).',
     ADV_DRAG: 'Trascina il pulsante ⏺ per spostare il widget; la posizione viene ricordata.',
+    ADV_LOGIN: 'Login Setup (Ctrl+3): apunta a tu servicio de login; el grabador inyecta before()/beforeEach() automáticamente en cada test nuevo.', // TODO: translate (it)
     CLOSE: 'Chiudi',
     TAB_REFERENCE: 'Riferimento rapido',
     TAB_GUIDE: 'Guida all\'uso',
@@ -301,12 +302,12 @@ export const I18N_IT = {
     G_COV_4: 'Selector fiable (data-cy/testid/aria/id) y picker cuando no hay uno claro.',
     G_COV_5: 'Aserciones automáticas (Alt+click) y constructor manual.',
     G_COV_6: 'Continuidad al cambiar de micro-frontend (mismo origen), modo invisible e i18n.',
+    G_COV_7: 'Login Setup: configura tu función de login en Ctrl+3 → Login Setup y el grabador añade los bloques before()/beforeEach() a cada test nuevo.', // TODO: translate (it)
     G_SEC_NOTCOVERED: '🚫 Qué NO cubre (por ahora)',
     G_NC_1: 'Orígenes distintos / subdominios (solo mismo origen).',
     G_NC_2: 'Subida de ficheros (selectFile), arrastrar y soltar, y hover.',
     G_NC_3: 'La tecla Tab (Cypress no la soporta en .type()).',
     G_NC_4: 'Peticiones DELETE (se ignoran a propósito).',
     G_NC_5: 'iframes y Shadow DOM de terceros pueden no capturarse.',
-    G_NC_6: 'Generación de login programático (en el roadmap).',
   },
 };

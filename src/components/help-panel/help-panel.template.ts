@@ -25,13 +25,13 @@ const REFERENCE_SECTIONS: Section[] = [
   { title: 'HELP.SEC_PANELS', items: ['HELP.PANEL_TESTS', 'HELP.PANEL_COMMANDS', 'HELP.PANEL_CONFIG', 'HELP.PANEL_FILES'] },
   { title: 'HELP.SEC_SELECTOR', items: ['HELP.SELECTOR_1', 'HELP.SELECTOR_2'] },
   { title: 'HELP.SEC_DATA', items: ['HELP.DATA_1', 'HELP.DATA_2'] },
-  { title: 'HELP.SEC_ADVANCED', items: ['HELP.ADV_INVISIBLE', 'HELP.ADV_RUNNER', 'HELP.ADV_CROSSAPP', 'HELP.ADV_DRAG'] },
+  { title: 'HELP.SEC_ADVANCED', items: ['HELP.ADV_INVISIBLE', 'HELP.ADV_RUNNER', 'HELP.ADV_CROSSAPP', 'HELP.ADV_DRAG', 'HELP.ADV_LOGIN'] },
 ];
 
 const GUIDE_SECTIONS: Section[] = [
   { title: 'HELP.G_SEC_WORKFLOW', items: ['HELP.G_WF_1', 'HELP.G_WF_2', 'HELP.G_WF_3', 'HELP.G_WF_4', 'HELP.G_WF_5'] },
-  { title: 'HELP.G_SEC_COVERED', items: ['HELP.G_COV_1', 'HELP.G_COV_2', 'HELP.G_COV_3', 'HELP.G_COV_4', 'HELP.G_COV_5', 'HELP.G_COV_6'] },
-  { title: 'HELP.G_SEC_NOTCOVERED', items: ['HELP.G_NC_1', 'HELP.G_NC_2', 'HELP.G_NC_3', 'HELP.G_NC_4', 'HELP.G_NC_5', 'HELP.G_NC_6'] },
+  { title: 'HELP.G_SEC_COVERED', items: ['HELP.G_COV_1', 'HELP.G_COV_2', 'HELP.G_COV_3', 'HELP.G_COV_4', 'HELP.G_COV_5', 'HELP.G_COV_6', 'HELP.G_COV_7'] },
+  { title: 'HELP.G_SEC_NOTCOVERED', items: ['HELP.G_NC_1', 'HELP.G_NC_2', 'HELP.G_NC_3', 'HELP.G_NC_4', 'HELP.G_NC_5'] },
 ];
 
 function sectionsHtml(sections: Section[], t: (key: string) => string): string {

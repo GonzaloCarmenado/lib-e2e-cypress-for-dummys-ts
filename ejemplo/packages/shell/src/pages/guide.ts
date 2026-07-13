@@ -51,6 +51,7 @@ export function mountGuide(el: HTMLElement) {
       <tr><td>Ticket / Issue tracker</td><td>Config ⚙️</td><td>Ctrl+3 → sección Issue tracker</td><td><code>// Ticket: PROJ-123</code></td></tr>
       <tr><td>Historial grabaciones</td><td>API JS</td><td><code>recorder.recoverLastRecording()</code></td><td>Restaura last-5 del localStorage</td></tr>
       <tr><td>Idioma</td><td>Config ⚙️</td><td>Ctrl+3 → selector de idioma</td><td>UI en es/en/fr/it/de</td></tr>
+      <tr><td>Login Setup</td><td>Config ⚙️</td><td>Ctrl+3 → Login Setup → apuntar fichero de login</td><td><code>before(() => loginFn())</code> / <code>beforeEach(() => loginFn())</code></td></tr>
     </table>
 
     <h2 style="margin-bottom:12px">🎯 Smart Selector Picker — tiers de calidad</h2>
@@ -112,6 +113,32 @@ export function mountGuide(el: HTMLElement) {
           <br><br>Activa con <code>?recorder=mfe</code>.
         </p>
       </div>
+    </div>
+
+    <h2 style="margin-bottom:12px">🔐 Login Setup</h2>
+    <div class="card" style="font-size:13px;color:#8b949e;line-height:1.8;margin-bottom:28px">
+      <p style="margin:0 0 10px">
+        Login Setup permite que el grabador inyecte automáticamente los bloques
+        <code>before()</code> y <code>beforeEach()</code> con tu función de login
+        en cada test nuevo que generes.
+      </p>
+      <ol style="margin-left:16px">
+        <li>Abre <kbd>Ctrl+3</kbd> → sección <b>🔐 Login Setup</b>.</li>
+        <li>
+          Elige el origen del fichero de login:
+          <ul style="margin-left:16px;margin-top:4px">
+            <li><b>Crear scaffold</b> — genera un fichero de ejemplo con funciones <code>loginBefore</code> / <code>loginBeforeEach</code> que puedes adaptar.</li>
+            <li><b>Seleccionar fichero existente</b> — apunta a un servicio de login ya existente en tu proyecto.</li>
+          </ul>
+        </li>
+        <li>Una vez seleccionado el fichero, el grabador lo escanea y detecta las funciones exportadas.</li>
+        <li>Asigna qué función va en <code>before()</code> (una vez por suite) y cuál en <code>beforeEach()</code> (antes de cada test).</li>
+        <li>Guarda la configuración. A partir de ahora, cada test nuevo incluirá el import y los bloques de login.</li>
+      </ol>
+      <p style="margin:10px 0 0;color:#6e7681">
+        Si un fichero existente ya tiene los bloques de login, el grabador lo detecta y no los duplica.
+        Si le faltan, al guardar te preguntará si deseas inyectarlos.
+      </p>
     </div>
 
     <h2 style="margin-bottom:12px">🗂️ File panel + fixtures + runner</h2>
