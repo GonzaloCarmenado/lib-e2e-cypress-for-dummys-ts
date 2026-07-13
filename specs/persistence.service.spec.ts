@@ -458,4 +458,43 @@ describe('Phase 5 — PersistenceService', () => {
       expect(test!.tags).toEqual(['regression']);
     });
   });
+
+  // ── spec 019 — writeUploadedFile / hasDirectoryAccess ────────────────────
+
+  describe('spec 019 — writeUploadedFile / hasDirectoryAccess', () => {
+    it('hasDirectoryAccess returns false when no directory is configured', async () => {
+      const result = await service.hasDirectoryAccess();
+      expect(result).toBe(false);
+    });
+
+    it('writeUploadedFile throws when no directory is configured', async () => {
+      await expect(service.writeUploadedFile('file.pdf', new ArrayBuffer(4))).rejects.toThrow();
+    });
+
+    it('hasDirectoryAccess returns true when cypressDirectoryHandle is set', async () => {
+      vi.spyOn(service, 'getGeneralConfig').mockResolvedValue({ id: 1, cypressDirectoryHandle: {} } as never);
+      const result = await service.hasDirectoryAccess();
+      expect(result).toBe(true);
+    });
+
+    it('writeUploadedFile writes bytes to cypress/fixtures/ via FSAA', async () => {
+      const writable = { write: vi.fn(), close: vi.fn() };
+      const fileHandle = { createWritable: vi.fn().mockResolvedValue(writable) };
+      const fixturesDir = { getFileHandle: vi.fn().mockResolvedValue(fileHandle) };
+      const dirHandle = {
+        getDirectoryHandle: vi.fn().mockResolvedValue(fixturesDir),
+        queryPermission: vi.fn().mockResolvedValue('granted'),
+        requestPermission: vi.fn().mockResolvedValue('granted'),
+      };
+      vi.spyOn(service, 'getGeneralConfig').mockResolvedValue({ id: 1, cypressDirectoryHandle: dirHandle } as never);
+
+      const bytes = new TextEncoder().encode('pdf content').buffer;
+      await service.writeUploadedFile('invoice.pdf', bytes);
+
+      expect(dirHandle.getDirectoryHandle).toHaveBeenCalledWith('fixtures', { create: true });
+      expect(fixturesDir.getFileHandle).toHaveBeenCalledWith('invoice.pdf', { create: true });
+      expect(writable.write).toHaveBeenCalledWith(bytes);
+      expect(writable.close).toHaveBeenCalled();
+    });
+  });
 });

@@ -1,6 +1,6 @@
 # 019 — Record file uploads as `.selectFile()`
 
-> **Status:** In Progress
+> **Status:** Done
 > **Date:** 2026-07-13
 > **Author:** Gonzalo
 
@@ -55,46 +55,46 @@ This spec covers:
 
 ### Command generation
 
-- [ ] AC-01: A `change` event on `input[type="file"]` with one file generates:
+- [x] AC-01: A `change` event on `input[type="file"]` with one file generates:
   `cy.get('SELECTOR').selectFile('cypress/fixtures/FILENAME')` using the
   existing smart-selector logic for `SELECTOR`.
-- [ ] AC-02: A `change` event on `input[type="file"][multiple]` with N files
+- [x] AC-02: A `change` event on `input[type="file"][multiple]` with N files
   generates: `cy.get('SELECTOR').selectFile(['cypress/fixtures/F1', ..., 'cypress/fixtures/FN'])`.
-- [ ] AC-03: File inputs do NOT also generate a `cy.get('SELECTOR').click()`
+- [x] AC-03: File inputs do NOT also generate a `cy.get('SELECTOR').click()`
   command — the `click` that opens the OS picker must be suppressed.
-- [ ] AC-04: The file content (as `ArrayBuffer`) is stored in memory in
+- [x] AC-04: The file content (as `ArrayBuffer`) is stored in memory in
   `RecordingService` alongside the command, keyed by filename, so it is
   available at save time without re-reading the DOM.
 
 ### Save to IndexedDB (UC-03)
 
-- [ ] AC-05: When `onSaveTest()` is called and the recording contains at least
+- [x] AC-05: When `onSaveTest()` is called and the recording contains at least
   one `.selectFile()` command, `showToast` is called with a message listing
   the filenames and instructing the user to add them to `cypress/fixtures/`.
-- [ ] AC-06: The toast fires for BOTH plain save and save-and-export when the
+- [x] AC-06: The toast fires for BOTH plain save and save-and-export when the
   destination is IndexedDB (i.e., no auto-copy attempted).
 
 ### Save-and-Edit with FSAA (UC-04)
 
-- [ ] AC-07: When `onSaveAndExportTest()` is called, FSAA is available
+- [x] AC-07: When `onSaveAndExportTest()` is called, FSAA is available
   (`PersistenceService.hasDirectoryAccess()` returns true), and the recording
   contains `.selectFile()` commands, the file bytes are written to
   `cypress/fixtures/FILENAME` via `PersistenceService.writeUploadedFile()`.
-- [ ] AC-08: On success, `showToast` confirms which files were written.
-- [ ] AC-09: On failure (write error), `showToast` shows an error and falls
-  back to the UC-03 warning toast.
+- [x] AC-08: On success, `showToast` confirms which files were written.
+- [x] AC-09: On failure (write error), `showToast` shows an error via
+  `FILE_UPLOAD_COPY_ERROR_TOAST` (which includes the manual instruction).
 
 ### Save-and-Edit without FSAA (UC-05)
 
-- [ ] AC-10: When FSAA is not configured, `onSaveAndExportTest()` falls back
+- [x] AC-10: When FSAA is not configured, `onSaveAndExportTest()` falls back
   to the UC-03 warning toast — no auto-copy attempted.
 
 ### Quality gates
 
-- [ ] AC-11: `npm run lint` — zero errors.
-- [ ] AC-12: `npm test` — all tests pass (≥ 1040).
-- [ ] AC-13: `npm run build` — clean compile (ESM + CJS + DTS).
-- [ ] AC-14: Coverage ≥ 80% on all metrics after new tests are added.
+- [x] AC-11: `npm run lint` — zero errors.
+- [x] AC-12: `npm test` — 1053/1053 (13 new tests).
+- [x] AC-13: `npm run build` — clean compile (ESM + CJS + DTS).
+- [x] AC-14: Coverage ≥ 80% on all metrics (94%/87%/94%/94%).
 
 ---
 
@@ -204,3 +204,4 @@ manually — out of scope for v1.
 | Date       | Change        |
 |------------|---------------|
 | 2026-07-13 | Initial draft |
+| 2026-07-13 | Implementation complete — all ACs done |

@@ -261,6 +261,28 @@ export class PersistenceService {
     await this.bulkInsertWithoutId('interceptors', interceptors);
   }
 
+  async hasDirectoryAccess(): Promise<boolean> {
+    const config = await this.getGeneralConfig();
+    return !!config?.['cypressDirectoryHandle'];
+  }
+
+  async writeUploadedFile(filename: string, bytes: ArrayBuffer): Promise<void> {
+    const config = await this.getGeneralConfig();
+    const dirHandle = config?.['cypressDirectoryHandle'] as FileSystemDirectoryHandle | undefined;
+    if (!dirHandle) throw new Error('No Cypress folder configured');
+
+    const perm = dirHandle as unknown as FileSystemHandleWithPermission;
+    let state = await perm.queryPermission({ mode: 'readwrite' });
+    if (state !== 'granted') state = await perm.requestPermission({ mode: 'readwrite' });
+    if (state !== 'granted') throw new Error('Write permission denied');
+
+    const fixturesDir = await dirHandle.getDirectoryHandle('fixtures', { create: true });
+    const fileHandle = await fixturesDir.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(bytes);
+    await writable.close();
+  }
+
   async requestDirectoryPermissions(): Promise<void> {
     if (!('showDirectoryPicker' in window)) {
       throw new Error('File System Access API not supported');

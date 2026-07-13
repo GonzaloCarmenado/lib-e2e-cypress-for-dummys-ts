@@ -223,6 +223,9 @@ export const I18N_FR = {
     FILE_SAVE_ERROR_TOAST: "Erreur lors de l'enregistrement",
     FIXTURES_WRITTEN_TOAST: '✓ Fixtures écrites dans cypress/fixtures',
     FIXTURES_NO_FOLDER_TOAST: 'Impossible d\'écrire les fixtures (configure le dossier Cypress)',
+    FILE_UPLOAD_MANUAL_TOAST: 'Ajoutez {files} à cypress/fixtures/ avant d\'exécuter le test.', // TODO: translate
+    FILE_UPLOAD_COPIED_TOAST: '{files} copié(s) dans cypress/fixtures/.', // TODO: translate
+    FILE_UPLOAD_COPY_ERROR_TOAST: 'Impossible de copier {files} vers cypress/fixtures/. Ajoutez-le manuellement.', // TODO: translate
     BTN_CONFIG: 'Config',
     BTN_FILES: 'Fichiers',
     BTN_COMMANDS: 'Commandes',

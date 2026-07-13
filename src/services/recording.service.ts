@@ -25,6 +25,7 @@ export class RecordingService {
   private readonly selectorNotFound$ = new Subject<{ target: HTMLElement; action: 'click' } | null>(null);
   private readonly inputDebounceTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
   private readonly fixtures = new Map<string, string>();
+  private readonly uploadedFiles = new Map<string, ArrayBuffer>();
   private readonly abort = new AbortController();
 
   selectorStrategy: SelectorStrategy = 'data-cy';
@@ -177,10 +178,23 @@ export class RecordingService {
     return [...this.fixtures.entries()].map(([name, content]) => ({ name, content }));
   }
 
+  addUploadedFile(filename: string, bytes: ArrayBuffer): void {
+    this.uploadedFiles.set(filename, bytes);
+  }
+
+  getUploadedFilesSnapshot(): Array<{ filename: string; bytes: ArrayBuffer }> {
+    return [...this.uploadedFiles.entries()].map(([filename, bytes]) => ({ filename, bytes }));
+  }
+
+  clearUploadedFiles(): void {
+    this.uploadedFiles.clear();
+  }
+
   clearCommands(): void {
     this.commands$.next([]);
     this.interceptors$.next([]);
     this.fixtures.clear();
+    this.uploadedFiles.clear();
   }
 
   clearInterceptors(): void {
@@ -381,14 +395,52 @@ export class RecordingService {
       'change',
       (e: Event) => {
         if (!this.isRecording$.getValue()) return;
-        const target = e.target as HTMLSelectElement;
+        const target = e.target as HTMLInputElement | HTMLSelectElement;
         if (!target || this.isOwnElement(target)) return;
-        if (target.tagName.toLowerCase() === 'select') {
-          this.handleSelectEvent(target);
+        const tag = target.tagName.toLowerCase();
+        if (tag === 'select') {
+          this.handleSelectEvent(target as HTMLSelectElement);
+        } else if (tag === 'input') {
+          const type = (target.getAttribute('type') ?? '').toLowerCase();
+          if (type === 'file') {
+            void this.handleFileInputChange(target as HTMLInputElement);
+          }
         }
       },
       { signal: this.abort.signal }
     );
+  }
+
+  private async handleFileInputChange(target: HTMLInputElement): Promise<void> {
+    if (this.isPaused$.getValue()) return;
+    const container = target.closest<HTMLElement>('[data-cy], [data-testid], [aria-label], [id]');
+    if (!container) return;
+    const selector = this.getReliableSelector(container);
+    if (!selector || this.isOwnSelector(selector)) return;
+
+    const files = Array.from(target.files ?? []);
+    if (!files.length) return;
+
+    const paths = files.map(f => `'cypress/fixtures/${escapeSingleQuotes(f.name)}'`);
+    const pathArg = paths.length === 1 ? paths[0] : `[${paths.join(', ')}]`;
+    this.addCommand(`cy.get('${escapeSingleQuotes(selector)}').selectFile(${pathArg})`);
+
+    for (const file of files) {
+      const bytes = await this.readFileAsArrayBuffer(file);
+      this.addUploadedFile(file.name, bytes);
+    }
+  }
+
+  private readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+    if (typeof file.arrayBuffer === 'function') {
+      return file.arrayBuffer();
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
   }
 
   private listenToRouteChanges(): void {

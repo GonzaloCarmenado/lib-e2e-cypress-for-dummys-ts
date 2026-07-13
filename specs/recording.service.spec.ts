@@ -1204,4 +1204,105 @@ describe('Phase 4 — RecordingService', () => {
       expect(cmd).not.toContain('say "hi"');
     });
   });
+
+  // ── spec 019 — file upload ────────────────────────────────────────────────
+
+  describe('spec 019 — file upload memory store', () => {
+    it('addUploadedFile stores a file keyed by filename', () => {
+      const bytes = new ArrayBuffer(8);
+      service.addUploadedFile('invoice.pdf', bytes);
+      const snap = service.getUploadedFilesSnapshot();
+      expect(snap).toHaveLength(1);
+      expect(snap[0].filename).toBe('invoice.pdf');
+      expect(snap[0].bytes).toBe(bytes);
+    });
+
+    it('same filename twice → last write wins', () => {
+      const bytes1 = new ArrayBuffer(4);
+      const bytes2 = new ArrayBuffer(8);
+      service.addUploadedFile('file.pdf', bytes1);
+      service.addUploadedFile('file.pdf', bytes2);
+      const snap = service.getUploadedFilesSnapshot();
+      expect(snap).toHaveLength(1);
+      expect(snap[0].bytes).toBe(bytes2);
+    });
+
+    it('clearUploadedFiles empties the store', () => {
+      service.addUploadedFile('a.pdf', new ArrayBuffer(4));
+      service.clearUploadedFiles();
+      expect(service.getUploadedFilesSnapshot()).toHaveLength(0);
+    });
+
+    it('clearCommands also clears uploaded files', () => {
+      service.startRecording();
+      service.addUploadedFile('a.pdf', new ArrayBuffer(4));
+      service.clearCommands();
+      expect(service.getUploadedFilesSnapshot()).toHaveLength(0);
+    });
+  });
+
+  describe('spec 019 — file input change event', () => {
+    function attachFiles(input: HTMLInputElement, files: File[]): void {
+      Object.defineProperty(input, 'files', {
+        configurable: true,
+        value: Object.assign(Object.create(null), {
+          ...files.reduce((acc: Record<number, File>, f, i) => { acc[i] = f; return acc; }, {}),
+          length: files.length,
+          item: (i: number) => files[i] ?? null,
+          [Symbol.iterator]: files[Symbol.iterator].bind(files),
+        }),
+      });
+    }
+
+    it('generates selectFile command for a single file', () => {
+      service.startRecording();
+      const fileInput = makeElement('input', { type: 'file', 'data-cy': 'upload-btn' }) as HTMLInputElement;
+      attachFiles(fileInput, [new File(['content'], 'invoice.pdf')]);
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.some(c => c.includes(".selectFile('cypress/fixtures/invoice.pdf')"))).toBe(true);
+    });
+
+    it('generates selectFile with array for multiple files', () => {
+      service.startRecording();
+      const fileInput = makeElement('input', { type: 'file', 'data-cy': 'upload-multi' });
+      fileInput.setAttribute('multiple', '');
+      document.body.appendChild(fileInput);
+      attachFiles(fileInput as HTMLInputElement, [new File(['a'], 'f1.pdf'), new File(['b'], 'f2.csv')]);
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.some(c =>
+        c.includes("selectFile(['cypress/fixtures/f1.pdf', 'cypress/fixtures/f2.csv'])")
+      )).toBe(true);
+    });
+
+    it('stores file bytes in memory asynchronously', async () => {
+      service.startRecording();
+      const fileInput = makeElement('input', { type: 'file', 'data-cy': 'upload-btn' }) as HTMLInputElement;
+      attachFiles(fileInput, [new File(['hello'], 'doc.pdf')]);
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const snap = service.getUploadedFilesSnapshot();
+      expect(snap.some(f => f.filename === 'doc.pdf')).toBe(true);
+    });
+
+    it('does not generate a command when recording is paused', () => {
+      service.startRecording();
+      service.pauseRecording();
+      const fileInput = makeElement('input', { type: 'file', 'data-cy': 'upload-btn' }) as HTMLInputElement;
+      attachFiles(fileInput, [new File(['content'], 'invoice.pdf')]);
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.some(c => c.includes('selectFile'))).toBe(false);
+    });
+
+    it('click on input[type=file] does NOT generate a click command', () => {
+      service.startRecording();
+      makeElement('input', { type: 'file', 'data-cy': 'upload-btn' });
+      const fileInput = document.querySelector('[data-cy="upload-btn"]') as HTMLElement;
+      fileInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      const cmds = service.getCommandsSnapshot();
+      expect(cmds.some(c => c.includes('.click()'))).toBe(false);
+    });
+  });
 });

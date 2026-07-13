@@ -819,6 +819,16 @@ export class LibE2eRecorderElement extends HTMLElement {
     // Plain save → IndexedDB only, spy interceptors with inline validations.
     // No fixture files written regardless of fixture mode (spec 012).
     await this.persistence.insertTest(description, this.cypressCommands, this.interceptors, tags, notes, ticketId || undefined);
+
+    const uploadedFiles = this.recording.getUploadedFilesSnapshot();
+    if (uploadedFiles.length > 0) {
+      const filenames = uploadedFiles.map(f => f.filename).join(', ');
+      showToast(
+        this.translation.translate('RECORDER.FILE_UPLOAD_MANUAL_TOAST').replace('{files}', filenames),
+        false,
+      );
+    }
+
     this.recording.clearCommands();
     this.clearRecordingHistory();
     this.cypressCommands = [];
@@ -843,6 +853,30 @@ export class LibE2eRecorderElement extends HTMLElement {
         showToast(`${this.translation.translate('RECORDER.FIXTURES_WRITTEN_TOAST')} (${n})`);
       } catch {
         showToast(this.translation.translate('RECORDER.FIXTURES_NO_FOLDER_TOAST'), false);
+      }
+    }
+
+    const uploadedFiles = this.recording.getUploadedFilesSnapshot();
+    if (uploadedFiles.length > 0) {
+      const filenames = uploadedFiles.map(f => f.filename).join(', ');
+      const hasAccess = await this.persistence.hasDirectoryAccess();
+      if (hasAccess) {
+        try {
+          for (const uf of uploadedFiles) {
+            await this.persistence.writeUploadedFile(uf.filename, uf.bytes);
+          }
+          showToast(this.translation.translate('RECORDER.FILE_UPLOAD_COPIED_TOAST').replace('{files}', filenames));
+        } catch {
+          showToast(
+            this.translation.translate('RECORDER.FILE_UPLOAD_COPY_ERROR_TOAST').replace('{files}', filenames),
+            false,
+          );
+        }
+      } else {
+        showToast(
+          this.translation.translate('RECORDER.FILE_UPLOAD_MANUAL_TOAST').replace('{files}', filenames),
+          false,
+        );
       }
     }
 

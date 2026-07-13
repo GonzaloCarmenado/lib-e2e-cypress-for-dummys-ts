@@ -132,6 +132,8 @@ The recorder automatically captures:
 | Type into a text field | `cy.get('[data-cy="email"]').clear().type('user@example.com')` |
 | Press Enter / Escape in a field | `cy.get('[data-cy="q"]').type('{enter}')` / `type('{esc}')` |
 | Select a `<select>` value | `cy.get('[data-cy="country"]').select('ES')` |
+| Upload a file via `<input type="file">` | `cy.get('[data-cy="upload"]').selectFile('cypress/fixtures/invoice.pdf')` |
+| Upload multiple files | `cy.get('[data-cy="upload"]').selectFile(['cypress/fixtures/f1.pdf', 'cypress/fixtures/f2.csv'])` |
 | SPA route change (push/replace/popstate) | `cy.url().should('include', '/dashboard')` |
 | Page load | `cy.visit('/current-path')` |
 
@@ -212,6 +214,16 @@ test, the fixture files are written into your `cypress/fixtures/` folder
 automatically (requires the Cypress folder configured — see the advanced editor
 setup). POST/PUT keep the spy + body-validation behaviour; non-JSON GETs fall back
 to a spy.
+
+#### File uploads
+
+When you interact with an `<input type="file">` while recording, the recorder captures
+the selected file(s) and generates `.selectFile('cypress/fixtures/FILENAME')`.
+
+- **Save-and-Edit with Cypress folder configured** — the file is automatically copied
+  into `cypress/fixtures/` and a confirmation toast appears.
+- **Any other save (IndexedDB / no folder)** — a warning toast reminds you to add the
+  file to `cypress/fixtures/` manually before running the test.
 
 ---
 

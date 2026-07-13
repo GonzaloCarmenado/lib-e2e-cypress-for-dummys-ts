@@ -42,7 +42,7 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 ## Backlog (prioritised)
 
 1. ~~**Recorder refactor**~~ — done (spec 018). `lib-e2e-recorder.ts` 1053 → 936 lines; extracted `ensurePopupDimensions`, `injectAssertionBuilder`, `mountFilesystemSetupContent`, `mountComponentInSwal`, `openSwalDialog`.
-2. **More interactions (part 2)** — file upload (`<input type=file>` →
-   `.selectFile(...)`); drag & drop / hover as recorded Cypress commands.
+2. ~~**File upload recording**~~ — done (spec 019). `input[type=file]` change → `.selectFile('cypress/fixtures/…')`. Bytes captured in memory; auto-copy via FSAA on Save-and-Edit or toast warning for IndexedDB save.
+3. **More interactions (part 3)** — drag & drop / hover as recorded Cypress commands.
 3. ~~**Auto-login generator**~~ — superseded by Login Setup Template (spec 015).
 4. ~~**Runner hardening**~~ — closed: dual-source is intentional (see comments in code); `alert()` → `showToast` fixed.
