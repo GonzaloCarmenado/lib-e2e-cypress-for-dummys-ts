@@ -41,10 +41,9 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Backlog (prioritised)
 
-1. **Auto-login generator** — generate a programmatic login `beforeEach`/command
-   from the captured auth request (real call, reusable). *Deferred (complex).*
-2. **More interactions (part 2)** — file upload (`<input type=file>` →
-   `.selectFile(...)`); drag & drop / hover.
-3. **Runner hardening** — ~~`extendedHttpCommands` dual source~~ (intentional: localStorage = sync cache for real-time interception, IndexedDB = persistence; mirrored on mount by `initHttpConfig()`); ~~`alert()` → `showToast` in config import~~ (fixed).
-4. **Recorder refactor** — `lib-e2e-recorder.ts` is ≈1000 lines; extract duplicated
+1. **Recorder refactor** — `lib-e2e-recorder.ts` is ≈1050 lines; extract duplicated
    Swal dialog scaffold + inline HTML/styles into sub-services.
+2. **More interactions (part 2)** — file upload (`<input type=file>` →
+   `.selectFile(...)`); drag & drop / hover as recorded Cypress commands.
+3. ~~**Auto-login generator**~~ — superseded by Login Setup Template (spec 015).
+4. ~~**Runner hardening**~~ — closed: dual-source is intentional (see comments in code); `alert()` → `showToast` fixed.
