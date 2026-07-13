@@ -41,8 +41,7 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Backlog (prioritised)
 
-1. **Recorder refactor** — `lib-e2e-recorder.ts` is ≈1050 lines; extract duplicated
-   Swal dialog scaffold + inline HTML/styles into sub-services.
+1. ~~**Recorder refactor**~~ — done (spec 018). `lib-e2e-recorder.ts` 1053 → 936 lines; extracted `ensurePopupDimensions`, `injectAssertionBuilder`, `mountFilesystemSetupContent`, `mountComponentInSwal`, `openSwalDialog`.
 2. **More interactions (part 2)** — file upload (`<input type=file>` →
    `.selectFile(...)`); drag & drop / hover as recorded Cypress commands.
 3. ~~**Auto-login generator**~~ — superseded by Login Setup Template (spec 015).

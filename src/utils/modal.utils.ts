@@ -125,3 +125,17 @@ export function setSwal2DataCyAttribute(dataCy = 'lib-e2e-cypress-for-dummys'): 
   document.querySelector('.swal2-html-container')?.setAttribute('data-cy', dataCy);
   document.querySelector('.swal2-title')?.setAttribute('data-cy', dataCy);
 }
+
+export function ensurePopupDimensions(popup: HTMLElement | null, heightPx: number): void {
+  if (!popup) return;
+  popup.style.height = `${heightPx}px`;
+  const htmlContainer = popup.querySelector('.swal2-html-container') as HTMLElement | null;
+  if (!htmlContainer) return;
+  htmlContainer.style.flex = '1';
+  htmlContainer.style.minHeight = '0';
+  htmlContainer.style.overflow = 'hidden';
+  htmlContainer.style.padding = '0';
+  htmlContainer.style.margin = '0';
+  htmlContainer.style.display = 'flex';
+  htmlContainer.style.flexDirection = 'column';
+}

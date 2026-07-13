@@ -1,6 +1,9 @@
-import Swal from 'sweetalert2';
+import Swal, { type SweetAlertOptions } from 'sweetalert2';
 import { getRecorderStyles } from './lib-e2e-recorder.styles';
 import { renderRecorderWidget } from './lib-e2e-recorder.template';
+import { injectAssertionBuilder } from './assertion-builder';
+import { mountFilesystemSetupContent } from './filesystem-setup';
+import { mountComponentInSwal } from '../../utils/swal-mount.utils';
 import { RecordingService, type SelectorStrategy } from '../../services/recording.service';
 import { PersistenceService } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
@@ -14,6 +17,7 @@ import {
   makeModalResizable,
   makeSwalDraggable,
   setSwal2DataCyAttribute,
+  ensurePopupDimensions,
 } from '../../utils/modal.utils';
 import type { Lang } from '../../models/lang.model';
 import type { LoginSetupConfig } from '../../models/login-setup.model';
@@ -32,7 +36,6 @@ import {
   defaultTogglePosition,
   boxTopLeftFor,
 } from '../../utils/widget-position.utils';
-import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { showToast } from '../../utils/toast.utils';
 import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig, type IssueTrackerProvider } from '../../models/issue-tracker.model';
 import { toFixtureInterceptors, simplifyFixtureWaits } from '../../utils/fixture-convert.utils';
@@ -544,8 +547,9 @@ export class LibE2eRecorderElement extends HTMLElement {
   }
 
   private showFilesystemSetupDialog(): void {
+    const t = this.translation.translate.bind(this.translation);
     Swal.fire({
-      title: this.translation.translate('RECORDER.FS_TITLE'),
+      title: t('RECORDER.FS_TITLE'),
       html: '<div id="fs-setup-content"></div>',
       showCloseButton: true,
       showConfirmButton: false,
@@ -554,52 +558,26 @@ export class LibE2eRecorderElement extends HTMLElement {
         setSwal2DataCyAttribute();
         const container = document.getElementById('fs-setup-content');
         if (!container) return;
-        container.innerHTML = `
-          <div style="padding:16px 20px 20px;color:#8b949e;font-size:13px;line-height:1.7">
-            <p>${this.translation.translate('RECORDER.FS_INTRO_HTML')}</p>
-            <p style="margin-top:10px;margin-bottom:6px;font-size:11px;color:#8b949e">
-              ${this.translation.translate('RECORDER.FS_STRUCTURE_HINT_HTML')}
-            </p>
-            <pre style="margin:0;padding:10px 14px;background:#0d1117;border:1px solid #21262d;
-                        border-radius:8px;font-size:11px;color:#c9d1d9;line-height:1.8;
-                        font-family:'Cascadia Code','Fira Code','Consolas',monospace">
-cypress/         <span style="color:#484f58">${this.translation.translate('RECORDER.FS_TREE_PICK_HINT')}</span>
-└── e2e/         <span style="color:#484f58">${this.translation.translate('RECORDER.FS_TREE_READ_HINT')}</span>
-    └── *.cy.ts</pre>
-            <p style="margin-top:8px;font-size:11px;color:#484f58">
-              ${this.translation.translate('RECORDER.FS_PERMISSION_NOTE')}
-            </p>
-            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-              <button id="fs-skip"
-                style="padding:7px 16px;border:1px solid #30363d;border-radius:6px;cursor:pointer;
-                       font-size:12px;font-weight:500;background:transparent;color:#8b949e">
-                ${this.translation.translate('RECORDER.FS_LATER_BTN')}
-              </button>
-              <button id="fs-select"
-                style="padding:7px 16px;border:none;border-radius:6px;cursor:pointer;
-                       font-size:12px;font-weight:500;background:#2f81f7;color:#fff">
-                ${this.translation.translate('RECORDER.FS_SELECT_BTN')}
-              </button>
-            </div>
-          </div>`;
-
-        document.getElementById('fs-skip')?.addEventListener('click', async () => {
-          await this.persistence.setConfigKey('allowReadWriteFiles', 'false');
-          Swal.close();
-        });
-
-        document.getElementById('fs-select')?.addEventListener('click', async () => {
-          try {
-            await this.persistence.requestDirectoryPermissions();
+        mountFilesystemSetupContent(
+          container,
+          t,
+          async () => {
+            await this.persistence.setConfigKey('allowReadWriteFiles', 'false');
             Swal.close();
-            showToast(this.translation.translate('RECORDER.FS_SUCCESS_TOAST'));
-          } catch (e: unknown) {
-            if ((e as DOMException)?.name !== 'AbortError') {
-              showToast(this.translation.translate('RECORDER.FS_ERROR_TOAST'), false);
+          },
+          async () => {
+            try {
+              await this.persistence.requestDirectoryPermissions();
+              Swal.close();
+              showToast(t('RECORDER.FS_SUCCESS_TOAST'));
+            } catch (e: unknown) {
+              if ((e as DOMException)?.name !== 'AbortError') {
+                showToast(t('RECORDER.FS_ERROR_TOAST'), false);
+              }
+              // AbortError = user cancelled the picker, leave dialog open
             }
-            // AbortError = user cancelled the picker, leave dialog open
-          }
-        });
+          },
+        );
       },
     });
   }
@@ -607,230 +585,133 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
   // ── dialogs ──────────────────────────────────────────────────────────────
 
   showCommandsDialog(): void {
-    this.toggleModal('isCommandsDialogOpen', () => {
-      Swal.fire({
+    this.openSwalDialog(
+      'isCommandsDialogOpen',
+      'commands-modal-content',
+      {
         title: this.translation.translate('MAIN_FRAME.DIALOG_COMMANDS'),
         html: '<div id="commands-modal-content" style="min-height:250px;padding:0"></div>',
-        showCloseButton: true,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        backdrop: false,
-        width: 640,
-        color: '#e6edf3',
-        didOpen: () => {
-          makeSwalDraggable();
-          setSwal2DataCyAttribute();
-          // Make the container click-through so the page underneath remains interactive
+        showCloseButton: true, allowOutsideClick: false, backdrop: false, width: 640,
+      },
+      (container) => {
+        const child = mountComponentInSwal<PrevisualizerEl>('lib-e2e-test-previsualizer', container, {
+          translation: this.translation,
+          commands: this.cypressCommands,
+          interceptors: this.interceptors,
+          editable: true,
+        }, [
+          { name: 'deletecommand', handler: (e) => this.recording.removeCommand(e.detail) },
+          { name: 'movecommand', handler: (e) => this.recording.moveCommand(e.detail.from, e.detail.to) },
+          { name: 'deleteinterceptor', handler: (e) => this.recording.removeInterceptor(e.detail) },
+        ]);
+        this._previsualizerRef = child;
+        injectAssertionBuilder(container, this.translation.translate.bind(this.translation), (cmd) => this.recording.appendCommand(cmd));
+      },
+      {
+        // Make the container click-through so the page underneath remains interactive
+        onDidOpenPreamble: () => {
           const swalContainer = document.querySelector('.swal2-container') as HTMLElement | null;
           if (swalContainer) {
             swalContainer.style.pointerEvents = 'none';
             const popup = swalContainer.querySelector('.swal2-popup') as HTMLElement | null;
             if (popup) popup.style.pointerEvents = 'all';
           }
-          const container = document.getElementById('commands-modal-content');
-          if (!container) return;
-
-          const child = document.createElement('lib-e2e-test-previsualizer') as unknown as PrevisualizerEl;
-          child.translation = this.translation;
-          child.commands = this.cypressCommands;
-          child.interceptors = this.interceptors;
-          child.editable = true;
-          container.appendChild(child as unknown as Node);
-          this._previsualizerRef = child;
-
-          child.addEventListener('deletecommand', (e: CustomEvent) => {
-            this.recording.removeCommand(e.detail);
-          });
-          child.addEventListener('movecommand', (e: CustomEvent) => {
-            this.recording.moveCommand(e.detail.from, e.detail.to);
-          });
-          child.addEventListener('deleteinterceptor', (e: CustomEvent) => {
-            this.recording.removeInterceptor(e.detail);
-          });
-
-          // ── Assertion builder panel ──────────────────────────────────────
-          const assertionHtml = `
-            <div id="assertion-builder"
-              style="padding:10px 12px;border-top:1px solid #21262d;background:#0d1117">
-              <div style="font-size:10px;color:#484f58;text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px">
-                ${this.translation.translate('RECORDER.ASSERTION_SECTION')}
-              </div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
-                <input id="assert-selector" type="text"
-                  placeholder="${this.translation.translate('RECORDER.ASSERT_SELECTOR_PH').replace(/"/g, '&quot;')}"
-                  style="flex:2;min-width:140px;padding:5px 8px;background:#161b22;border:1px solid #30363d;
-                         border-radius:5px;color:#c9d1d9;font-size:11px;outline:none;
-                         font-family:'Cascadia Code','Fira Code',monospace"/>
-                <select id="assert-type"
-                  style="padding:5px 8px;background:#161b22;border:1px solid #30363d;border-radius:5px;
-                         color:#c9d1d9;font-size:11px;outline:none;cursor:pointer;flex-shrink:0">
-                  <option value="be.visible">be.visible</option>
-                  <option value="not.exist">not.exist</option>
-                  <option value="be.disabled">be.disabled</option>
-                  <option value="be.checked">be.checked</option>
-                  <option value="contain.text">contain.text</option>
-                  <option value="have.value">have.value</option>
-                  <option value="have.length">have.length</option>
-                  <option value="have.class">have.class</option>
-                  <option value="have.attr">have.attr</option>
-                </select>
-                <input id="assert-value" type="text" placeholder="${this.translation.translate('RECORDER.ASSERT_VALUE_PH')}"
-                  style="flex:2;min-width:110px;padding:5px 8px;background:#161b22;border:1px solid #30363d;
-                         border-radius:5px;color:#c9d1d9;font-size:11px;outline:none"/>
-                <button id="btn-add-assertion"
-                  style="padding:5px 12px;border:none;border-radius:5px;cursor:pointer;
-                         font-size:11px;font-weight:500;background:#2f81f7;color:#fff;
-                         white-space:nowrap;flex-shrink:0">
-                  ${this.translation.translate('RECORDER.ASSERT_ADD_BTN')}
-                </button>
-              </div>
-            </div>`;
-          container.insertAdjacentHTML('beforeend', assertionHtml);
-
-          const NO_VALUE_ASSERTIONS = new Set(['be.visible', 'not.exist', 'be.disabled', 'be.checked']);
-          document.getElementById('btn-add-assertion')?.addEventListener('click', () => {
-            const sel  = (document.getElementById('assert-selector') as HTMLInputElement).value.trim();
-            const type = (document.getElementById('assert-type')     as HTMLSelectElement).value;
-            const val  = (document.getElementById('assert-value')    as HTMLInputElement).value.trim();
-            if (!sel) return;
-            const s = escapeSingleQuotes(sel);
-            const v = escapeSingleQuotes(val);
-            const cmd = NO_VALUE_ASSERTIONS.has(type) || !val
-              ? `cy.get('${s}').should('${type}')`
-              : `cy.get('${s}').should('${type}', '${v}')`;
-            this.recording.appendCommand(cmd);
-            (document.getElementById('assert-selector') as HTMLInputElement).value = '';
-            (document.getElementById('assert-value')    as HTMLInputElement).value = '';
-          });
         },
-        willClose: () => {
-          this.isCommandsDialogOpen = false;
-          this._previsualizerRef = null;
-        },
-      });
-      this.resizePopup();
-    });
+        onWillClose: () => { this._previsualizerRef = null; },
+      },
+    );
   }
 
   showSavedTestsDialog(): void {
-    this.toggleModal('isSavedTestsDialogOpen', () => {
-      Swal.fire({
+    this.openSwalDialog(
+      'isSavedTestsDialogOpen',
+      'saved-tests-modal-content',
+      {
         title: this.translation.translate('MAIN_FRAME.DIALOG_SAVED_TESTS'),
         html: '<div id="saved-tests-modal-content" style="min-height:250px;padding:0"></div>',
-        showCloseButton: true,
-        showConfirmButton: false,
-        width: 680,
-        color: '#e6edf3',
-        didOpen: () => {
-          makeSwalDraggable();
-          setSwal2DataCyAttribute();
-          const container = document.getElementById('saved-tests-modal-content');
-          if (!container) return;
-          const child = document.createElement('lib-e2e-test-editor') as unknown as TestEditorEl;
-          child.persistence = this.persistence;
-          child.translation = this.translation;
-          child.issueTrackerConfig = this.issueTrackerConfig;
-          container.appendChild(child as unknown as Node);
-        },
-        willClose: () => { this.isSavedTestsDialogOpen = false; },
-      });
-      this.resizePopup();
-    });
+        showCloseButton: true, width: 680,
+      },
+      (container) => {
+        mountComponentInSwal<TestEditorEl>('lib-e2e-test-editor', container, {
+          persistence: this.persistence,
+          translation: this.translation,
+          issueTrackerConfig: this.issueTrackerConfig,
+        });
+      },
+    );
   }
 
   showSaveTestDialog(): void {
-    this.toggleModal('isSaveTestDialogOpen', () => {
-      Swal.fire({
+    this.openSwalDialog(
+      'isSaveTestDialogOpen',
+      'save-test-modal-content',
+      {
         title: this.translation.translate('MAIN_FRAME.DIALOG_SAVE'),
         html: '<div id="save-test-modal-content" style="padding:0"></div>',
-        showCloseButton: false,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        color: '#e6edf3',
-        didOpen: () => {
-          makeSwalDraggable();
-          setSwal2DataCyAttribute();
-          const container = document.getElementById('save-test-modal-content');
-          if (!container) return;
-          const child = document.createElement('lib-e2e-save-test') as unknown as SaveTestEl;
-          child.translation = this.translation;
-          child.issueTrackerConfig = this.issueTrackerConfig;
-          container.appendChild(child as unknown as Node);
-          child.addEventListener('savetest', (e: CustomEvent) => {
+        showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false,
+      },
+      (container) => {
+        mountComponentInSwal<SaveTestEl>('lib-e2e-save-test', container, {
+          translation: this.translation,
+          issueTrackerConfig: this.issueTrackerConfig,
+        }, [
+          { name: 'savetest', handler: (e) => {
             const { description, notes, tags, ticketId } = e.detail ?? {};
             this.onSaveTest(description ?? null, tags ?? [], notes ?? '', ticketId ?? '');
             Swal.close();
-          });
-          child.addEventListener('saveandexport', (e: CustomEvent) => {
+          }},
+          { name: 'saveandexport', handler: (e) => {
             const { description, notes, tags, ticketId } = e.detail ?? {};
             this.onSaveAndExportTest(description ?? null, tags ?? [], notes ?? '', ticketId ?? '');
             Swal.close();
-          });
-        },
-        willClose: () => { this.isSaveTestDialogOpen = false; },
-      });
-    });
+          }},
+        ]);
+      },
+      { skipResize: true },
+    );
   }
 
   showSettingsDialog(): void {
-    this.toggleModal('isSettingsDialogOpen', () => {
-      Swal.fire({
+    this.openSwalDialog(
+      'isSettingsDialogOpen',
+      'settings-modal-content',
+      {
         title: this.translation.translate('MAIN_FRAME.SETTINGS'),
         html: '<div id="settings-modal-content" style="padding:0"></div>',
-        showCloseButton: true,
-        showConfirmButton: false,
-        width: 520,
-        color: '#e6edf3',
-        didOpen: () => {
-          makeSwalDraggable();
-          setSwal2DataCyAttribute();
-          const container = document.getElementById('settings-modal-content');
-          if (!container) return;
-          const child = document.createElement('lib-e2e-configuration') as unknown as ConfigEl;
-          child.persistence = this.persistence;
-          child.translation = this.translation;
-          container.appendChild(child as unknown as Node);
-          child.addEventListener('smartselectorchange', (e: CustomEvent) => {
-            this.smartSelectorEnabled = e.detail;
-          });
-          child.addEventListener('starthiddenchange', (e: CustomEvent) => {
+        showCloseButton: true, width: 520,
+      },
+      (container) => {
+        mountComponentInSwal<ConfigEl>('lib-e2e-configuration', container, {
+          persistence: this.persistence,
+          translation: this.translation,
+        }, [
+          { name: 'smartselectorchange', handler: (e) => { this.smartSelectorEnabled = e.detail; } },
+          { name: 'starthiddenchange', handler: (e) => {
             this.isVisible = !e.detail;
             this.style.display = this.isVisible ? '' : 'none';
-          });
-          child.addEventListener('resetwidgetposition', () => this.resetWidgetPosition());
-          child.addEventListener('issuetrackerchange', (e: CustomEvent) => {
-            this.issueTrackerConfig = e.detail as IssueTrackerConfig;
-          });
-        },
-        willClose: () => { this.isSettingsDialogOpen = false; },
-      });
-      this.resizePopup();
-    });
+          }},
+          { name: 'resetwidgetposition', handler: () => this.resetWidgetPosition() },
+          { name: 'issuetrackerchange', handler: (e) => { this.issueTrackerConfig = e.detail as IssueTrackerConfig; } },
+        ]);
+      },
+    );
   }
 
   showHelpDialog(): void {
-    this.toggleModal('isHelpDialogOpen', () => {
-      Swal.fire({
+    this.openSwalDialog(
+      'isHelpDialogOpen',
+      'help-modal-content',
+      {
         title: this.translation.translate('HELP.TITLE'),
         html: '<div id="help-modal-content" style="padding:0"></div>',
-        showCloseButton: true,
-        showConfirmButton: false,
-        width: 560,
-        color: '#e6edf3',
-        didOpen: () => {
-          makeSwalDraggable();
-          setSwal2DataCyAttribute();
-          const container = document.getElementById('help-modal-content');
-          if (!container) return;
-          const child = document.createElement('lib-e2e-help-panel') as unknown as HelpPanelEl;
-          child.translation = this.translation;
-          container.appendChild(child as unknown as Node);
-        },
-        willClose: () => { this.isHelpDialogOpen = false; },
-      });
-      this.resizePopup();
-    });
+        showCloseButton: true, width: 560,
+      },
+      (container) => {
+        mountComponentInSwal<HelpPanelEl>('lib-e2e-help-panel', container, {
+          translation: this.translation,
+        });
+      },
+    );
   }
 
   showAdvancedEditorDialog(testId?: number): void {
@@ -846,39 +727,25 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
-          const popup = Swal.getPopup();
-          if (popup) {
-            popup.style.height = '600px';
-            const htmlContainer = popup.querySelector('.swal2-html-container') as HTMLElement | null;
-            if (htmlContainer) {
-              htmlContainer.style.flex = '1';
-              htmlContainer.style.minHeight = '0';
-              htmlContainer.style.overflow = 'hidden';
-              htmlContainer.style.padding = '0';
-              htmlContainer.style.margin = '0';
-              htmlContainer.style.display = 'flex';
-              htmlContainer.style.flexDirection = 'column';
-            }
-          }
+          ensurePopupDimensions(Swal.getPopup(), 600);
           const container = document.getElementById('advanced-editor-modal-content');
           if (!container) return;
-          const child = document.createElement('lib-e2e-advanced-test-editor') as unknown as AdvancedEditorEl;
-          child.persistence = this.persistence;
-          child.translation = this.translation;
-          if (testId !== undefined) child.testId = testId;
-          container.appendChild(child as unknown as Node);
+          const child = mountComponentInSwal<AdvancedEditorEl>('lib-e2e-advanced-test-editor', container, {
+            persistence: this.persistence,
+            translation: this.translation,
+            ...(testId !== undefined ? { testId } : {}),
+          }, [
+            { name: 'selectorstrategychange', handler: (e) => { this.recording.selectorStrategy = e.detail; } },
+            { name: 'closemodal', handler: () => Swal.close() },
+            { name: 'openfileeditor', handler: (e) => {
+              Swal.close();
+              setTimeout(() => this.showFileEditorDialog(
+                e.detail.handle, e.detail.content, e.detail.fileName, e.detail.testId,
+                e.detail.itBlock, e.detail.interceptorsBlock, e.detail.notes,
+              ), 150);
+            }},
+          ]);
           void this.persistence.getLoginSetup().then(cfg => { child.loginSetupConfig = cfg; });
-          child.addEventListener('selectorstrategychange', (e: CustomEvent) => {
-            this.recording.selectorStrategy = e.detail;
-          });
-          child.addEventListener('closemodal', () => Swal.close());
-          child.addEventListener('openfileeditor', (e: CustomEvent) => {
-            Swal.close();
-            setTimeout(() => this.showFileEditorDialog(
-              e.detail.handle, e.detail.content, e.detail.fileName, e.detail.testId,
-              e.detail.itBlock, e.detail.interceptorsBlock, e.detail.notes,
-            ), 150);
-          });
         },
         willClose: () => { this.isAdvancedEditorDialogOpen = false; },
       });
@@ -911,47 +778,35 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
         setSwal2DataCyAttribute();
         // Give the code editor a tall default height (otherwise the popup collapses
         // to its ~210px min-height and the user has to resize it every time).
-        const popup = Swal.getPopup();
-        if (popup) {
-          popup.style.height = '640px';
-          const htmlContainer = popup.querySelector('.swal2-html-container') as HTMLElement | null;
-          if (htmlContainer) {
-            htmlContainer.style.flex = '1';
-            htmlContainer.style.minHeight = '0';
-            htmlContainer.style.overflow = 'hidden';
-            htmlContainer.style.padding = '0';
-            htmlContainer.style.margin = '0';
-            htmlContainer.style.display = 'flex';
-            htmlContainer.style.flexDirection = 'column';
-          }
-        }
+        ensurePopupDimensions(Swal.getPopup(), 640);
         const container = document.getElementById('file-editor-modal-content');
         if (!container) return;
-        const child = document.createElement('lib-e2e-file-preview') as unknown as FilePreviewEl;
-        child.translation = this.translation;
-        child.fileContent = content;
-        child.fileName = fileName;
-        child.closeLabel = this.translation.translate('FILE_PREVIEW.BACK_TO_EDITOR');
-        child.itBlock = itBlock;
-        child.interceptorsBlock = interceptorsBlock;
-        child.notes = notes;
-        container.appendChild(child as unknown as Node);
-        child.addEventListener('close', () => {
-          Swal.close();
-          setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
-        });
-        child.addEventListener('save', async (e: CustomEvent) => {
-          try {
-            const writable = await handle.createWritable();
-            await writable.write(e.detail);
-            await writable.close();
-            showToast(this.translation.translate('RECORDER.FILE_SAVED_TOAST'));
-          } catch {
-            showToast(this.translation.translate('RECORDER.FILE_SAVE_ERROR_TOAST'), false);
-          }
-          Swal.close();
-          setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
-        });
+        mountComponentInSwal<FilePreviewEl>('lib-e2e-file-preview', container, {
+          translation: this.translation,
+          fileContent: content,
+          fileName,
+          closeLabel: this.translation.translate('FILE_PREVIEW.BACK_TO_EDITOR'),
+          itBlock,
+          interceptorsBlock,
+          notes,
+        }, [
+          { name: 'close', handler: () => {
+            Swal.close();
+            setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
+          }},
+          { name: 'save', handler: async (e) => {
+            try {
+              const writable = await handle.createWritable();
+              await writable.write(e.detail);
+              await writable.close();
+              showToast(this.translation.translate('RECORDER.FILE_SAVED_TOAST'));
+            } catch {
+              showToast(this.translation.translate('RECORDER.FILE_SAVE_ERROR_TOAST'), false);
+            }
+            Swal.close();
+            setTimeout(() => this.showAdvancedEditorDialog(testId), 150);
+          }},
+        ]);
       },
     });
     this.resizePopup();
@@ -1016,6 +871,35 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
       const popup = Swal.getPopup();
       if (popup) makeModalResizable(popup, { minWidth: 400, minHeight: 200 });
     }, 0);
+  }
+
+  private openSwalDialog(
+    flag: keyof this,
+    contentId: string,
+    swalOptions: SweetAlertOptions,
+    onMount: (container: HTMLElement) => void,
+    extra?: { onDidOpenPreamble?: () => void; onWillClose?: () => void; skipResize?: boolean },
+  ): void {
+    this.toggleModal(flag, () => {
+      Swal.fire({
+        showConfirmButton: false,
+        color: '#e6edf3',
+        ...swalOptions,
+        didOpen: () => {
+          makeSwalDraggable();
+          setSwal2DataCyAttribute();
+          extra?.onDidOpenPreamble?.();
+          const container = document.getElementById(contentId);
+          if (!container) return;
+          onMount(container);
+        },
+        willClose: () => {
+          (this as Record<string, unknown>)[flag as string] = false;
+          extra?.onWillClose?.();
+        },
+      });
+      if (!extra?.skipResize) this.resizePopup();
+    });
   }
 
   private render(): void {
