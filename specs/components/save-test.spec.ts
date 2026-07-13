@@ -82,12 +82,27 @@ describe('Phase 8.2 — SaveTestElement', () => {
     expect(received.description).toBe('');
   });
 
-  it('cancel() dispatches "savetest" event with null description', () => {
+  it('cancel() transitions to confirm-discard state without dispatching event', () => {
+    let fired = false;
+    el.addEventListener('savetest', () => { fired = true; });
+    el.cancel();
+    expect(fired).toBe(false);
+    expect(el.shadowRoot!.getElementById('btn-confirm-discard')).not.toBeNull();
+    expect(el.shadowRoot!.getElementById('btn-back-discard')).not.toBeNull();
+  });
+
+  it('confirmDiscard() dispatches "savetest" event with null description', () => {
     let received: any;
     el.addEventListener('savetest', (e: Event) => { received = (e as CustomEvent).detail; });
-    el.cancel();
+    el.confirmDiscard();
     expect(received.description).toBeNull();
     expect(received.tags).toEqual([]);
+  });
+
+  it('backFromDiscard() returns to the previous step', () => {
+    el.cancel();
+    el.backFromDiscard();
+    expect(el.shadowRoot!.getElementById('btn-yes')).not.toBeNull();
   });
 
   it('confirmSaveAndExport() dispatches "saveandexport" event with trimmed description', () => {

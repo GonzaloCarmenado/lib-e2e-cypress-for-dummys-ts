@@ -25,6 +25,9 @@ export const I18N_FR = {
     TICKET_LABEL: 'Ticket / Issue (optionnel) :',
     TICKET_PLACEHOLDER: 'Ex : PROJ-123, #42',
     TICKET_WARN: 'ID non valide pour le fournisseur configuré (sera enregistré quand même)', // TODO: translate
+    CONFIRM_DISCARD: 'Êtes-vous sûr de vouloir abandonner cet enregistrement ? Toutes les étapes enregistrées seront perdues.',
+    CONFIRM_DISCARD_BTN: 'Oui, abandonner',
+    BACK_BTN: 'Retour',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Sans étiquettes',

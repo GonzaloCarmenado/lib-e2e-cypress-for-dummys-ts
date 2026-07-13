@@ -740,9 +740,10 @@ cypress/         <span style="color:#484f58">${this.translation.translate('RECOR
       Swal.fire({
         title: this.translation.translate('MAIN_FRAME.DIALOG_SAVE'),
         html: '<div id="save-test-modal-content" style="padding:0"></div>',
-        showCloseButton: true,
+        showCloseButton: false,
         showConfirmButton: false,
         allowOutsideClick: false,
+        allowEscapeKey: false,
         color: '#e6edf3',
         didOpen: () => {
           makeSwalDraggable();

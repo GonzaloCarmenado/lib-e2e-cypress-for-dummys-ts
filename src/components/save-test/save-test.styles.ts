@@ -58,4 +58,5 @@ export const SAVE_TEST_STYLES = `
     transition: color 0.12s; padding: 0; background: none; border: none;
   }
   .chip-del:hover { color: #f85149; filter: none; }
+  .discard-warn { color: #e6edf3; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
 `;

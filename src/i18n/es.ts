@@ -25,6 +25,9 @@ export const I18N_ES = {
     TICKET_LABEL: 'Ticket / Issue (opcional):',
     TICKET_PLACEHOLDER: 'Ej: PROJ-123, #42',
     TICKET_WARN: 'ID no válido para el proveedor configurado (se guardará igualmente)',
+    CONFIRM_DISCARD: '¿Seguro que quieres descartar el test grabado? Se perderán todos los pasos registrados.',
+    CONFIRM_DISCARD_BTN: 'Sí, descartar',
+    BACK_BTN: 'Volver',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Sin etiquetas',

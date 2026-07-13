@@ -1,5 +1,16 @@
 import { escHtml, escAttr } from '../../utils/html.utils';
 
+export function renderSaveTestConfirmDiscard(t: (key: string) => string): string {
+  return `
+    <div class="container">
+      <p class="discard-warn">⚠ ${t('SAVE_TEST.CONFIRM_DISCARD')}</p>
+      <div class="btn-row">
+        <button class="btn-danger" id="btn-confirm-discard">${t('SAVE_TEST.CONFIRM_DISCARD_BTN')}</button>
+        <button id="btn-back-discard">${t('SAVE_TEST.BACK_BTN')}</button>
+      </div>
+    </div>`;
+}
+
 export function renderSaveTestAsk(t: (key: string) => string): string {
   return `
     <div class="container">

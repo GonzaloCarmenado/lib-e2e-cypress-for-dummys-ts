@@ -3,11 +3,12 @@ import { isValidTicketId } from '../../utils/ticket.utils';
 import type { IssueTrackerConfig } from '../../models/issue-tracker.model';
 import { DEFAULT_ISSUE_TRACKER_CONFIG } from '../../models/issue-tracker.model';
 import { SAVE_TEST_STYLES } from './save-test.styles';
-import { renderSaveTestAsk, renderSaveTestDesc } from './save-test.template';
+import { renderSaveTestAsk, renderSaveTestDesc, renderSaveTestConfirmDiscard } from './save-test.template';
 
 export class SaveTestElement extends HTMLElement {
   private shadow: ShadowRoot;
-  private _step: 'ask' | 'desc' = 'ask';
+  private _step: 'ask' | 'desc' | 'confirm-discard' = 'ask';
+  private _stepBeforeDiscard: 'ask' | 'desc' = 'ask';
   description = '';
   notes = '';
   tags: string[] = [];
@@ -30,7 +31,15 @@ export class SaveTestElement extends HTMLElement {
 
   confirmSaveAndExport(): void { this.dispatch('saveandexport', { description: this.description.trim(), notes: this.notes, tags: [...this.tags], ticketId: this.ticketId.trim() }); }
 
-  cancel(): void { this.dispatch('savetest', { description: null, notes: '', tags: [], ticketId: '' }); }
+  cancel(): void {
+    this._stepBeforeDiscard = this._step === 'confirm-discard' ? 'ask' : (this._step as 'ask' | 'desc');
+    this._step = 'confirm-discard';
+    this.render();
+  }
+
+  confirmDiscard(): void { this.dispatch('savetest', { description: null, notes: '', tags: [], ticketId: '' }); }
+
+  backFromDiscard(): void { this._step = this._stepBeforeDiscard; this.render(); }
 
   restartComponent(): void { this._step = 'ask'; this.description = ''; this.notes = ''; this.tags = []; this.ticketId = ''; this.render(); }
 
@@ -59,6 +68,12 @@ export class SaveTestElement extends HTMLElement {
   }
 
   private render(): void {
+    if (this._step === 'confirm-discard') {
+      this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestConfirmDiscard(this.t.bind(this))}`;
+      this.shadow.getElementById('btn-confirm-discard')?.addEventListener('click', () => this.confirmDiscard());
+      this.shadow.getElementById('btn-back-discard')?.addEventListener('click', () => this.backFromDiscard());
+      return;
+    }
     if (this._step === 'ask') {
       this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestAsk(this.t.bind(this))}`;
       this.shadow.getElementById('btn-yes')?.addEventListener('click', () => this.askSave());

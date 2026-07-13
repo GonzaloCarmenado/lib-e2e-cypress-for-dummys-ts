@@ -25,6 +25,9 @@ export const I18N_DE = {
     TICKET_LABEL: 'Ticket / Issue (optional):',
     TICKET_PLACEHOLDER: 'Z. B.: PROJ-123, #42',
     TICKET_WARN: 'Ungültige ID für den konfigurierten Anbieter (wird trotzdem gespeichert)', // TODO: translate
+    CONFIRM_DISCARD: 'Sind Sie sicher, dass Sie diese Aufzeichnung verwerfen möchten? Alle aufgezeichneten Schritte gehen verloren.',
+    CONFIRM_DISCARD_BTN: 'Ja, verwerfen',
+    BACK_BTN: 'Zurück',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Keine Tags',
