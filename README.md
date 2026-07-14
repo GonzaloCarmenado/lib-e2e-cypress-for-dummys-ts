@@ -685,7 +685,7 @@ class RecordingService {
 
 ```typescript
 class PersistenceService {
-  insertTest(name: string, commands?: string[], interceptors?: string[], tags?: string[]): Promise<number>;
+  insertTest(name: string, commands?: string[], interceptors?: string[], tags?: string[], notes?: string, ticketId?: string): Promise<number>;
   getAllTests(): Promise<TestWithDetails[]>;
   getTestById(testId: number): Promise<TestDetail | null>;
   deleteTest(id: number): Promise<void>;
@@ -700,14 +700,37 @@ class PersistenceService {
   getActiveSession(): Promise<ActiveSessionState | null>;
   clearActiveSession(): Promise<void>;
 
-  clearAllData(): Promise<void>;
+  // File System Access — writing fixtures / uploaded files to cypress/ (specs 012, 019)
   requestDirectoryPermissions(): Promise<void>;
+  hasDirectoryAccess(): Promise<boolean>;
+  writeFixtures(fixtures: Array<{ name: string; content: string }>): Promise<number>;
+  writeUploadedFile(filename: string, bytes: ArrayBuffer): Promise<void>;
+
+  // Login setup config (spec 015)
+  saveLoginSetup(config: LoginSetupConfig): Promise<void>;
+  getLoginSetup(): Promise<LoginSetupConfig | null>;
+  clearLoginSetup(): Promise<void>;
+
+  clearAllData(): Promise<void>;
 }
 ```
 
 ---
 
 ## Breaking changes
+
+See [`CHANGELOG.md`](./CHANGELOG.md) for the full history.
+
+### v0.10.0
+
+- **Public export surface curated.** `src/index.ts` now exports an explicit
+  allowlist instead of re-exporting every module. Internal singletons
+  (`translationService`, `transformationService`, …), internal constants
+  (`ACTIVE_SESSION_BREADCRUMB_KEY`, `TOGGLE_MARGIN`, …), low-level modal/drag
+  helpers and the test-only `_resetHttpMonitorState` are **no longer exported**
+  from the package root. The public services, components, `VERSION`,
+  `generateAlias`, `injectStyles`, `showToast`, `makeModalResizable`,
+  `makeSwalDraggable` and the style constants remain available.
 
 ### v0.9.0
 

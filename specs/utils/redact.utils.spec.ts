@@ -22,6 +22,20 @@ describe('redact.utils', () => {
       '"%s" is not sensitive',
       (key) => { expect(isSensitiveKey(key)).toBe(false); }
     );
+
+    it.each([
+      'apiKey', 'api_key', 'X-Api-Key', 'pwd', 'passwd', 'passphrase',
+      'sessionId', 'session_token', 'idToken', 'id_token', 'clientSecret',
+      'privateKey', 'pin', 'otp', 'ssn', 'cardNumber', 'creditCard', 'cvv',
+      'X-Auth-Token', 'csrfToken',
+    ])('broadened: "%s" is sensitive', (key) => {
+      expect(isSensitiveKey(key)).toBe(true);
+    });
+
+    it.each(['author', 'spinner', 'shipping', 'description', 'monkey', 'pinboard'])(
+      'no false positive: "%s" is not sensitive',
+      (key) => { expect(isSensitiveKey(key)).toBe(false); }
+    );
   });
 
   // ── redactSensitiveFields ────────────────────────────────────────────────────

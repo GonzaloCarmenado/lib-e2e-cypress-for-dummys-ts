@@ -119,6 +119,8 @@ export const I18N_IT = {
     LOGIN_SETUP_FILE_NAME_LABEL: 'Nome del file',
     LOGIN_SETUP_FILE_NAME_PH: 'Es: cypress/common-services/login.service.ts',
     LOGIN_SETUP_RESCAN: '🔄 Re-scansiona',
+    LOGIN_SETUP_FUNCTIONS_DETECTED: 'Funzioni rilevate',
+    LOGIN_SETUP_BLOCK_ASSIGN: 'Assegnazione dei blocchi',
     LOGIN_SETUP_NO_FUNCTIONS: 'Nessuna funzione esportata trovata. Compila lo scaffold e ri-scansiona.',
     LOGIN_SETUP_BEFORE_LABEL: 'Funzione before() (una volta per suite)',
     LOGIN_SETUP_BEFORE_EACH_LABEL: 'Funzione beforeEach() (prima di ogni test)',

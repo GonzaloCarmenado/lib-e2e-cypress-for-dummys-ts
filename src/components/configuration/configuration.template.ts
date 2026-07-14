@@ -313,11 +313,11 @@ function renderLoginSetupOverlay(state: ConfigurationState, t: (key: string) => 
   const functionsSection = hasContent
     ? (fns.length > 0
         ? `<div class="ls-section">
-             <span class="ls-section-label">Funciones detectadas</span>
+             <span class="ls-section-label">${t('CONFIG.LOGIN_SETUP_FUNCTIONS_DETECTED')}</span>
              <div class="ls-fns">${fns.map((fn) => `<span class="ls-fn-chip">${escHtml(fn)}</span>`).join('')}</div>
            </div>
            <div class="ls-section">
-             <span class="ls-section-label">Asignación de bloques</span>
+             <span class="ls-section-label">${t('CONFIG.LOGIN_SETUP_BLOCK_ASSIGN')}</span>
              ${fnDropdown('login-setup-before-fn', t('CONFIG.LOGIN_SETUP_BEFORE_LABEL'), beforeFn)}
              ${fnDropdown('login-setup-before-each-fn', t('CONFIG.LOGIN_SETUP_BEFORE_EACH_LABEL'), beforeEachFn)}
            </div>`

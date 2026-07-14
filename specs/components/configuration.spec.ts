@@ -620,6 +620,62 @@ describe('Phase 8.4 — ConfigurationElement', () => {
       expect(el2.loginSetupConfig).toEqual(cfg);
       el2.remove();
     });
+
+    it('clicking btn-login-setup-save reads DOM values and saves', async () => {
+      const spy = vi.spyOn(el, 'saveLoginSetupConfig').mockResolvedValue();
+      el.openLoginSetupPanel();
+      // hasContent stays false → the free-text filepath input renders.
+      (el as unknown as { loginSetupDraftFunctions: string[] }).loginSetupDraftFunctions = ['fetchAuthToken'];
+      (el as unknown as { loginSetupDraftContent: string }).loginSetupDraftContent = 'export function fetchAuthToken() {}';
+      (el as unknown as { render: () => void }).render();
+      const pathEl = el.shadowRoot!.getElementById('login-setup-filepath') as HTMLInputElement;
+      pathEl.value = 'cypress/login.service.ts';
+      (el.shadowRoot!.getElementById('btn-login-setup-save') as HTMLButtonElement).click();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+        enabled: true,
+        filePath: 'cypress/login.service.ts',
+        fileContent: 'export function fetchAuthToken() {}',
+        detectedFunctions: ['fetchAuthToken'],
+      }));
+    });
+  });
+
+  // ── issue tracker DOM wiring (spec 014) ───────────────────────────────────
+
+  describe('issue tracker DOM wiring', () => {
+    it('change on issue-tracker-toggle calls onIssueTrackerEnabledChange', () => {
+      const spy = vi.spyOn(el, 'onIssueTrackerEnabledChange');
+      const toggle = el.shadowRoot!.getElementById('issue-tracker-toggle') as HTMLInputElement;
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event('change'));
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('change on provider/base-url calls the matching handlers', async () => {
+      (el as unknown as { issueTrackerConfig: object }).issueTrackerConfig = {
+        enabled: true, provider: 'jira', baseUrl: '',
+      };
+      (el as unknown as { render: () => void }).render();
+      const providerSpy = vi.spyOn(el, 'onIssueTrackerProviderChange');
+      const baseUrlSpy = vi.spyOn(el, 'onIssueTrackerBaseUrlChange');
+
+      const provider = el.shadowRoot!.getElementById('issue-tracker-provider') as HTMLSelectElement;
+      provider.value = 'github';
+      provider.dispatchEvent(new Event('change'));
+      expect(providerSpy).toHaveBeenCalledWith('github');
+
+      const baseUrl = el.shadowRoot!.getElementById('issue-tracker-base-url') as HTMLInputElement;
+      baseUrl.value = 'https://github.com/org/repo';
+      baseUrl.dispatchEvent(new Event('change'));
+      expect(baseUrlSpy).toHaveBeenCalledWith('https://github.com/org/repo');
+    });
+
+    it('onIssueTrackerBaseUrlChange persists the base url', async () => {
+      await el.onIssueTrackerBaseUrlChange('https://jira.example.com');
+      const stored = await persistence.getConfig('issueTrackerBaseUrl');
+      expect(stored).toMatchObject({ issueTrackerBaseUrl: 'https://jira.example.com' });
+    });
   });
 
   // ── widget position reset (spec 007) ──────────────────────────────────────

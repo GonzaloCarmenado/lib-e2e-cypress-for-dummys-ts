@@ -16,7 +16,8 @@ const MAX_TEXT_LENGTH = 60;
  * always valid JS.
  */
 export function inferAssertionCommand(el: HTMLElement, selector: string): string {
-  const should = (body: string): string => `cy.get('${selector}').should(${body})`;
+  const safeSelector = escapeSingleQuotes(selector);
+  const should = (body: string): string => `cy.get('${safeSelector}').should(${body})`;
   const tag = el.tagName.toLowerCase();
 
   if (tag === 'input') {

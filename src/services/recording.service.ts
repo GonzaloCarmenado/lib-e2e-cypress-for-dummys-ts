@@ -158,9 +158,9 @@ export class RecordingService {
     // the host app fires before recording starts (the monitor is installed on
     // mount) would leak orphan cy.intercept lines into the saved test.
     if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
-    const wildcard = this.urlToWildcard(url, method);
+    const wildcard = escapeSingleQuotes(this.urlToWildcard(url, method));
     const command = fixtureFile
-      ? `cy.intercept('${method}', '${wildcard}', { fixture: '${fixtureFile}' }).as('${alias}')`
+      ? `cy.intercept('${method}', '${wildcard}', { fixture: '${escapeSingleQuotes(fixtureFile)}' }).as('${alias}')`
       : `cy.intercept('${method}', '${wildcard}').as('${alias}')`;
     const current = this.interceptors$.getValue();
     if (!current.includes(command)) {

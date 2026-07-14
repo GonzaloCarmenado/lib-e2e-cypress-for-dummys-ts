@@ -44,5 +44,24 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 1. ~~**Recorder refactor**~~ — done (spec 018). `lib-e2e-recorder.ts` 1053 → 936 lines; extracted `ensurePopupDimensions`, `injectAssertionBuilder`, `mountFilesystemSetupContent`, `mountComponentInSwal`, `openSwalDialog`.
 2. ~~**File upload recording**~~ — done (spec 019). `input[type=file]` change → `.selectFile('cypress/fixtures/…')`. Bytes captured in memory; auto-copy via FSAA on Save-and-Edit or toast warning for IndexedDB save.
 3. **More interactions (part 3)** — drag & drop / hover as recorded Cypress commands.
-3. ~~**Auto-login generator**~~ — superseded by Login Setup Template (spec 015).
-4. ~~**Runner hardening**~~ — closed: dual-source is intentional (see comments in code); `alert()` → `showToast` fixed.
+4. ~~**Auto-login generator**~~ — superseded by Login Setup Template (spec 015).
+5. ~~**Runner hardening**~~ — closed: dual-source is intentional (see comments in code); `alert()` → `showToast` fixed.
+
+### Deferred from the 2026-07-14 audit (spec 021)
+
+- **F4 — Login-setup surface decision.** Login-setup persistence methods are
+  public but the feature is unvalidated (memory `spec_015_status`). Decide
+  before/at 1.0 whether to freeze or mark experimental.
+- **F5 — Recorder decomposition.** `lib-e2e-recorder.ts` (~940 lines) still owns
+  widget-drag, session-continuity and dialog orchestration. Extract
+  `WidgetDragController` / `SessionContinuityController` / `DialogManager`.
+- **F6 — Magic-string storage keys.** Hoist `'extendedHttpCommands'`,
+  `'fixtureMode'`, `'e2e-recording-history'` to shared exported constants.
+- **LOW polish:** `runner.ts:137` floating promise → 500; `configuration.ts`
+  unguarded element casts → `?.`; `escAttr` `&` escaping; FSAA filename
+  sanitisation + per-file try/catch; dedupe write/permission blocks;
+  `file-preview.ts` clipboard `.catch`; remove vestigial interceptor loop in
+  `recoverLastRecording`; `filesystem-setup.ts`/`assertion-builder.ts` split into
+  pure render + wire; `http-monitor.ts` `.service` rename.
+- **devDependency advisories** (`ws`/cypress chain) — tooling only, never
+  shipped; run `npm audit fix` opportunistically.
