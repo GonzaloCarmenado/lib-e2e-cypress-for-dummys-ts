@@ -35,7 +35,7 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Release status
 
-- **0.10.0** — current version on `main`. Includes specs 001–012, 014, 015, 016, 017.
+- **0.10.0** — published. Includes specs 001–012, 014, 015, 016, 017, 018 (refactor), 019 (file upload → .selectFile()).
 
 ---
 
