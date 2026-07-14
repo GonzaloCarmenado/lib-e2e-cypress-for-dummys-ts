@@ -1,6 +1,6 @@
 # 020 — GitHub Actions: CI + manual npm release
 
-> **Status:** In Progress
+> **Status:** Done
 > **Date:** 2026-07-14
 > **Author:** Gonzalo
 
@@ -47,41 +47,41 @@ source code.
 
 ### CI workflow (`ci.yml`)
 
-- [ ] AC-01: Triggers on `push` to `main` and on any `pull_request` targeting `main`.
-- [ ] AC-02: Steps in order: checkout → setup-node (v20, npm cache) → `npm ci` →
+- [x] AC-01: Triggers on `push` to `main` and on any `pull_request` targeting `main`.
+- [x] AC-02: Steps in order: checkout → setup-node (v20, npm cache) → `npm ci` →
   `npm run lint` → `npm run build` → `npm test` → `npm run test:coverage`.
-- [ ] AC-03: If any step exits non-zero, the workflow fails and subsequent steps
+- [x] AC-03: If any step exits non-zero, the workflow fails and subsequent steps
   are skipped (default GitHub Actions behaviour — no `continue-on-error`).
-- [ ] AC-04: Does NOT publish to npm under any circumstance.
+- [x] AC-04: Does NOT publish to npm under any circumstance.
 
 ### Release workflow (`release.yml`)
 
-- [ ] AC-05: Trigger is `workflow_dispatch` only (manual, no automatic trigger).
-- [ ] AC-06: Steps in order: checkout → setup-node (v20, npm cache, registry
+- [x] AC-05: Trigger is `workflow_dispatch` only (manual, no automatic trigger).
+- [x] AC-06: Steps in order: checkout → setup-node (v20, npm cache, registry
   `https://registry.npmjs.org/`) → `npm ci` → `npm run lint` → `npm run build` →
   `npm test` → `npm run test:coverage` → `npm publish --access public`.
-- [ ] AC-07: The `NODE_AUTH_TOKEN` environment variable for the publish step is
+- [x] AC-07: The `NODE_AUTH_TOKEN` environment variable for the publish step is
   set to `${{ secrets.NPM_TOKEN }}`. No token value appears in the workflow file.
-- [ ] AC-08: `setup-node` uses `registry-url: https://registry.npmjs.org/` so
+- [x] AC-08: `setup-node` uses `registry-url: https://registry.npmjs.org/` so
   that the generated `.npmrc` binds `NODE_AUTH_TOKEN` to the registry automatically
   (standard GitHub Actions pattern — no manual `npm config set` needed).
-- [ ] AC-09: The workflow file contains no hardcoded credentials, registry tokens,
+- [x] AC-09: The workflow file contains no hardcoded credentials, registry tokens,
   or user-specific values.
 
 ### Security
 
-- [ ] AC-10: Running `git grep -i "npm_\|_authToken\|//registry"` on the committed
+- [x] AC-10: Running `git grep -i "npm_\|_authToken\|//registry"` on the committed
   workflow files returns no matches (no token leaked in source).
-- [ ] AC-11: The `NPM_TOKEN` secret must be created manually in
+- [x] AC-11: The `NPM_TOKEN` secret must be created manually in
   `GitHub → repo → Settings → Secrets and variables → Actions → New repository secret`.
   This step is documented in the spec and in a comment in the workflow file —
   it is intentionally out of scope for the workflow itself.
 
 ### Quality gates
 
-- [ ] AC-12: Both workflow files pass `yamllint` / GitHub's own YAML parser
+- [x] AC-12: Both workflow files pass `yamllint` / GitHub's own YAML parser
   (no syntax errors).
-- [ ] AC-13: `npm run build` and `npm test` pass locally before the workflows
+- [x] AC-13: `npm run build` and `npm test` pass locally before the workflows
   are committed.
 
 ---
