@@ -7,7 +7,7 @@
 //
 // Keep VERSION in sync with package.json "version" (asserted in
 // specs/public-api.spec.ts).
-export const VERSION = '0.10.0';
+export const VERSION = '1.0.0';
 
 // ── Models (public types & stable constants) ────────────────────────────────
 export { SUPPORTED_LANGS, isLang, LOCALE_BY_LANG, localeForLang } from './models/lang.model';

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-07-14
+
+First stable release. The public API surface (`src/index.ts` exports) is now
+frozen under semantic versioning. Backed by the general audit in
+`docs/audits/2026-07-14-audit.md` (spec 021).
+
 ### Added
 - `LICENSE` file (MIT).
 - `CHANGELOG.md` (this file).
@@ -62,5 +68,6 @@ draggable widget, assertion capture, richer interactions, in-app help,
 HTTP → fixtures, ticket reference & grouping, login setup template, example
 microfrontend showcase, security & quality audit fixes (spec 017).
 
-[Unreleased]: https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/releases/tag/v0.10.0

@@ -35,6 +35,9 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Release status
 
+- **1.0.0** — first stable release (public API frozen). Backed by the general
+  audit (spec 021, `docs/audits/2026-07-14-audit.md`). Version bumped; publish
+  pending.
 - **0.10.0** — published. Includes specs 001–012, 014, 015, 016, 017, 018 (refactor), 019 (file upload → .selectFile()).
 
 ---
