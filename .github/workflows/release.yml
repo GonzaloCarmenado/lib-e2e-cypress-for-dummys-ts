@@ -1,0 +1,35 @@
+# Manual npm publish workflow.
+#
+# Trigger: Actions → Release → Run workflow (workflow_dispatch).
+# Prerequisite: create a repository secret named NPM_TOKEN with an npm
+# automation token (Settings → Secrets and variables → Actions).
+# The token value is never stored in this file.
+
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # registry-url makes setup-node write a project-level .npmrc that maps
+      # NODE_AUTH_TOKEN to the registry — no manual `npm config set` needed.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org/
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:coverage
+
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
