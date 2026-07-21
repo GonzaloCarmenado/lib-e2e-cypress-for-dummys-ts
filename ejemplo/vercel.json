@@ -1,5 +1,5 @@
 {
   "buildCommand": "npm run build:remotes && npm run build -w packages/shell && node scripts/merge-dist.mjs",
   "outputDirectory": "packages/shell/dist",
-  "installCommand": "npm install"
+  "installCommand": "rm -f package-lock.json && npm install"
 }
