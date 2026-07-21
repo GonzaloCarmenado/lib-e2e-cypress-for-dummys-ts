@@ -1,6 +1,6 @@
 {
   "name": "lib-e2e-cypress-for-dummys-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cypress E2E test recorder — pure TypeScript, zero Angular dependencies",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -25,7 +25,7 @@
     "type": "git",
     "url": "git+https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts.git"
   },
-  "homepage": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts#readme",
+  "homepage": "https://lib-e2e-cypress-for-dummys-ts.vercel.app/",
   "bugs": {
     "url": "https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/issues"
   },

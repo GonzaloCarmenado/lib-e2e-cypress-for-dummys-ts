@@ -95,7 +95,9 @@
       "Bash(dir /b CHANGELOG.md LICENSE LICENSE.md)",
       "Bash(dir dist\\\\runner.js dist\\\\index.d.ts)",
       "Bash(grep -c \"/\\\\*\\\\*\" \"D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/dist/index.d.ts\")",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(gh workflow *)",
+      "Bash(gh auth *)"
     ]
   }
 }
