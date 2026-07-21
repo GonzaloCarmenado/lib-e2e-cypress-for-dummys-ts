@@ -1,14 +1,16 @@
 import { defineConfig } from 'vite';
 import federation from '@originjs/vite-plugin-federation';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 export default defineConfig({
   plugins: [
     federation({
       name: 'shell',
       remotes: {
-        store: 'http://localhost:5001/assets/remoteEntry.js',
-        forms: 'http://localhost:5002/assets/remoteEntry.js',
-        admin: 'http://localhost:5003/assets/remoteEntry.js',
+        store: isProd ? '/mfe-store/assets/remoteEntry.js' : 'http://localhost:5001/assets/remoteEntry.js',
+        forms: isProd ? '/mfe-forms/assets/remoteEntry.js' : 'http://localhost:5002/assets/remoteEntry.js',
+        admin: isProd ? '/mfe-admin/assets/remoteEntry.js' : 'http://localhost:5003/assets/remoteEntry.js',
       },
       shared: [],
     }),

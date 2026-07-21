@@ -77,7 +77,24 @@
       "Bash(sed -n '107,112p' D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/src/i18n/en.ts)",
       "Bash(sed -n '107,112p' D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/src/i18n/fr.ts)",
       "Bash(sed -n '107,112p' D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/src/i18n/it.ts)",
-      "Bash(sed -n '107,112p' D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/src/i18n/de.ts)"
+      "Bash(sed -n '107,112p' D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/src/i18n/de.ts)",
+      "Bash(Get-Content \"D:\\\\GIT\\\\Otros\\\\lib-e2e-cypress-for-dummys-ts\\\\src\\\\components\\\\lib-e2e-recorder\\\\lib-e2e-recorder.ts\")",
+      "Bash(Measure-Object -Line)",
+      "Bash(chromium-cli *)",
+      "Bash(node *)",
+      "Bash(where msedge *)",
+      "Bash(where node *)",
+      "Bash(curl *)",
+      "Bash(npm pack *)",
+      "Bash(git remote *)",
+      "Bash(git grep *)",
+      "Bash(npm audit *)",
+      "Bash(xargs wc -l)",
+      "Bash(cd /d D:\\\\GIT\\\\Otros\\\\lib-e2e-cypress-for-dummys-ts)",
+      "Bash(dir CHANGELOG* LICENSE*)",
+      "Bash(dir /b CHANGELOG.md LICENSE LICENSE.md)",
+      "Bash(dir dist\\\\runner.js dist\\\\index.d.ts)",
+      "Bash(grep -c \"/\\\\*\\\\*\" \"D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/dist/index.d.ts\")"
     ]
   }
 }
