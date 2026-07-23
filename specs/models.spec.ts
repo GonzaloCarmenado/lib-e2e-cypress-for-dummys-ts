@@ -7,6 +7,7 @@ import {
   RESUME_TTL_CONFIG_KEY,
   DEFAULT_RESUME_TTL_MINUTES,
 } from '../src/models/active-session.model';
+import { isLoginSetupConfig, DEFAULT_LOGIN_SETUP_CONFIG } from '../src/models/login-setup.model';
 
 describe('Phase 1 — Models', () => {
 
@@ -136,6 +137,61 @@ describe('Phase 1 — Models', () => {
         expect.arrayContaining(['tests', 'commands', 'interceptors', 'configuration', 'activeSession'])
       );
       expect(DB_STORE_NAMES).toHaveLength(5);
+    });
+  });
+
+  describe('login-setup.model — isLoginSetupConfig', () => {
+    it('returns true for a valid LoginSetupConfig object', () => {
+      expect(isLoginSetupConfig(DEFAULT_LOGIN_SETUP_CONFIG)).toBe(true);
+    });
+
+    it('returns true when beforeFn and beforeEachFn are non-null strings', () => {
+      expect(isLoginSetupConfig({
+        enabled: true,
+        filePath: '/login.ts',
+        fileContent: 'export function login() {}',
+        detectedFunctions: ['login'],
+        beforeFn: 'login',
+        beforeEachFn: null,
+      })).toBe(true);
+    });
+
+    it('returns false for null', () => {
+      expect(isLoginSetupConfig(null)).toBe(false);
+    });
+
+    it('returns false for undefined', () => {
+      expect(isLoginSetupConfig(undefined)).toBe(false);
+    });
+
+    it('returns false for a primitive', () => {
+      expect(isLoginSetupConfig(42)).toBe(false);
+      expect(isLoginSetupConfig('string')).toBe(false);
+    });
+
+    it('returns false for an array', () => {
+      expect(isLoginSetupConfig([])).toBe(false);
+    });
+
+    it('returns false when enabled is missing', () => {
+      const { enabled: _unused, ...rest } = DEFAULT_LOGIN_SETUP_CONFIG;
+      expect(isLoginSetupConfig(rest)).toBe(false);
+    });
+
+    it('returns false when filePath is not a string', () => {
+      expect(isLoginSetupConfig({ ...DEFAULT_LOGIN_SETUP_CONFIG, filePath: 123 })).toBe(false);
+    });
+
+    it('returns false when detectedFunctions is not an array', () => {
+      expect(isLoginSetupConfig({ ...DEFAULT_LOGIN_SETUP_CONFIG, detectedFunctions: 'login' })).toBe(false);
+    });
+
+    it('returns false when beforeFn is neither null nor string', () => {
+      expect(isLoginSetupConfig({ ...DEFAULT_LOGIN_SETUP_CONFIG, beforeFn: 42 })).toBe(false);
+    });
+
+    it('returns false when beforeEachFn is neither null nor string', () => {
+      expect(isLoginSetupConfig({ ...DEFAULT_LOGIN_SETUP_CONFIG, beforeEachFn: false })).toBe(false);
     });
   });
 

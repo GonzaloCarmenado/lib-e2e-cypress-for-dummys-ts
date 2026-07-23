@@ -1,17 +1,17 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { DB_SCHEMA } from '../models/db-schema.model';
 import type { ActiveSessionState } from '../models/active-session.model';
-import type { LoginSetupConfig } from '../models/login-setup.model';
+import { isLoginSetupConfig, type LoginSetupConfig } from '../models/login-setup.model';
 import { normalizeBlock, escapeSingleQuotes } from '../utils/code-format.utils';
 import { buildTicketComment } from '../utils/ticket.utils';
 
 /** Fixed primary key for the single active-session record. */
 const ACTIVE_SESSION_ID = 1;
 
-interface TestRecord        { id: number; name: string; createdAt: number; tags?: string[]; notes?: string; ticketId?: string; }
-interface CommandRecord     { id: number; command: string; testId: number; createdAt: number; }
-interface InterceptorRecord { id: number; interceptor: string; testId: number; createdAt: number; }
-interface ConfigRecord      { id: number; [key: string]: unknown; }
+type TestRecord        = { id: number; name: string; createdAt: number; tags?: string[]; notes?: string; ticketId?: string; };
+type CommandRecord     = { id: number; command: string; testId: number; createdAt: number; };
+type InterceptorRecord = { id: number; interceptor: string; testId: number; createdAt: number; };
+type ConfigRecord      = { id: number; [key: string]: unknown; };
 
 export interface TestWithDetails extends TestRecord {
   commands: string[];
@@ -195,7 +195,10 @@ export class PersistenceService {
     if (!record) return null;
     const raw = record[PersistenceService.LOGIN_SETUP_KEY];
     if (typeof raw !== 'string') return null;
-    try { return JSON.parse(raw) as LoginSetupConfig; } catch { return null; }
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return isLoginSetupConfig(parsed) ? parsed : null;
+    } catch { return null; }
   }
 
   async clearLoginSetup(): Promise<void> {
