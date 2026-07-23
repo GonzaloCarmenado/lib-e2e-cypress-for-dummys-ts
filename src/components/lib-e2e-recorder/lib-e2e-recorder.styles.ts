@@ -1,4 +1,5 @@
 import type { ExpandDirection } from '../../utils/widget-position.utils';
+import { THEME } from '../../utils/theme';
 
 const DIRECTIONS: ExpandDirection[] = ['up-left', 'up-right', 'down-left', 'down-right'];
 
@@ -39,7 +40,7 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       right: 0;
       width: 190px;
       height: 190px;
-      z-index: 2147483647;
+      z-index: ${THEME.zIndex.overlay};
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
@@ -56,8 +57,8 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       touch-action: none;
       font-size: 19px;
       background: ${rec
-        ? 'linear-gradient(135deg,#f85149 0%,#da3633 100%)'
-        : 'linear-gradient(135deg,#2f81f7 0%,#1f6feb 100%)'};
+        ? `linear-gradient(135deg,${THEME.color.red} 0%,${THEME.color.redDark} 100%)`
+        : `linear-gradient(135deg,${THEME.color.blue} 0%,${THEME.color.blueDark} 100%)`};
       color: #fff;
       box-shadow: ${rec
         ? '0 4px 20px rgba(248,81,73,.55),0 0 0 4px rgba(248,81,73,.13)'
@@ -92,9 +93,9 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       align-items: center;
       justify-content: center;
       background: ${paused
-        ? 'linear-gradient(135deg,#2f81f7 0%,#1f6feb 100%)'
+        ? `linear-gradient(135deg,${THEME.color.blue} 0%,${THEME.color.blueDark} 100%)`
         : 'rgba(13,17,23,0.85)'};
-      color: ${paused ? '#fff' : '#e3b341'};
+      color: ${paused ? '#fff' : THEME.color.yellowLight};
       box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 0 0 1px rgba(48,54,61,.8);
       transition: transform .15s, background .2s, color .2s;
       z-index: 2;
@@ -139,19 +140,19 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       border-radius: 8px;
       cursor: pointer;
       background: transparent;
-      color: #c9d1d9;
+      color: ${THEME.color.textBody};
       font-size: 18px;
       line-height: 1;
       transition: background .12s;
     }
-    .action-item:hover { background: #21262d; }
+    .action-item:hover { background: ${THEME.color.border}; }
     .action-item .label {
       font-size: 9px;
       font-weight: 500;
-      color: #8b949e;
+      color: ${THEME.color.textSecondary};
       white-space: nowrap;
     }
-    .action-item:hover .label { color: #e6edf3; }
+    .action-item:hover .label { color: ${THEME.color.textPrimary}; }
 
     /* Per-direction anchors */
     ${directionBlocks()}
@@ -163,8 +164,8 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       left: 50%;
       transform: translateX(-50%);
       background: ${paused
-        ? 'linear-gradient(90deg,#e3b341,#d29922)'
-        : 'linear-gradient(90deg,#f85149,#da3633)'};
+        ? `linear-gradient(90deg,${THEME.color.yellowLight},${THEME.color.yellow})`
+        : `linear-gradient(90deg,${THEME.color.red},${THEME.color.redDark})`};
       color: #fff;
       padding: 3px 16px;
       border-radius: 20px;
@@ -172,7 +173,7 @@ export function getRecorderStyles(rec: boolean, paused: boolean): string {
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
-      z-index: 2147483647;
+      z-index: ${THEME.zIndex.overlay};
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       box-shadow: ${paused
         ? '0 4px 16px rgba(227,179,65,.4)'

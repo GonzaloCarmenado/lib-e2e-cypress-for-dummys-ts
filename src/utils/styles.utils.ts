@@ -1,3 +1,5 @@
+import { THEME } from './theme';
+
 export const SCROLLBAR_STYLES = `
 .swal2-popup::-webkit-scrollbar,
 .swal2-html-container::-webkit-scrollbar,
@@ -11,13 +13,13 @@ export const SCROLLBAR_STYLES = `
 .swal2-html-container::-webkit-scrollbar-thumb,
 .swal2-content::-webkit-scrollbar-thumb,
 .swal2-container::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: ${THEME.color.borderHover};
   border-radius: 3px;
 }
 .swal2-popup::-webkit-scrollbar-thumb:hover,
 .swal2-html-container::-webkit-scrollbar-thumb:hover,
 .swal2-content::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
+  background: ${THEME.color.textMuted};
 }
 .swal2-popup::-webkit-scrollbar-track,
 .swal2-html-container::-webkit-scrollbar-track,
@@ -27,13 +29,13 @@ export const SCROLLBAR_STYLES = `
 }
 .swal2-popup, .swal2-html-container, .swal2-content, .swal2-container {
   scrollbar-width: thin;
-  scrollbar-color: #30363d transparent;
+  scrollbar-color: ${THEME.color.borderHover} transparent;
 }
 `;
 
 export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
 .swal2-container, .swal2-popup {
-  z-index: 99999 !important;
+  z-index: ${THEME.zIndex.swal2} !important;
 }
 .swal2-container {
   padding: 0 !important;
@@ -41,10 +43,10 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   justify-content: center !important;
 }
 .swal2-popup {
-  background: #161b22 !important;
-  color: #e6edf3 !important;
+  background: ${THEME.color.bgCard} !important;
+  color: ${THEME.color.textPrimary} !important;
   border-radius: 12px !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.72), 0 0 0 1px #30363d !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.72), 0 0 0 1px ${THEME.color.borderHover} !important;
   border: none !important;
   padding: 0 !important;
   min-width: 400px;
@@ -65,13 +67,13 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   overflow: hidden !important;
 }
 .swal2-title {
-  color: #e6edf3 !important;
+  color: ${THEME.color.textPrimary} !important;
   font-weight: 600 !important;
   font-size: 14px !important;
-  background: #161b22;
+  background: ${THEME.color.bgCard};
   padding: 14px 48px 13px 18px !important;
   margin: 0 !important;
-  border-bottom: 1px solid #21262d;
+  border-bottom: 1px solid ${THEME.color.border};
   text-align: left !important;
   letter-spacing: 0.1px;
   white-space: nowrap !important;
@@ -82,7 +84,7 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   position: absolute !important;
   top: 10px !important;
   right: 12px !important;
-  color: #8b949e !important;
+  color: ${THEME.color.textSecondary} !important;
   font-size: 1.1rem !important;
   z-index: 1 !important;
   border-radius: 6px !important;
@@ -92,14 +94,14 @@ export const LIB_E2E_CYPRESS_FOR_DUMMYS_SWAL2_STYLES = `
   transition: background 0.15s, color 0.15s !important;
 }
 .swal2-close:hover {
-  background: #21262d !important;
-  color: #e6edf3 !important;
+  background: ${THEME.color.border} !important;
+  color: ${THEME.color.textPrimary} !important;
 }
 /* In SweetAlert2 v11, .swal2-html-container is a direct child of .swal2-popup */
 .swal2-html-container {
   flex: 1 !important;
   min-height: 0 !important;
-  background: #161b22;
+  background: ${THEME.color.bgCard};
   padding: 0 !important;
   margin: 0 !important;
   width: 100%;

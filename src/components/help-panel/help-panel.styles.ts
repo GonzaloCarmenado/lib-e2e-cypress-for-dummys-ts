@@ -1,3 +1,5 @@
+import { THEME } from '../../utils/theme';
+
 export const HELP_PANEL_STYLES = `
   :host { display: block; }
   *, *::before, *::after { box-sizing: border-box; }
@@ -5,14 +7,14 @@ export const HELP_PANEL_STYLES = `
   .help-tabs {
     display: flex;
     gap: 4px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid ${THEME.color.border};
     margin-bottom: 8px;
   }
   .help-tab {
     appearance: none;
     border: none;
     background: transparent;
-    color: #8b949e;
+    color: ${THEME.color.textSecondary};
     font-size: 12px;
     font-weight: 600;
     padding: 8px 12px;
@@ -22,14 +24,14 @@ export const HELP_PANEL_STYLES = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     transition: color .12s, border-color .12s;
   }
-  .help-tab:hover { color: #c9d1d9; }
-  .help-tab.active { color: #e6edf3; border-bottom-color: #2f81f7; }
+  .help-tab:hover { color: ${THEME.color.textBody}; }
+  .help-tab.active { color: ${THEME.color.textPrimary}; border-bottom-color: ${THEME.color.blue}; }
 
   .help-panel {
     max-height: 60vh;
     overflow-y: auto;
     padding: 4px 6px 8px;
-    color: #c9d1d9;
+    color: ${THEME.color.textBody};
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 13px;
     line-height: 1.55;
@@ -37,7 +39,7 @@ export const HELP_PANEL_STYLES = `
 
   .help-intro {
     margin: 0 0 12px;
-    color: #8b949e;
+    color: ${THEME.color.textSecondary};
     font-size: 12px;
   }
 
@@ -47,9 +49,9 @@ export const HELP_PANEL_STYLES = `
     margin: 0 0 6px;
     font-size: 12px;
     font-weight: 700;
-    color: #e6edf3;
+    color: ${THEME.color.textPrimary};
     letter-spacing: .3px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid ${THEME.color.border};
     padding-bottom: 4px;
   }
 
@@ -62,14 +64,14 @@ export const HELP_PANEL_STYLES = `
   .help-list li {
     padding: 3px 0 3px 14px;
     position: relative;
-    color: #c9d1d9;
+    color: ${THEME.color.textBody};
   }
 
   .help-list li::before {
     content: '·';
     position: absolute;
     left: 3px;
-    color: #2f81f7;
+    color: ${THEME.color.blue};
     font-weight: 700;
   }
 `;
