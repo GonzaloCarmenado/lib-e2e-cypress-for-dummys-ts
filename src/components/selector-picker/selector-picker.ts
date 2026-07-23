@@ -1,30 +1,31 @@
 import type { RecordingService } from '../../services/recording.service';
-import type { TranslationService } from '../../services/translation.service';
 import { describePickerRow, type PickerRow } from '../../utils/selector-quality.utils';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { SELECTOR_PICKER_STYLES } from './selector-picker.styles';
 import { renderPicker } from './selector-picker.template';
+import { BaseElement } from '../base.element';
 
 const OWN_DATA_CY = 'lib-e2e-cypress-for-dummys';
 const MAX_ANCESTORS = 10;
 
-export class SelectorPickerElement extends HTMLElement {
+/**
+ * `<lib-e2e-selector-picker>` custom element — floating overlay that lets the
+ * user choose the best CSS selector for an element the recorder could not
+ * resolve automatically.
+ *
+ * Displays a ranked list of ancestor elements with their available selector
+ * attributes and lets the user confirm or dismiss with keyboard or mouse.
+ */
+export class SelectorPickerElement extends BaseElement {
   targetElement: HTMLElement | null = null;
   recording!: RecordingService;
-  translation!: TranslationService;
 
-  private shadow: ShadowRoot;
   private ancestors: HTMLElement[] = [];
   private rows: PickerRow[] = [];
   private selectedIndex = 0;
   private keyHandler: ((e: KeyboardEvent) => void) | null = null;
   private unsubRecording: (() => void) | null = null;
   private unsubPause: (() => void) | null = null;
-
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
 
   connectedCallback(): void {
     this.setAttribute('data-cy', 'lib-e2e-cypress-for-dummys');
@@ -41,10 +42,6 @@ export class SelectorPickerElement extends HTMLElement {
     this.detachKeyListener();
     this.unsubRecording?.();
     this.unsubPause?.();
-  }
-
-  private t(key: string): string {
-    return this.translation?.translate(key) ?? key;
   }
 
   // ── Ancestor chain ──────────────────────────────────────────────────────────

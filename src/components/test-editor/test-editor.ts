@@ -1,16 +1,21 @@
 import { PersistenceService } from '../../services/persistence.service';
 import type { TestWithDetails } from '../../services/persistence.service';
-import { translationService, type TranslationService } from '../../services/translation.service';
 import { localeForLang } from '../../models/lang.model';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig } from '../../models/issue-tracker.model';
 import { TEST_EDITOR_STYLES } from './test-editor.styles';
 import { renderTestEditor } from './test-editor.template';
+import { BaseElement } from '../base.element';
 
-export class TestEditorElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-test-editor>` custom element — lists all saved Cypress tests stored
+ * in IndexedDB and provides expand, tag-filter, select, and export controls.
+ *
+ * Supports grouping by ticket, multi-select export modes (`all`, `manual`,
+ * `tags`), and configurable issue-tracker URL linking.
+ */
+export class TestEditorElement extends BaseElement {
   persistence!: PersistenceService;
-  translation: TranslationService = translationService;
   tests: TestWithDetails[] = [];
   expandedIndex: number | null = null;
   interceptorsByTest: Record<number, string[]> = {};
@@ -20,11 +25,6 @@ export class TestEditorElement extends HTMLElement {
   describeName = '';
   groupByTicket = false;
   issueTrackerConfig: IssueTrackerConfig = { ...DEFAULT_ISSUE_TRACKER_CONFIG };
-
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
 
   connectedCallback(): void {
     if (!this.persistence) this.persistence = new PersistenceService();
@@ -114,8 +114,6 @@ export class TestEditorElement extends HTMLElement {
     if (!tag) return this.tests;
     return this.tests.filter((t) => (t.tags ?? []).includes(tag));
   }
-
-  private t(key: string): string { return this.translation.translate(key); }
 
   private render(): void {
     const tags = this.allTags;

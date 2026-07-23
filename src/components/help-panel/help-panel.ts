@@ -1,21 +1,15 @@
 import { TranslationService } from '../../services/translation.service';
 import { HELP_PANEL_STYLES } from './help-panel.styles';
 import { renderHelpPanel, type HelpTab } from './help-panel.template';
+import { BaseElement } from '../base.element';
 
 /**
  * `<help-panel>` — an in-app guide (spec 011). Two tabs: a quick reference
  * cheat-sheet and a verbose usage guide (workflow + coverage). Content is driven
  * by the HELP.* i18n keys.
  */
-export class HelpPanelElement extends HTMLElement {
-  private shadow: ShadowRoot;
+export class HelpPanelElement extends BaseElement {
   private activeTab: HelpTab = 'reference';
-  translation!: TranslationService;
-
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
 
   connectedCallback(): void {
     if (!this.translation) this.translation = new TranslationService();

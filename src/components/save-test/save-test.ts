@@ -1,12 +1,19 @@
-import { translationService, type TranslationService } from '../../services/translation.service';
 import { isValidTicketId } from '../../utils/ticket.utils';
 import type { IssueTrackerConfig } from '../../models/issue-tracker.model';
 import { DEFAULT_ISSUE_TRACKER_CONFIG } from '../../models/issue-tracker.model';
 import { SAVE_TEST_STYLES } from './save-test.styles';
 import { renderSaveTestAsk, renderSaveTestDesc, renderSaveTestConfirmDiscard } from './save-test.template';
+import { BaseElement } from '../base.element';
 
-export class SaveTestElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-save-test>` custom element — multi-step form for naming, tagging,
+ * and optionally linking a ticket to a recorded test before saving it.
+ *
+ * Manages three internal steps: `ask` (initial prompt), `desc` (description
+ * form), and `confirm-discard` (discard confirmation). Dispatches `savetest`
+ * and `saveandexport` custom events when the user confirms.
+ */
+export class SaveTestElement extends BaseElement {
   private _step: 'ask' | 'desc' | 'confirm-discard' = 'ask';
   private _stepBeforeDiscard: 'ask' | 'desc' = 'ask';
   description = '';
@@ -14,12 +21,6 @@ export class SaveTestElement extends HTMLElement {
   tags: string[] = [];
   ticketId = '';
   issueTrackerConfig: IssueTrackerConfig = DEFAULT_ISSUE_TRACKER_CONFIG;
-  translation: TranslationService = translationService;
-
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
 
   connectedCallback(): void { this.render(); }
 
@@ -55,8 +56,6 @@ export class SaveTestElement extends HTMLElement {
     this.tags = this.tags.filter((t) => t !== tag);
     this.render();
   }
-
-  private t(key: string): string { return this.translation.translate(key); }
 
   get ticketIdWarning(): boolean {
     if (!this.ticketId.trim() || !this.issueTrackerConfig.enabled) return false;

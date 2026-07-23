@@ -2,6 +2,7 @@ import Swal from 'sweetalert2';
 import { PersistenceService } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import { AdvancedTestTransformationService } from '../../services/advanced-test.transformation.service';
+import { BaseElement } from '../base.element';
 import { escapeSingleQuotes } from '../../utils/code-format.utils';
 import { buildLoginBlocks, buildLoginImportPath, hasLoginBlocks, injectLoginBlocksIntoExisting } from '../../utils/login-setup.utils';
 import type { LoginSetupConfig } from '../../models/login-setup.model';
@@ -9,12 +10,19 @@ import { ADVANCED_TEST_EDITOR_STYLES } from './advanced-test-editor.styles';
 import { renderNoPermission, renderAdvancedEditor, findFileHandleRecursive } from './advanced-test-editor.template';
 import type { DirectoryNode, FileNode } from '../../services/advanced-test.transformation.service';
 
-export class AdvancedTestEditorElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-advanced-test-editor>` custom element — full-featured editor that
+ * writes recorded tests directly into an on-disk Cypress spec file via the
+ * File System Access API.
+ *
+ * Supports directory scanning, file selection, `beforeEach` interceptor
+ * injection, `it(…)` block appending, diff preview, and login-setup block
+ * injection.
+ */
+export class AdvancedTestEditorElement extends BaseElement {
   private readonly transformationService = new AdvancedTestTransformationService();
 
   persistence!: PersistenceService;
-  translation!: TranslationService;
   testId?: number;
 
   e2eTree: Array<DirectoryNode | FileNode> = [];
@@ -38,18 +46,11 @@ export class AdvancedTestEditorElement extends HTMLElement {
   private _dirHandle: FileSystemDirectoryHandle | null = null;
   private _e2eHandle: FileSystemDirectoryHandle | null = null;
 
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
-
   connectedCallback(): void {
     if (!this.persistence) this.persistence = new PersistenceService();
     if (!this.translation) this.translation = new TranslationService();
     this.init();
   }
-
-  private t(key: string): string { return this.translation.translate(key); }
 
   private async init(): Promise<void> {
     const config = await this.persistence.getGeneralConfig();

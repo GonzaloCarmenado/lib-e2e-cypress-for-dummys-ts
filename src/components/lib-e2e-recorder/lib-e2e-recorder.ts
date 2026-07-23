@@ -1,4 +1,5 @@
 import Swal, { type SweetAlertOptions } from 'sweetalert2';
+import { BaseElement } from '../base.element';
 import { getRecorderStyles } from './lib-e2e-recorder.styles';
 import { renderRecorderWidget } from './lib-e2e-recorder.template';
 import { injectAssertionBuilder } from './assertion-builder';
@@ -45,37 +46,44 @@ import { toFixtureInterceptors, simplifyFixtureWaits } from '../../utils/fixture
  * Not extending HTMLElement avoids conflicts with the strict EventListener signature;
  * cast to Node/HTMLElement only for actual DOM insertion.
  */
-interface PrevisualizerEl {
+type PrevisualizerEl = {
   translation: TranslationService; commands: string[]; interceptors: string[]; editable: boolean;
   addEventListener(type: string, listener: (e: CustomEvent) => void): void;
-}
-interface TestEditorEl { persistence: PersistenceService; translation: TranslationService; issueTrackerConfig: IssueTrackerConfig; groupByTicket: boolean; }
-interface SaveTestEl {
+};
+type TestEditorEl = { persistence: PersistenceService; translation: TranslationService; issueTrackerConfig: IssueTrackerConfig; groupByTicket: boolean; };
+type SaveTestEl = {
   translation: TranslationService;
   issueTrackerConfig: IssueTrackerConfig;
   addEventListener(type: string, listener: (e: CustomEvent) => void): void;
-}
-interface ConfigEl {
+};
+type ConfigEl = {
   persistence: PersistenceService; translation: TranslationService;
   addEventListener(type: string, listener: (e: CustomEvent) => void): void;
-}
-interface AdvancedEditorEl {
+};
+type AdvancedEditorEl = {
   persistence: PersistenceService; translation: TranslationService; testId?: number;
   loginSetupConfig: LoginSetupConfig | null;
   addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
-}
-interface FilePreviewEl {
+};
+type FilePreviewEl = {
   translation: TranslationService; fileContent: string | null; fileName: string | null;
   closeLabel: string; itBlock: string; interceptorsBlock: string; notes: string;
   addEventListener(type: string, listener: (e: CustomEvent) => void | Promise<void>): void;
-}
-interface SelectorPickerEl {
+};
+type SelectorPickerEl = {
   targetElement: HTMLElement; recording: RecordingService; translation: TranslationService;
-}
-interface HelpPanelEl { translation: TranslationService }
+};
+type HelpPanelEl = { translation: TranslationService };
 
-export class LibE2eRecorderElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-recorder>` custom element — the root recorder widget.
+ *
+ * Orchestrates all sub-components (recorder widget, test editor, configuration,
+ * advanced editor, help panel) within SweetAlert2 modals. Manages the
+ * {@link RecordingService}, {@link HttpMonitor}, and cross-app session
+ * continuity via localStorage breadcrumbs.
+ */
+export class LibE2eRecorderElement extends BaseElement {
   private _isDisabled = false;
   private keydownHandler!: (e: KeyboardEvent) => void;
   private recordingUnsub?: () => void;
@@ -104,7 +112,6 @@ export class LibE2eRecorderElement extends HTMLElement {
 
   recording!: RecordingService;
   persistence!: PersistenceService;
-  translation!: TranslationService;
 
   isVisible = false;
   isRecording = false;
@@ -118,11 +125,6 @@ export class LibE2eRecorderElement extends HTMLElement {
   isSettingsDialogOpen = false;
   isAdvancedEditorDialogOpen = false;
   isHelpDialogOpen = false;
-
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
 
   connectedCallback(): void {
     if ('Cypress' in window) {

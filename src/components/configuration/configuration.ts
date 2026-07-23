@@ -2,6 +2,7 @@ import { PersistenceService } from '../../services/persistence.service';
 import type { TestWithDetails } from '../../services/persistence.service';
 import { TranslationService } from '../../services/translation.service';
 import type { Lang } from '../../models/lang.model';
+import { BaseElement } from '../base.element';
 import type { SelectorStrategy } from '../../services/recording.service';
 import { RESUME_TTL_CONFIG_KEY, DEFAULT_RESUME_TTL_MINUTES } from '../../models/active-session.model';
 import { DEFAULT_ISSUE_TRACKER_CONFIG, type IssueTrackerConfig, type IssueTrackerProvider } from '../../models/issue-tracker.model';
@@ -12,10 +13,15 @@ import { selectTestsForExport, type ExportMode } from '../../utils/export-select
 import { CONFIGURATION_STYLES } from './configuration.styles';
 import { renderConfiguration } from './configuration.template';
 
-export class ConfigurationElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-configuration>` custom element — settings panel for the recorder
+ * library.
+ *
+ * Exposes controls for language, selector strategy, extended HTTP commands,
+ * fixture mode, issue-tracker integration, login-setup, and test export options.
+ */
+export class ConfigurationElement extends BaseElement {
   persistence!: PersistenceService;
-  translation!: TranslationService;
   selectedLanguage = 'es';
   advancedHttpConfig = false;
   fixtureMode = false;
@@ -43,7 +49,6 @@ export class ConfigurationElement extends HTMLElement {
 
   constructor() {
     super();
-    this.shadow = this.attachShadow({ mode: 'open' });
     // Read from localStorage (sync cache) — see initHttpConfig() in the recorder.
     this.advancedHttpConfig = localStorage.getItem('extendedHttpCommands') === 'true';
     this.fixtureMode = localStorage.getItem('fixtureMode') === 'true';
@@ -55,8 +60,6 @@ export class ConfigurationElement extends HTMLElement {
     this.loadConfig();
     this.render();
   }
-
-  private t(key: string): string { return this.translation.translate(key); }
 
   private async loadConfig(): Promise<void> {
     const config = await this.persistence.getGeneralConfig();

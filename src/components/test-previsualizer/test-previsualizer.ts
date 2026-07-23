@@ -1,19 +1,17 @@
-import { translationService, type TranslationService } from '../../services/translation.service';
 import { TEST_PREVISUALIZER_STYLES } from './test-previsualizer.styles';
 import { renderTestPrevisualizer } from './test-previsualizer.template';
+import { BaseElement } from '../base.element';
 
-export class TestPrevisualizerElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-test-previsualizer>` custom element — read-only (or optionally
+ * editable) preview panel that renders the currently recorded Cypress commands
+ * and interceptors with syntax highlighting.
+ */
+export class TestPrevisualizerElement extends BaseElement {
   private _commands: string[] = [];
   private _interceptors: string[] = [];
   private _showInterceptors = false;
   editable = false;
-  translation: TranslationService = translationService;
-
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
 
   connectedCallback(): void {
     this.render();
@@ -55,8 +53,6 @@ export class TestPrevisualizerElement extends HTMLElement {
     if (!text) return;
     navigator.clipboard?.writeText(text);
   }
-
-  private t(key: string): string { return this.translation.translate(key); }
 
   private dispatchDelete(index: number): void {
     this.dispatchEvent(new CustomEvent('deletecommand', { detail: index, bubbles: true, composed: true }));

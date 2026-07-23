@@ -1,17 +1,20 @@
-import { translationService, type TranslationService } from '../../services/translation.service';
 import { advancedTestTransformationService } from '../../services/advanced-test.transformation.service';
 import { showToast } from '../../utils/toast.utils';
 import { isLocalHost } from '../../utils/host.utils';
 import { FILE_PREVIEW_STYLES } from './file-preview.styles';
 import { renderFilePreview, type RunState } from './file-preview.template';
+import { BaseElement } from '../base.element';
 
-export class FilePreviewElement extends HTMLElement {
-  private shadow: ShadowRoot;
+/**
+ * `<lib-e2e-file-preview>` custom element — displays a Cypress spec file's
+ * content with an inline editor, a diff view, and an optional "Run test"
+ * button that calls a local Cypress runner endpoint.
+ */
+export class FilePreviewElement extends BaseElement {
   private textarea: HTMLTextAreaElement | null = null;
 
   fileName: string | null = null;
   closeLabel = '';
-  translation: TranslationService = translationService;
   itBlock = '';
   interceptorsBlock = '';
   notes = '';
@@ -27,17 +30,10 @@ export class FilePreviewElement extends HTMLElement {
   private _runState: RunState = 'idle';
   private _runOutput = '';
 
-  constructor() {
-    super();
-    this.shadow = this.attachShadow({ mode: 'open' });
-  }
-
   connectedCallback(): void {
     if (!this.closeLabel) this.closeLabel = this.translation.translate('FILE_PREVIEW.CLOSE_BTN');
     this.render();
   }
-
-  private t(key: string): string { return this.translation.translate(key); }
 
   get fileContent(): string | null { return this._fileContent; }
   set fileContent(v: string | null) {
