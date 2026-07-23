@@ -1,0 +1,9 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "readme": "README.md",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "excludePrivate": true,
+  "excludeInternal": true
+}
