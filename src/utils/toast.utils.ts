@@ -1,3 +1,10 @@
+/**
+ * Displays a self-dismissing toast notification in the top-right corner of the
+ * viewport. The toast removes itself from the DOM after 3 seconds.
+ *
+ * @param message - The text to display inside the toast.
+ * @param isSuccess - When `true` (default) the toast is green; when `false` it is red.
+ */
 export function showToast(message: string, isSuccess = true): void {
   const toast = document.createElement('div');
   toast.textContent = message;

@@ -1,3 +1,16 @@
+/**
+ * Makes a modal element user-resizable by switching it to `position: fixed`,
+ * applying `resize: both`, and injecting a visible resize handle in the
+ * bottom-right corner. Attaches `mousemove`/`mouseup` listeners on `window`
+ * to support dragging the handle.
+ *
+ * @param modal - The modal root element to make resizable.
+ * @param options - Optional minimum dimensions in pixels.
+ * @param options.minWidth - Minimum width (default `320`).
+ * @param options.minHeight - Minimum height (default `180`).
+ * @returns A cleanup function that removes the resize handle and all listeners.
+ *          Returns a no-op if the element is falsy or already has a resizer.
+ */
 export function makeModalResizable(
   modal: HTMLElement,
   options?: { minWidth?: number; minHeight?: number }
@@ -97,6 +110,13 @@ function resolveDragArea(swal: HTMLElement): HTMLElement | null {
     ?? (swal.querySelector('.swal2-title') as HTMLElement | null);
 }
 
+/**
+ * Makes the topmost visible SweetAlert2 popup draggable by attaching a
+ * mousedown handler to its header or title element.
+ *
+ * Scans all `.swal2-popup` elements in the document and targets the last one
+ * (the one rendered on top). Does nothing if no popup or drag area is found.
+ */
 export function makeSwalDraggable(): void {
   const popups = document.querySelectorAll('.swal2-popup');
   if (!popups.length) return;
@@ -106,6 +126,15 @@ export function makeSwalDraggable(): void {
   applyDraggable(swal, dragArea);
 }
 
+/**
+ * Makes the SweetAlert2 popup that contains a given content element draggable.
+ *
+ * Looks up the element by `contentId`, traverses to its `.swal2-popup` ancestor,
+ * and attaches a drag handler to the popup's header or title. Falls back to
+ * {@link makeSwalDraggable} when the element is not found.
+ *
+ * @param contentId - The `id` of an element inside the target SweetAlert2 popup.
+ */
 export function makeSwalDraggableByContentId(contentId: string): void {
   const content = document.getElementById(contentId);
   if (!content) {
@@ -120,12 +149,26 @@ export function makeSwalDraggableByContentId(contentId: string): void {
   applyDraggable(swal, dragArea);
 }
 
+/**
+ * Sets a `data-cy` attribute on the SweetAlert2 container, HTML container, and
+ * title elements so Cypress can target them reliably in tests.
+ *
+ * @param dataCy - The attribute value to set (default `'lib-e2e-cypress-for-dummys'`).
+ */
 export function setSwal2DataCyAttribute(dataCy = 'lib-e2e-cypress-for-dummys'): void {
   document.querySelector('.swal2-container')?.setAttribute('data-cy', dataCy);
   document.querySelector('.swal2-html-container')?.setAttribute('data-cy', dataCy);
   document.querySelector('.swal2-title')?.setAttribute('data-cy', dataCy);
 }
 
+/**
+ * Fixes a SweetAlert2 popup to an exact pixel height and makes its
+ * `.swal2-html-container` fill the remaining space as a flex column, preventing
+ * content overflow when the popup hosts a tall custom element.
+ *
+ * @param popup - The `.swal2-popup` element to resize, or `null` (no-op).
+ * @param heightPx - The target height in pixels.
+ */
 export function ensurePopupDimensions(popup: HTMLElement | null, heightPx: number): void {
   if (!popup) return;
   popup.style.height = `${heightPx}px`;

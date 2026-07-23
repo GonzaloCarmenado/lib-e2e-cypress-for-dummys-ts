@@ -5,6 +5,17 @@ import { redactSensitiveFields } from '../utils/redact.utils';
 const INTERCEPTED_METHODS = ['GET', 'POST', 'PUT'] as const;
 type InterceptedMethod = (typeof INTERCEPTED_METHODS)[number];
 
+/**
+ * Generates a human-readable Cypress alias from an HTTP method and URL.
+ *
+ * Converts the URL path segments to a kebab-case string and prefixes it with
+ * the lowercased method, e.g. `'get-api-users-123'` for `GET /api/users/123`.
+ * Falls back to `'<method>-intercepted-request'` if the URL cannot be parsed.
+ *
+ * @param method - HTTP method string (e.g. `'GET'`, `'POST'`).
+ * @param url - The full request URL.
+ * @returns A kebab-case alias suitable for use in `cy.intercept(…).as(alias)`.
+ */
 export function generateAlias(method: string, url: string): string {
   try {
     const u = new URL(url, 'http://localhost');
@@ -263,9 +274,24 @@ export function _resetHttpMonitorState(): void {
 
 // ─── HttpMonitor — public API (thin wrapper over the module-level singleton) ─
 
+/**
+ * Installs and manages reference-counted patches over `window.fetch` and
+ * `window.XMLHttpRequest` to intercept HTTP traffic and forward it to one or
+ * more {@link RecordingService} instances as Cypress command strings.
+ *
+ * Uses a module-level singleton so that multiple recorder instances share a
+ * single fetch/XHR patch; the patch is applied on the first {@link install}
+ * call and removed when the last {@link uninstall} call brings the ref-count to
+ * zero.
+ */
 export class HttpMonitor {
   constructor(private readonly recording: RecordingService) {}
 
+  /**
+   * Registers this instance's recording service with the shared monitor and
+   * increments the ref-count. Patches `window.fetch` and `window.XMLHttpRequest`
+   * on the first call.
+   */
   install(): void {
     _recordings.add(this.recording);
     _refCount++;
@@ -275,6 +301,11 @@ export class HttpMonitor {
     }
   }
 
+  /**
+   * Deregisters this instance's recording service and decrements the ref-count.
+   * Restores the original `window.fetch` and `window.XMLHttpRequest` when the
+   * ref-count reaches zero.
+   */
   uninstall(): void {
     _recordings.delete(this.recording);
     if (_refCount <= 0) return;
@@ -285,10 +316,20 @@ export class HttpMonitor {
     }
   }
 
+  /**
+   * Returns `true` when the "Extended HTTP commands" option is enabled, meaning
+   * `cy.wait(…).then(…)` blocks will include inline request/response body
+   * assertions instead of empty callbacks.
+   */
   isExtendedHttpEnabled(): boolean {
     return localStorage.getItem('extendedHttpCommands') === 'true';
   }
 
+  /**
+   * Returns `true` when the "Fixture mode" option is enabled, meaning GET
+   * responses will be captured as JSON fixture files and interceptors will use
+   * `{ fixture: '…' }` stubs instead of spy-only intercepts.
+   */
   isFixtureModeEnabled(): boolean {
     return localStorage.getItem('fixtureMode') === 'true';
   }

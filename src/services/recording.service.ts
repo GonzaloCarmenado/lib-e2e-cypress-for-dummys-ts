@@ -17,6 +17,17 @@ function createSessionId(): string {
   return `sess-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
 }
 
+/**
+ * Central recording engine for the lib-e2e-cypress-for-dummys library.
+ *
+ * Installs document-level event listeners (click, dblclick, contextmenu, input,
+ * change, keydown) and history patching to translate user interactions into
+ * Cypress command strings. Commands and interceptors are held in reactive
+ * {@link Subject} streams so UI components can subscribe to live updates.
+ *
+ * One instance is created per recorder widget mount and torn down via
+ * {@link destroy} when the widget unmounts.
+ */
 export class RecordingService {
   private readonly commands$ = new Subject<string[]>([]);
   private readonly interceptors$ = new Subject<string[]>([]);
@@ -51,6 +62,11 @@ export class RecordingService {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
+  /**
+   * Starts a new recording session: clears any previous commands, assigns a
+   * fresh session ID, and emits the three boilerplate bootstrap commands
+   * (`cy.viewport`, `cy.visit`, and `invoke('hide')`).
+   */
   startRecording(): void {
     this.clearCommands();
     this.sessionId = createSessionId();
@@ -93,11 +109,19 @@ export class RecordingService {
     };
   }
 
+  /**
+   * Stops the active recording session and clears the paused state.
+   * Recorded commands are preserved so they can be saved or exported.
+   */
   stopRecording(): void {
     this.isPaused$.next(false);
     this.isRecording$.next(false);
   }
 
+  /**
+   * Toggles between recording and stopped states: stops if currently recording,
+   * starts a new session otherwise.
+   */
   toggleRecording(): void {
     if (this.isRecording$.getValue()) {
       this.stopRecording();
@@ -106,15 +130,21 @@ export class RecordingService {
     }
   }
 
+  /**
+   * Pauses the active recording session so that subsequent interactions are
+   * ignored. Does nothing when no recording is in progress.
+   */
   pauseRecording(): void {
     if (!this.isRecording$.getValue()) return;
     this.isPaused$.next(true);
   }
 
+  /** Resumes a paused recording session, re-enabling command capture. */
   resumeRecording(): void {
     this.isPaused$.next(false);
   }
 
+  /** Toggles between paused and resumed states while a recording is active. */
   togglePause(): void {
     if (this.isPaused$.getValue()) {
       this.resumeRecording();
@@ -123,6 +153,13 @@ export class RecordingService {
     }
   }
 
+  /**
+   * Appends a Cypress command string to the recorded list, but only when the
+   * session is actively recording and not paused. Use {@link appendCommand} to
+   * bypass the recording/paused guard.
+   *
+   * @param cmd - The Cypress command string to append (e.g. `"cy.get('…').click()"`).
+   */
   addCommand(cmd: string): void {
     if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
     this.commands$.next([...this.commands$.getValue(), cmd]);
@@ -133,12 +170,25 @@ export class RecordingService {
     this.commands$.next([...this.commands$.getValue(), cmd]);
   }
 
+  /**
+   * Removes the command at the given index from the recorded list.
+   * Out-of-bounds indices are silently ignored.
+   *
+   * @param index - Zero-based index of the command to remove.
+   */
   removeCommand(index: number): void {
     const cmds = this.commands$.getValue();
     if (index < 0 || index >= cmds.length) return;
     this.commands$.next([...cmds.slice(0, index), ...cmds.slice(index + 1)]);
   }
 
+  /**
+   * Moves a recorded command from one position to another (reorders in place).
+   * Out-of-bounds or identical indices are silently ignored.
+   *
+   * @param from - Zero-based source index.
+   * @param to - Zero-based destination index.
+   */
   moveCommand(from: number, to: number): void {
     const cmds = [...this.commands$.getValue()];
     if (from < 0 || to < 0 || from >= cmds.length || to >= cmds.length || from === to) return;
@@ -147,12 +197,28 @@ export class RecordingService {
     this.commands$.next(cmds);
   }
 
+  /**
+   * Removes the interceptor at the given index from the captured interceptors list.
+   * Out-of-bounds indices are silently ignored.
+   *
+   * @param index - Zero-based index of the interceptor to remove.
+   */
   removeInterceptor(index: number): void {
     const ints = this.interceptors$.getValue();
     if (index < 0 || index >= ints.length) return;
     this.interceptors$.next([...ints.slice(0, index), ...ints.slice(index + 1)]);
   }
 
+  /**
+   * Records a `cy.intercept(…).as(alias)` command for a captured HTTP request.
+   * Deduplicates: an identical intercept line is not added twice. Only fires
+   * while actively recording and not paused.
+   *
+   * @param method - HTTP method in uppercase (e.g. `'GET'`, `'POST'`).
+   * @param url - The full request URL; converted to a wildcard path pattern.
+   * @param alias - The Cypress alias to assign (e.g. `'get-api-users'`).
+   * @param fixtureFile - Optional fixture filename to stub the response with.
+   */
   registerInterceptor(method: string, url: string, alias: string, fixtureFile?: string): void {
     // Only capture interceptors while actively recording — otherwise HTTP calls
     // the host app fires before recording starts (the monitor is installed on
@@ -174,22 +240,43 @@ export class RecordingService {
     this.fixtures.set(name, content);
   }
 
+  /**
+   * Returns a snapshot of all captured fixtures as an array of
+   * `{ name, content }` objects, where `name` is the fixture filename
+   * (e.g. `'get-api-users.json'`) and `content` is pretty-printed JSON.
+   */
   getFixturesSnapshot(): Array<{ name: string; content: string }> {
     return [...this.fixtures.entries()].map(([name, content]) => ({ name, content }));
   }
 
+  /**
+   * Stores the binary content of a file selected via a `<input type="file">`
+   * element so it can be written to the Cypress fixtures folder at export time.
+   *
+   * @param filename - The original filename (e.g. `'avatar.png'`).
+   * @param bytes - The raw file contents as an `ArrayBuffer`.
+   */
   addUploadedFile(filename: string, bytes: ArrayBuffer): void {
     this.uploadedFiles.set(filename, bytes);
   }
 
+  /**
+   * Returns a snapshot of all files captured from file-input interactions as an
+   * array of `{ filename, bytes }` objects.
+   */
   getUploadedFilesSnapshot(): Array<{ filename: string; bytes: ArrayBuffer }> {
     return [...this.uploadedFiles.entries()].map(([filename, bytes]) => ({ filename, bytes }));
   }
 
+  /** Clears all uploaded-file buffers (called after they have been written to disk). */
   clearUploadedFiles(): void {
     this.uploadedFiles.clear();
   }
 
+  /**
+   * Clears all recorded commands, interceptors, fixtures, and uploaded files.
+   * Called automatically at the start of each new recording session.
+   */
   clearCommands(): void {
     this.commands$.next([]);
     this.interceptors$.next([]);
@@ -197,26 +284,54 @@ export class RecordingService {
     this.uploadedFiles.clear();
   }
 
+  /** Clears all captured interceptors without affecting recorded commands. */
   clearInterceptors(): void {
     this.interceptors$.next([]);
   }
 
+  /** Returns the current list of recorded Cypress command strings (point-in-time snapshot). */
   getCommandsSnapshot(): string[]  { return this.commands$.getValue(); }
+  /** Returns the current list of captured `cy.intercept` strings (point-in-time snapshot). */
   getInterceptorsSnapshot(): string[] { return this.interceptors$.getValue(); }
+  /** Returns `true` when the recording is currently paused. */
   getPausedSnapshot(): boolean     { return this.isPaused$.getValue(); }
 
+  /**
+   * Subscribes to changes in the recorded commands list.
+   *
+   * @param fn - Callback invoked with the full current list whenever it changes.
+   * @returns An unsubscribe function.
+   */
   onCommandsChange(fn: (cmds: string[]) => void): () => void {
     return this.commands$.subscribe(fn);
   }
 
+  /**
+   * Subscribes to changes in the captured interceptors list.
+   *
+   * @param fn - Callback invoked with the full current list whenever it changes.
+   * @returns An unsubscribe function.
+   */
   onInterceptorsChange(fn: (ints: string[]) => void): () => void {
     return this.interceptors$.subscribe(fn);
   }
 
+  /**
+   * Subscribes to changes in the recording state (started / stopped).
+   *
+   * @param fn - Callback invoked with `true` when recording starts and `false` when it stops.
+   * @returns An unsubscribe function.
+   */
   onRecordingChange(fn: (isRecording: boolean) => void): () => void {
     return this.isRecording$.subscribe(fn);
   }
 
+  /**
+   * Subscribes to changes in the paused state.
+   *
+   * @param fn - Callback invoked with `true` when paused and `false` when resumed.
+   * @returns An unsubscribe function.
+   */
   onPauseChange(fn: (isPaused: boolean) => void): () => void {
     return this.isPaused$.subscribe(fn);
   }
@@ -237,12 +352,25 @@ export class RecordingService {
     return () => unsubs.forEach((u) => u());
   }
 
+  /**
+   * Subscribes to events where a clicked element could not be resolved to a
+   * reliable CSS selector. Useful for opening the selector-picker overlay.
+   *
+   * @param fn - Callback invoked with the unresolvable target element and the
+   *             interaction type that triggered the failure.
+   * @returns An unsubscribe function.
+   */
   onSelectorNotFound(fn: (target: HTMLElement, action: 'click') => void): () => void {
     return this.selectorNotFound$.subscribe((v) => {
       if (v) fn(v.target, v.action);
     });
   }
 
+  /**
+   * Tears down all event listeners and restores the original `history.pushState`
+   * and `history.replaceState` methods. Must be called when the recorder widget
+   * unmounts to prevent memory leaks and stale listeners.
+   */
   destroy(): void {
     this.abort.abort();
     history.pushState = this.origPushState;

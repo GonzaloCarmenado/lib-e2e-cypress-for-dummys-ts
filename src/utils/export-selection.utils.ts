@@ -3,6 +3,7 @@ import type { TestWithDetails } from '../services/persistence.service';
 /** How the user chose which tests to export. */
 export type ExportMode = 'all' | 'manual' | 'tags';
 
+/** Options that refine which tests are selected in `manual` and `tags` modes. */
 export interface ExportSelectionOptions {
   /** Test ids to include in `manual` mode. */
   ids?: Iterable<number>;

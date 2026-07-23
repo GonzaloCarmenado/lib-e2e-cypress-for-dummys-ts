@@ -33,6 +33,18 @@ function normalizeKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+/**
+ * Returns `true` when a field key should be considered sensitive and its value
+ * must be redacted before being written to generated test code or fixture files.
+ *
+ * A key is sensitive when, once normalized (lowercased, non-alphanumeric
+ * characters stripped), it matches a known credential substring (e.g.
+ * `password`, `token`, `apikey`) or exactly equals a short marker (`auth`,
+ * `pwd`, `pin`, `otp`, `ssn`).
+ *
+ * @param key - The object key to evaluate (e.g. `"X-Api-Key"`, `"accessToken"`).
+ * @returns `true` if the key should be redacted, `false` otherwise.
+ */
 export function isSensitiveKey(key: string): boolean {
   const normalized = normalizeKey(key);
   if (SENSITIVE_EXACT.has(normalized)) return true;

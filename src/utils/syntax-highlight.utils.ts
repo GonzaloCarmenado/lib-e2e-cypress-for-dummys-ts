@@ -10,6 +10,21 @@ const KEYWORDS = new Set([
 
 const BUILTINS = new Set(['cy', 'expect', 'assert', 'Cypress', 'chai']);
 
+/**
+ * Applies lightweight syntax highlighting to a JavaScript/Cypress code string by
+ * wrapping tokens in `<span>` elements with CSS classes:
+ * - `sh-kw` — language keywords (`describe`, `it`, `const`, `await`, etc.)
+ * - `sh-bi` — Cypress/Chai builtins (`cy`, `expect`, `Cypress`, `chai`)
+ * - `sh-str` — string literals (single-quoted, double-quoted, template)
+ * - `sh-num` — numeric literals
+ * - `sh-cmt` — single-line `//` comments
+ *
+ * All token text is HTML-escaped before wrapping, so the output is safe to set as
+ * `innerHTML`.
+ *
+ * @param code - The raw JavaScript/Cypress source code to highlight.
+ * @returns An HTML string with syntax-highlighting spans applied, line by line.
+ */
 export function syntaxHighlight(code: string): string {
   return code.split('\n').map(highlightLine).join('\n');
 }
