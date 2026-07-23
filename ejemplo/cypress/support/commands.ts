@@ -1,27 +1,14 @@
 /// <reference types="cypress" />
-// ***********************************************
-// This example commands.ts shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
+
+declare namespace Cypress {
+  interface Chainable {
+    clearRecorderState(): Chainable<void>;
+    startRecording(): Chainable<void>;
+    stopRecording(): Chainable<void>;
+    openCommandsPanel(): Chainable<void>;
+    commandShouldContain(text: string): Chainable<void>;
+    commandShouldNotContain(text: string): Chainable<void>;
+    interceptorShouldContain(text: string): Chainable<void>;
+    interceptorCountShouldBe(n: number): Chainable<void>;
+  }
+}
