@@ -65,6 +65,19 @@ jobs:
         run: npx cypress install
         working-directory: ejemplo
 
+      # Diagnose workspace after npm ci
+      - name: Debug workspace
+        run: |
+          echo "=== node_modules/.bin/vite ==="
+          ls node_modules/.bin/vite 2>/dev/null && echo "vite found" || echo "vite NOT found"
+          echo "=== @originjs ==="
+          ls node_modules/@originjs/ 2>/dev/null || echo "federation plugin NOT found"
+          echo "=== @ejemplo ==="
+          ls node_modules/@ejemplo/ 2>/dev/null || echo "@ejemplo NOT found"
+          echo "=== node version ==="
+          node --version && npm --version
+        working-directory: ejemplo
+
       # Build all MFE packages and the shell
       - name: Build MFE remotes
         run: |
