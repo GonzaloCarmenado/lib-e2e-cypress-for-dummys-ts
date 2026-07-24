@@ -19,7 +19,7 @@ jobs:
 
       - name: Lint
         run: |
-          npm run lint -- --format json > /tmp/lint.json 2>/dev/null || true
+          npx eslint --format json > /tmp/lint.json 2>/dev/null || true
           npm run lint
 
       - name: Build
