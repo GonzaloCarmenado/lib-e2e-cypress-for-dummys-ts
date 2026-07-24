@@ -16,10 +16,74 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run build
-      - run: npm test
-      - run: npm run test:coverage
+
+      - name: Lint
+        run: |
+          npm run lint -- --format json > /tmp/lint.json 2>&1 || true
+          npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: |
+          npm test -- \
+            --reporter=verbose \
+            --reporter=json \
+            "--outputFile.json=/tmp/vitest.json"
+
+      - name: Coverage
+        run: npm run test:coverage
+
+      - name: Job summary
+        if: always()
+        run: |
+          cat > /tmp/unit-summary.cjs << 'ENDSCRIPT'
+          const fs = require('fs');
+          const out = process.env.GITHUB_STEP_SUMMARY;
+          let md = '## Unit Job Summary\n\n';
+
+          // ESLint
+          try {
+            const lint = JSON.parse(fs.readFileSync('/tmp/lint.json', 'utf8'));
+            const errors = lint.reduce((s, f) => s + f.errorCount, 0);
+            const warnings = lint.reduce((s, f) => s + f.warningCount, 0);
+            const icon = errors === 0 ? '✅' : '❌';
+            md += `### ${icon} ESLint\n\n`;
+            md += `| Errors | Warnings |\n|--------|----------|\n| ${errors} | ${warnings} |\n\n`;
+          } catch { md += '### ⚠️ ESLint — results unavailable\n\n'; }
+
+          // Unit tests
+          try {
+            const v = JSON.parse(fs.readFileSync('/tmp/vitest.json', 'utf8'));
+            const icon = v.numFailedTests === 0 ? '✅' : '❌';
+            md += `### ${icon} Unit Tests\n\n`;
+            md += `| Passed | Failed | Total | Suites |\n|--------|--------|-------|--------|\n`;
+            md += `| ${v.numPassedTests} | ${v.numFailedTests} | ${v.numTotalTests} | ${v.numTotalTestSuites} |\n\n`;
+          } catch { md += '### ⚠️ Unit Tests — results unavailable\n\n'; }
+
+          // Coverage — parse coverage-final.json (Istanbul/V8 format)
+          try {
+            const cov = JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8'));
+            let s = {t:0,c:0}, fn = {t:0,c:0}, b = {t:0,c:0};
+            for (const file of Object.values(cov)) {
+              for (const v of Object.values(file.s)) { s.t++; if (v > 0) s.c++; }
+              for (const v of Object.values(file.f)) { fn.t++; if (v > 0) fn.c++; }
+              for (const bs of Object.values(file.b)) for (const v of bs) { b.t++; if (v > 0) b.c++; }
+            }
+            const p = ({c, t}) => t > 0 ? (c / t * 100).toFixed(2) : '100.00';
+            const ok = v => parseFloat(v) >= 80 ? '✅' : '❌';
+            const sp = p(s), fp = p(fn), bp = p(b);
+            md += '### Coverage _(threshold: 80%)_\n\n';
+            md += '| Metric | % | Status |\n|--------|---|--------|\n';
+            md += `| Statements | ${sp}% | ${ok(sp)} |\n`;
+            md += `| Functions  | ${fp}% | ${ok(fp)} |\n`;
+            md += `| Branches   | ${bp}% | ${ok(bp)} |\n\n`;
+          } catch { md += '### ⚠️ Coverage — results unavailable\n\n'; }
+
+          fs.appendFileSync(out, md);
+          ENDSCRIPT
+          node /tmp/unit-summary.cjs
 
   e2e:
     runs-on: ubuntu-latest
@@ -107,9 +171,12 @@ jobs:
             --timeout 30000
         working-directory: ejemplo
 
-      # Run only the 5 extension spec files (test.cy.ts is a user scratch file)
+      # Run only the 5 extension spec files; tee output for the job summary
       - name: Run Cypress e2e tests
-        run: npx cypress run --spec "cypress/e2e/extension/**/*.cy.ts" --headless
+        run: |
+          set -o pipefail
+          npx cypress run --spec "cypress/e2e/extension/**/*.cy.ts" --headless \
+            2>&1 | tee /tmp/cypress-output.txt
         working-directory: ejemplo
 
       - name: Upload screenshots on failure
@@ -119,3 +186,28 @@ jobs:
           name: cypress-screenshots
           path: ejemplo/cypress/screenshots
           if-no-files-found: ignore
+
+      - name: Job summary
+        if: always()
+        run: |
+          cat > /tmp/e2e-summary.cjs << 'ENDSCRIPT'
+          const fs = require('fs');
+          const out = process.env.GITHUB_STEP_SUMMARY;
+          let md = '## E2E Job Summary\n\n';
+
+          try {
+            const text = fs.readFileSync('/tmp/cypress-output.txt', 'utf8');
+            const passingMatch = text.match(/(\d+) passing/);
+            const failingMatch = text.match(/(\d+) failing/);
+            const passing = passingMatch ? parseInt(passingMatch[1]) : 0;
+            const failing = failingMatch ? parseInt(failingMatch[1]) : 0;
+            const total = passing + failing;
+            const icon = failing === 0 && total > 0 ? '✅' : '❌';
+            md += `### ${icon} E2E Tests (Cypress)\n\n`;
+            md += `| Passed | Failed | Total |\n|--------|--------|-------|\n`;
+            md += `| ${passing} | ${failing} | ${total} |\n\n`;
+          } catch { md += '### ⚠️ E2E Tests — results unavailable\n\n'; }
+
+          fs.appendFileSync(out, md);
+          ENDSCRIPT
+          node /tmp/e2e-summary.cjs
