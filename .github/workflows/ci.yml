@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  ci:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,3 +20,65 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run test:coverage
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [unit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Build the library (ejemplo packages depend on dist/ via file:)
+      - run: npm ci
+      - run: npm run build
+
+      # Install ejemplo workspace dependencies (includes Cypress)
+      - name: Install ejemplo dependencies
+        run: npm ci
+        working-directory: ejemplo
+
+      # Build all MFE packages and the shell
+      - name: Build MFE remotes
+        run: npm run build:remotes
+        working-directory: ejemplo
+
+      - name: Build shell
+        run: npm run build -w packages/shell
+        working-directory: ejemplo
+
+      # Start all 4 preview servers in background
+      - name: Start preview servers
+        run: |
+          npm run preview -w packages/mfe-store &
+          npm run preview -w packages/mfe-forms &
+          npm run preview -w packages/mfe-admin &
+          npm run preview -w packages/shell &
+        working-directory: ejemplo
+
+      # Wait until all 4 servers respond before running Cypress
+      - name: Wait for servers to be ready
+        run: |
+          npx --yes wait-on \
+            http://localhost:5000 \
+            http://localhost:5001 \
+            http://localhost:5002 \
+            http://localhost:5003 \
+            --timeout 30000
+        working-directory: ejemplo
+
+      # Run only the 5 extension spec files (test.cy.ts is a user scratch file)
+      - name: Run Cypress e2e tests
+        run: npx cypress run --spec "cypress/e2e/extension/**/*.cy.ts" --headless
+        working-directory: ejemplo
+
+      - name: Upload screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: ejemplo/cypress/screenshots
+          if-no-files-found: ignore
