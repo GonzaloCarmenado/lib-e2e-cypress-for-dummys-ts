@@ -45,19 +45,17 @@ jobs:
       - run: npm run build
 
       # Install ejemplo workspace dependencies.
-      # --ignore-scripts avoids esbuild/parcel postinstall failures on Linux;
-      # we set up esbuild manually in the next step.
+      # The lockfile was generated on Windows (only has @esbuild/win32-x64, not
+      # @esbuild/linux-x64). Delete it so npm resolves fresh for Linux and
+      # installs the correct platform optional deps (esbuild, parcel-watcher…).
+      # CYPRESS_INSTALL_BINARY=0 suppresses the binary download (installed separately).
       - name: Install ejemplo dependencies
-        run: npm install --ignore-scripts
+        run: |
+          rm -f package-lock.json
+          npm install
         working-directory: ejemplo
         env:
           CYPRESS_INSTALL_BINARY: 0
-
-      # esbuild's postinstall hard-links the platform binary — run it explicitly
-      # now that @esbuild/linux-x64 is on disk.
-      - name: Set up esbuild binary
-        run: node node_modules/esbuild/install.js
-        working-directory: ejemplo
 
       - name: Install Cypress binary
         run: npx cypress install
