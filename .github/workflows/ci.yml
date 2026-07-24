@@ -68,30 +68,27 @@ jobs:
       # Diagnose workspace after npm ci
       - name: Debug workspace
         run: |
-          echo "=== node version ==="
+          echo "=== node/npm versions ==="
           node --version && npm --version
-          echo "=== vite binary ==="
-          ls -la node_modules/.bin/vite 2>/dev/null && node node_modules/.bin/vite --version || echo "vite NOT found or not executable"
-          echo "=== packages structure ==="
-          ls packages/
-          for pkg in packages/mfe-store packages/mfe-forms packages/mfe-admin; do
-            echo "--- $pkg/package.json scripts ---"
-            node -e "const p=require('./$pkg/package.json'); console.log(JSON.stringify(p.scripts))"
-          done
+          echo "=== vite bin ==="
+          ls -la node_modules/vite/bin/vite.js && node node_modules/vite/bin/vite.js --version
+          echo "=== federation plugin ==="
+          ls node_modules/@originjs/vite-plugin-federation/dist/ | head -5
         working-directory: ejemplo
 
-      # Build MFE remotes by running vite directly (bypasses npm workspace PATH resolution)
+      # Build MFE remotes using vite's JS entrypoint directly with --root flag
+      # (avoids cd+relative-path issues and shell-script vs JS-file confusion)
       - name: Build MFE remotes
         run: |
           set -e
           for pkg in mfe-store mfe-forms mfe-admin; do
             echo "=== Building packages/$pkg ==="
-            (cd packages/$pkg && node ../../node_modules/.bin/vite build)
+            node node_modules/vite/bin/vite.js build --root packages/$pkg
           done
         working-directory: ejemplo
 
       - name: Build shell
-        run: (cd packages/shell && node ../../node_modules/.bin/vite build)
+        run: node node_modules/vite/bin/vite.js build --root packages/shell
         working-directory: ejemplo
 
       # Start all 4 preview servers in background
