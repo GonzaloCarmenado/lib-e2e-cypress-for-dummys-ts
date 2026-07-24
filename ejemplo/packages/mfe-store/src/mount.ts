@@ -29,12 +29,6 @@ async function loadProducts(): Promise<void> {
           onclick="window._storeDetail(${p.id})">Ver detalle</button>
       </td>
     </tr>`).join('');
-  (window as unknown as Record<string, unknown>)._storeDetail = async (id: number) => {
-    const r = await fetch(`/api/products/${id}`);
-    const product = await r.json() as { id: number; name: string; price: number };
-    const detail = _root?.querySelector<HTMLElement>('#detail-output');
-    if (detail) detail.textContent = `GET /api/products/${id} → ${JSON.stringify(product)}`;
-  };
 }
 
 function render(el: HTMLElement): void {
@@ -120,4 +114,10 @@ function render(el: HTMLElement): void {
   </div>`;
 
   (window as unknown as Record<string, unknown>)._storeLoad = loadProducts;
+  (window as unknown as Record<string, unknown>)._storeDetail = async (id: number) => {
+    const r = await fetch(`/api/products/${id}`);
+    const product = await r.json() as { id: number; name: string; price: number };
+    const detail = _root?.querySelector<HTMLElement>('#detail-output');
+    if (detail) detail.textContent = `GET /api/products/${id} → ${JSON.stringify(product)}`;
+  };
 }

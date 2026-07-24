@@ -20,5 +20,12 @@ export default defineConfig({
     minify: false,
   },
   server: { port: 5000 },
-  preview: { port: 5000 },
+  preview: {
+    port: 5000,
+    proxy: {
+      '/mfe-store': { target: 'http://localhost:5001', rewrite: (p) => p.replace(/^\/mfe-store/, '') },
+      '/mfe-forms': { target: 'http://localhost:5002', rewrite: (p) => p.replace(/^\/mfe-forms/, '') },
+      '/mfe-admin': { target: 'http://localhost:5003', rewrite: (p) => p.replace(/^\/mfe-admin/, '') },
+    },
+  },
 });
