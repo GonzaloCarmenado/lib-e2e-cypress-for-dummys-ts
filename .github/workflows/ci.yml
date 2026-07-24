@@ -45,15 +45,12 @@ jobs:
       - run: npm run build
 
       # Install ejemplo workspace dependencies.
-      # --ignore-scripts skips msw init (worker already committed) and Cypress binary
-      # download (installed separately). npm rebuild re-runs binary package scripts.
+      # CYPRESS_INSTALL_BINARY=0 suppresses Cypress binary download (installed separately).
       - name: Install ejemplo dependencies
-        run: npm install --ignore-scripts
+        run: npm install
         working-directory: ejemplo
-
-      - name: Rebuild native binaries
-        run: npm rebuild
-        working-directory: ejemplo
+        env:
+          CYPRESS_INSTALL_BINARY: 0
 
       - name: Install Cypress binary
         run: npx cypress install
