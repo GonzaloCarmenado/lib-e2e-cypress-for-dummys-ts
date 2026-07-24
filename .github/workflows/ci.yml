@@ -65,30 +65,30 @@ jobs:
         run: npx cypress install
         working-directory: ejemplo
 
-      # Diagnose workspace after npm ci
-      - name: Debug workspace
-        run: |
-          echo "=== node/npm versions ==="
-          node --version && npm --version
-          echo "=== vite bin ==="
-          ls -la node_modules/vite/bin/vite.js && node node_modules/vite/bin/vite.js --version
-          echo "=== federation plugin ==="
-          ls node_modules/@originjs/vite-plugin-federation/dist/ | head -5
-        working-directory: ejemplo
-
-      # Build MFE remotes: cd into each package and invoke vite's JS entrypoint
-      # node_modules/.bin/vite is a shell script on Linux — must use the real JS file
-      - name: Build MFE remotes
+      # Verify vite is properly installed — fail explicitly if not
+      - name: Verify vite
         run: |
           set -e
-          for pkg in mfe-store mfe-forms mfe-admin; do
-            echo "=== Building packages/$pkg ==="
-            (cd packages/$pkg && node ../../node_modules/vite/bin/vite.js build)
-          done
+          echo "node: $(node --version), npm: $(npm --version)"
+          ls node_modules/vite/bin/vite.js
+          node node_modules/vite/bin/vite.js --version
+        working-directory: ejemplo
+
+      # Each MFE as its own step so failure is precisely identified
+      - name: Build mfe-store
+        run: cd packages/mfe-store && node ../../node_modules/vite/bin/vite.js build
+        working-directory: ejemplo
+
+      - name: Build mfe-forms
+        run: cd packages/mfe-forms && node ../../node_modules/vite/bin/vite.js build
+        working-directory: ejemplo
+
+      - name: Build mfe-admin
+        run: cd packages/mfe-admin && node ../../node_modules/vite/bin/vite.js build
         working-directory: ejemplo
 
       - name: Build shell
-        run: (cd packages/shell && node ../../node_modules/vite/bin/vite.js build)
+        run: cd packages/shell && node ../../node_modules/vite/bin/vite.js build
         working-directory: ejemplo
 
       # Start all 4 preview servers in background
