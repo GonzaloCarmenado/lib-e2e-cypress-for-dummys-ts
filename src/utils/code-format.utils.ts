@@ -16,6 +16,19 @@ export function escapeSingleQuotes(value: string): string {
 }
 
 /**
+ * Returns a quoted JavaScript string literal for use as the argument to `cy.get()`.
+ * Uses single-quote wrapping by default; switches to double-quote wrapping when
+ * the selector contains a single quote, so apostrophes never need backslash escaping
+ * in the generated Cypress command.
+ */
+export function selectorLiteral(selector: string): string {
+  if (selector.includes("'")) {
+    return `"${selector.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  }
+  return `'${escapeSingleQuotes(selector)}'`;
+}
+
+/**
  * Escapes double quotes so a value can be safely embedded inside a CSS
  * double-quoted attribute selector, e.g. `[data-cy="VALUE"]`.
  * The result must subsequently pass through {@link escapeSingleQuotes} when it is

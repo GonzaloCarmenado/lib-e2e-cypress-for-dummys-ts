@@ -3,7 +3,7 @@ import type { ActiveSessionState } from '../models/active-session.model';
 import { Subject } from '../utils/subject';
 import { FORBIDDEN_ID_PREFIXES } from '../utils/selector-quality.utils';
 import { inferAssertionCommand } from '../utils/assertion.utils';
-import { escapeSingleQuotes, escapeCssAttrValue } from '../utils/code-format.utils';
+import { escapeSingleQuotes, escapeCssAttrValue, selectorLiteral } from '../utils/code-format.utils';
 
 const OWN_SELECTOR = '[data-cy="lib-e2e-cypress-for-dummys"]';
 
@@ -455,8 +455,8 @@ export class RecordingService {
         const selector = this.resolveSelectorFor(e.target as HTMLElement);
         if (!selector) return;
         // Collapse the up-to-2 single clicks the browser fired before the dblclick.
-        const safeSelector = escapeSingleQuotes(selector);
-        const clickCmd = `cy.get('${safeSelector}').click()`;
+        const litSelector = selectorLiteral(selector);
+        const clickCmd = `cy.get(${litSelector}).click()`;
         let cmds = this.commands$.getValue();
         let removed = 0;
         while (removed < 2 && cmds.length > 0 && cmds[cmds.length - 1] === clickCmd) {
@@ -464,7 +464,7 @@ export class RecordingService {
           removed++;
         }
         if (removed > 0) this.commands$.next(cmds);
-        this.addCommand(`cy.get('${safeSelector}').dblclick()`);
+        this.addCommand(`cy.get(${litSelector}).dblclick()`);
       },
       { signal: this.abort.signal }
     );
@@ -477,7 +477,7 @@ export class RecordingService {
         if (!this.isRecording$.getValue() || this.isPaused$.getValue()) return;
         const selector = this.resolveSelectorFor(e.target as HTMLElement);
         if (!selector) return;
-        this.addCommand(`cy.get('${escapeSingleQuotes(selector)}').rightclick()`);
+        this.addCommand(`cy.get(${selectorLiteral(selector)}).rightclick()`);
       },
       { signal: this.abort.signal }
     );
@@ -499,7 +499,7 @@ export class RecordingService {
         // Record the field's pending value before the key press.
         this.flushInputDebounce(target);
         const token = key === 'Enter' ? '{enter}' : '{esc}';
-        this.addCommand(`cy.get('${escapeSingleQuotes(selector)}').type('${token}')`);
+        this.addCommand(`cy.get(${selectorLiteral(selector)}).type('${token}')`);
       },
       { signal: this.abort.signal }
     );
@@ -551,7 +551,7 @@ export class RecordingService {
 
     const paths = files.map(f => `'cypress/fixtures/${escapeSingleQuotes(f.name)}'`);
     const pathArg = paths.length === 1 ? paths[0] : `[${paths.join(', ')}]`;
-    this.addCommand(`cy.get('${escapeSingleQuotes(selector)}').selectFile(${pathArg})`);
+    this.addCommand(`cy.get(${selectorLiteral(selector)}).selectFile(${pathArg})`);
 
     for (const file of files) {
       const bytes = await this.readFileAsArrayBuffer(file);
@@ -630,7 +630,7 @@ export class RecordingService {
       if (matSelect) {
         const sel = this.getReliableSelector(matSelect as HTMLElement);
         if (sel) {
-          this.addCommand(`cy.get('${sel}').click()`);
+          this.addCommand(`cy.get(${selectorLiteral(sel)}).click()`);
         } else {
           this.selectorNotFound$.next({ target: matSelect as HTMLElement, action: 'click' });
         }
@@ -663,7 +663,7 @@ export class RecordingService {
           const selector = this.getReliableSelector(container);
           if (selector && !this.isOwnSelector(selector)) {
             const action = type === 'radio' || input.checked ? 'check' : 'uncheck';
-            this.addCommand(`cy.get('${selector}').${action}()`);
+            this.addCommand(`cy.get(${selectorLiteral(selector)}).${action}()`);
           }
         }
       }
@@ -691,7 +691,7 @@ export class RecordingService {
 
     this.addGenericCommand({
       selector,
-      action: (s) => `cy.get('${s}').click()`,
+      action: (s) => `cy.get(${s}).click()`,
     });
   }
 
@@ -701,12 +701,11 @@ export class RecordingService {
     if (matSelect) dataCy = matSelect.closest('[data-cy]')?.getAttribute('data-cy') ?? null;
     if (!dataCy) dataCy = target.closest('[data-cy]')?.getAttribute('data-cy') ?? null;
     if (dataCy) {
-      const safeSel = escapeSingleQuotes(`[data-cy="${escapeCssAttrValue(dataCy)}"]`);
-      this.addCommand(`cy.get('${safeSel}').click()`);
+      this.addCommand(`cy.get(${selectorLiteral(`[data-cy="${escapeCssAttrValue(dataCy)}"]`)}).click()`);
       return;
     }
     if (selector) {
-      this.addCommand(`cy.get('${selector}').eq(0).click()`);
+      this.addCommand(`cy.get(${selectorLiteral(selector)}).eq(0).click()`);
     } else {
       this.selectorNotFound$.next({ target, action: 'click' });
     }
@@ -742,7 +741,7 @@ export class RecordingService {
     const value = escapeSingleQuotes(target.value);
     this.addGenericCommand({
       selector,
-      action: (s) => `cy.get('${s}').clear().type('${value}')`,
+      action: (s) => `cy.get(${s}).clear().type('${value}')`,
     });
   }
 
@@ -764,7 +763,7 @@ export class RecordingService {
     const value = escapeSingleQuotes(target.value);
     this.addGenericCommand({
       selector,
-      action: (s) => `cy.get('${s}').select('${value}')`,
+      action: (s) => `cy.get(${s}).select('${value}')`,
     });
   }
 
@@ -775,7 +774,7 @@ export class RecordingService {
     action: (s: string) => string;
   }): void {
     if (!opts.selector || this.isOwnSelector(opts.selector)) return;
-    this.addCommand(opts.action(escapeSingleQuotes(opts.selector)));
+    this.addCommand(opts.action(selectorLiteral(opts.selector)));
   }
 
   private getReliableSelector(el: HTMLElement): string | null {

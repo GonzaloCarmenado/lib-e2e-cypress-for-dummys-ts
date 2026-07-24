@@ -127,7 +127,7 @@ export class LibE2eRecorderElement extends BaseElement {
   isHelpDialogOpen = false;
 
   connectedCallback(): void {
-    if ('Cypress' in window) {
+    if ('Cypress' in window && !('__e2eRecorderTestMode__' in window)) {
       this._isDisabled = true;
       return;
     }
@@ -284,6 +284,12 @@ export class LibE2eRecorderElement extends BaseElement {
   }
 
   private async initSelectorStrategy(): Promise<void> {
+    const testStrategy = (window as unknown as Record<string, unknown>)['__e2eTestStrategy__'] as string | undefined;
+    if (testStrategy) {
+      this.recording.selectorStrategy = testStrategy as SelectorStrategy;
+      this.smartSelectorEnabled = false;
+      return;
+    }
     const config = await this.persistence.getGeneralConfig();
     const strategy = config?.['selectorStrategy'] as string | undefined;
     if (strategy) this.recording.selectorStrategy = strategy as SelectorStrategy;
@@ -542,6 +548,7 @@ export class LibE2eRecorderElement extends BaseElement {
   // ── filesystem setup ─────────────────────────────────────────────────────
 
   private async initFilesystemAccess(): Promise<void> {
+    if ('__e2eRecorderTestMode__' in window) return;
     const config = await this.persistence.getGeneralConfig();
     // Only show if the user has never made a choice (key doesn't exist yet)
     if (config && 'allowReadWriteFiles' in config) return;

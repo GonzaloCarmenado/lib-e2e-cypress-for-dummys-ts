@@ -1140,21 +1140,21 @@ describe('Phase 4 — RecordingService', () => {
       const btn = makeElement('button', { 'data-cy': "o'brien" });
       click(btn);
       const cmd = service.getCommandsSnapshot().at(-1)!;
-      expect(cmd).toBe(`cy.get('[data-cy="o\\'brien"]').click()`);
+      expect(cmd).toBe(`cy.get("[data-cy=\\"o'brien\\"]").click()`);
     });
 
     it('escapes a single quote in a dblclick selector', () => {
       const btn = makeElement('button', { 'data-cy': "don't" });
       dblclick(btn);
       const cmd = service.getCommandsSnapshot().at(-1)!;
-      expect(cmd).toBe(`cy.get('[data-cy="don\\'t"]').dblclick()`);
+      expect(cmd).toBe(`cy.get("[data-cy=\\"don't\\"]").dblclick()`);
     });
 
     it('escapes a single quote in a rightclick selector', () => {
       const btn = makeElement('button', { 'data-cy': "it's-ok" });
       rightClick(btn);
       const cmd = service.getCommandsSnapshot().at(-1)!;
-      expect(cmd).toBe(`cy.get('[data-cy="it\\'s-ok"]').rightclick()`);
+      expect(cmd).toBe(`cy.get("[data-cy=\\"it's-ok\\"]").rightclick()`);
     });
 
     // Problem A — single quote / backslash in input value
