@@ -68,26 +68,23 @@ jobs:
       # Diagnose workspace after npm ci
       - name: Debug workspace
         run: |
-          echo "=== node_modules/.bin/vite ==="
-          ls node_modules/.bin/vite 2>/dev/null && echo "vite found" || echo "vite NOT found"
-          echo "=== @originjs ==="
-          ls node_modules/@originjs/ 2>/dev/null || echo "federation plugin NOT found"
-          echo "=== @ejemplo ==="
-          ls node_modules/@ejemplo/ 2>/dev/null || echo "@ejemplo NOT found"
           echo "=== node version ==="
           node --version && npm --version
+          echo "=== vite binary ==="
+          ls -la node_modules/.bin/vite 2>/dev/null && node node_modules/.bin/vite --version || echo "vite NOT found or not executable"
+          echo "=== @originjs ==="
+          ls node_modules/@originjs/ 2>/dev/null || echo "federation plugin NOT found"
+          echo "=== workspace list ==="
+          npm ls --depth=0 --workspaces 2>/dev/null || true
         working-directory: ejemplo
 
-      # Build MFE remotes using package names (more reliable than path -w)
+      # Build MFE remotes using the existing build:remotes script (path-based workspace refs)
       - name: Build MFE remotes
-        run: |
-          npm run build --workspace=@ejemplo/mfe-store
-          npm run build --workspace=@ejemplo/mfe-forms
-          npm run build --workspace=@ejemplo/mfe-admin
+        run: npm run build:remotes
         working-directory: ejemplo
 
       - name: Build shell
-        run: npm run build --workspace=@ejemplo/shell
+        run: npm run build -w packages/shell
         working-directory: ejemplo
 
       # Start all 4 preview servers in background
