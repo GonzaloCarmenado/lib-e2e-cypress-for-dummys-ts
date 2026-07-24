@@ -45,10 +45,14 @@ jobs:
       - run: npm run build
 
       # Install ejemplo workspace dependencies.
-      # --ignore-scripts skips postinstall hooks (msw init is not needed since
-      # mockServiceWorker.js is already committed; Cypress binary is installed separately).
+      # --ignore-scripts skips msw init (worker already committed) and Cypress binary
+      # download (installed separately). npm rebuild re-runs binary package scripts.
       - name: Install ejemplo dependencies
         run: npm install --ignore-scripts
+        working-directory: ejemplo
+
+      - name: Rebuild native binaries
+        run: npm rebuild
         working-directory: ejemplo
 
       - name: Install Cypress binary
