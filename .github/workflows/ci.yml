@@ -67,8 +67,20 @@ jobs:
 
       # Build all MFE packages and the shell
       - name: Build MFE remotes
-        run: npm run build:remotes
+        run: |
+          npm run build -w packages/mfe-store 2>&1 | tee /tmp/build-store.log; S1=${PIPESTATUS[0]}
+          npm run build -w packages/mfe-forms 2>&1 | tee /tmp/build-forms.log; S2=${PIPESTATUS[0]}
+          npm run build -w packages/mfe-admin 2>&1 | tee /tmp/build-admin.log; S3=${PIPESTATUS[0]}
+          exit $((S1 + S2 + S3))
         working-directory: ejemplo
+
+      - name: Upload MFE build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mfe-build-logs
+          path: /tmp/build-*.log
+          if-no-files-found: ignore
 
       - name: Build shell
         run: npm run build -w packages/shell
