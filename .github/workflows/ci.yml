@@ -29,8 +29,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
+
+      # Cache the Cypress binary to avoid re-downloading it on every run
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('ejemplo/package-lock.json') }}
+          restore-keys: cypress-${{ runner.os }}-
 
       # Build the library (ejemplo packages depend on dist/ via file:)
       - run: npm ci
