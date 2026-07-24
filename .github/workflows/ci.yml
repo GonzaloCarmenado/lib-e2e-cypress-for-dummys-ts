@@ -72,19 +72,26 @@ jobs:
           node --version && npm --version
           echo "=== vite binary ==="
           ls -la node_modules/.bin/vite 2>/dev/null && node node_modules/.bin/vite --version || echo "vite NOT found or not executable"
-          echo "=== @originjs ==="
-          ls node_modules/@originjs/ 2>/dev/null || echo "federation plugin NOT found"
-          echo "=== workspace list ==="
-          npm ls --depth=0 --workspaces 2>/dev/null || true
+          echo "=== packages structure ==="
+          ls packages/
+          for pkg in packages/mfe-store packages/mfe-forms packages/mfe-admin; do
+            echo "--- $pkg/package.json scripts ---"
+            node -e "const p=require('./$pkg/package.json'); console.log(JSON.stringify(p.scripts))"
+          done
         working-directory: ejemplo
 
-      # Build MFE remotes using the existing build:remotes script (path-based workspace refs)
+      # Build MFE remotes by running vite directly (bypasses npm workspace PATH resolution)
       - name: Build MFE remotes
-        run: npm run build:remotes
+        run: |
+          set -e
+          for pkg in mfe-store mfe-forms mfe-admin; do
+            echo "=== Building packages/$pkg ==="
+            (cd packages/$pkg && node ../../node_modules/.bin/vite build)
+          done
         working-directory: ejemplo
 
       - name: Build shell
-        run: npm run build -w packages/shell
+        run: (cd packages/shell && node ../../node_modules/.bin/vite build)
         working-directory: ejemplo
 
       # Start all 4 preview servers in background
