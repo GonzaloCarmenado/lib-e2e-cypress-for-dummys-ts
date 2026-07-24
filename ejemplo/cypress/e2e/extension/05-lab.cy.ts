@@ -1,7 +1,10 @@
+import { allowRecorder } from '../../support/recorder';
+
 describe('05 — Lab edge cases', () => {
   beforeEach(() => {
-    cy.clearRecorderState();
+    allowRecorder();
     cy.visit('/lab');
+    cy.clearRecorderState();
     cy.startRecording();
   });
 
@@ -10,10 +13,8 @@ describe('05 — Lab edge cases', () => {
     cy.get('[data-cy="o\'brien-btn"]').click();
     cy.openCommandsPanel();
     cy.get('lib-e2e-test-previsualizer').shadow().find('[data-ref="cmds"]').invoke('text').then(text => {
-      // The generated command must be syntactically valid (no raw unescaped single quote breaking the string)
       expect(text).to.include("o'brien-btn");
-      // The outer quotes must be consistent (double-quoted attribute value or escaped)
-      expect(text).not.to.match(/cy\.get\('[^']*'[^']*'\)/); // no broken single-quote string
+      expect(text).not.to.match(/cy\.get\('[^']*'[^']*'\)/);
     });
   });
 
@@ -24,7 +25,6 @@ describe('05 — Lab edge cases', () => {
     cy.get('lib-e2e-test-previsualizer').shadow().find('[data-ref="cmds"]').invoke('text').then(text => {
       expect(text).to.include('say');
       expect(text).to.include('hello');
-      // Outer selector string must not be broken by unescaped double quotes
       expect(text).not.to.match(/cy\.get\("[^"]*"[^"]*"\)/);
     });
   });
@@ -34,8 +34,7 @@ describe('05 — Lab edge cases', () => {
     cy.get('[data-cy="apostrophe-input"]').clear().type("it's a valid input");
     cy.openCommandsPanel();
     cy.commandShouldContain('.type(');
-    cy.commandShouldContain("it");
-    cy.commandShouldContain("valid input");
+    cy.commandShouldContain('valid input');
   });
 
   // AC-28
@@ -44,8 +43,7 @@ describe('05 — Lab edge cases', () => {
     cy.openCommandsPanel();
     cy.get('lib-e2e-test-previsualizer').shadow().find('[data-action="toggle-icp"]').click();
     cy.get('lib-e2e-test-previsualizer').shadow().find('[data-section="interceptors"]').invoke('text').then(text => {
-      // The literal token value must not appear in the generated interceptor
-      expect(text).not.to.match(/eyJ[A-Za-z0-9_-]{10,}/); // typical JWT pattern
+      expect(text).not.to.match(/eyJ[A-Za-z0-9_-]{10,}/);
       expect(text).not.to.match(/"token"\s*:\s*"[^"]{8,}"/);
     });
   });

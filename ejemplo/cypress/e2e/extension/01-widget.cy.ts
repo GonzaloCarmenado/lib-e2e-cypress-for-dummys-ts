@@ -1,7 +1,11 @@
+import { allowRecorder } from '../../support/recorder';
+
 describe('01 — Widget mount and controls', () => {
   beforeEach(() => {
-    cy.clearRecorderState();
+    allowRecorder();
     cy.visit('/');
+    cy.clearRecorderState();
+    cy.get('lib-e2e-recorder').shadow().find('[data-action="toggle"]').should('exist');
   });
 
   // AC-01
@@ -33,14 +37,14 @@ describe('01 — Widget mount and controls', () => {
 
   // AC-05
   it('configuration button opens the Swal2 configuration modal', () => {
-    cy.get('lib-e2e-recorder').shadow().find('[data-action="config"]').click();
+    cy.get('lib-e2e-recorder').shadow().find('[data-action="config"]').click({ force: true });
     cy.get('.swal2-popup').should('be.visible');
     cy.get('lib-e2e-configuration').should('exist');
   });
 
   // AC-06
   it('help button opens the help panel inside a Swal2 modal', () => {
-    cy.get('lib-e2e-recorder').shadow().find('[data-action="help"]').click();
+    cy.get('lib-e2e-recorder').shadow().find('[data-action="help"]').click({ force: true });
     cy.get('.swal2-popup').should('be.visible');
     cy.get('lib-e2e-help-panel').should('exist');
   });

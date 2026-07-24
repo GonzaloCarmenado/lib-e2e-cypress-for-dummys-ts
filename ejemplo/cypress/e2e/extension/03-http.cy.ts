@@ -1,8 +1,11 @@
+import { allowRecorder } from '../../support/recorder';
+
 describe('03 — HTTP interception', () => {
   describe('GET requests (store page)', () => {
     beforeEach(() => {
-      cy.clearRecorderState();
+      allowRecorder();
       cy.visit('/store');
+      cy.clearRecorderState();
       cy.startRecording();
     });
 
@@ -25,8 +28,9 @@ describe('03 — HTTP interception', () => {
 
   describe('POST / PUT / DELETE requests (forms page)', () => {
     beforeEach(() => {
-      cy.clearRecorderState();
+      allowRecorder();
       cy.visit('/forms');
+      cy.clearRecorderState();
       cy.startRecording();
     });
 

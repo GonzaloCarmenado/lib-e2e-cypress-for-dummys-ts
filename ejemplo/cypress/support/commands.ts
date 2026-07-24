@@ -3,6 +3,7 @@
 declare namespace Cypress {
   interface Chainable {
     clearRecorderState(): Chainable<void>;
+    setRecorderStrategy(strategy: string): Chainable<void>;
     startRecording(): Chainable<void>;
     stopRecording(): Chainable<void>;
     openCommandsPanel(): Chainable<void>;

@@ -12,7 +12,8 @@
     "preview": "concurrently -n store,forms,admin,shell -c cyan,green,yellow,magenta \"npm run preview -w packages/mfe-store\" \"npm run preview -w packages/mfe-forms\" \"npm run preview -w packages/mfe-admin\" \"npm run preview -w packages/shell\""
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "cypress": "^15.19.0"
   },
   "msw": {
     "workerDirectory": [

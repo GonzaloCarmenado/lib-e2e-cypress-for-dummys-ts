@@ -1,8 +1,11 @@
+import { allowRecorder } from '../../support/recorder';
+
 describe('04 — Form input recording', () => {
   describe('Checkout page (checkbox, radio, textarea)', () => {
     beforeEach(() => {
-      cy.clearRecorderState();
+      allowRecorder();
       cy.visit('/forms');
+      cy.clearRecorderState();
       cy.startRecording();
     });
 
@@ -38,8 +41,9 @@ describe('04 — Form input recording', () => {
 
   describe('Store page (select, text input)', () => {
     beforeEach(() => {
-      cy.clearRecorderState();
+      allowRecorder();
       cy.visit('/store');
+      cy.clearRecorderState();
       cy.startRecording();
     });
 
