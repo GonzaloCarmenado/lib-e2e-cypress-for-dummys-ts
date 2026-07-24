@@ -76,19 +76,19 @@ jobs:
           ls node_modules/@originjs/vite-plugin-federation/dist/ | head -5
         working-directory: ejemplo
 
-      # Build MFE remotes using vite's JS entrypoint directly with --root flag
-      # (avoids cd+relative-path issues and shell-script vs JS-file confusion)
+      # Build MFE remotes: cd into each package and invoke vite's JS entrypoint
+      # node_modules/.bin/vite is a shell script on Linux — must use the real JS file
       - name: Build MFE remotes
         run: |
           set -e
           for pkg in mfe-store mfe-forms mfe-admin; do
             echo "=== Building packages/$pkg ==="
-            node node_modules/vite/bin/vite.js build --root packages/$pkg
+            (cd packages/$pkg && node ../../node_modules/vite/bin/vite.js build)
           done
         working-directory: ejemplo
 
       - name: Build shell
-        run: node node_modules/vite/bin/vite.js build --root packages/shell
+        run: (cd packages/shell && node ../../node_modules/vite/bin/vite.js build)
         working-directory: ejemplo
 
       # Start all 4 preview servers in background
