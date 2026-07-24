@@ -48,10 +48,18 @@ jobs:
       # CYPRESS_INSTALL_BINARY=0 skips binary download during npm ci; the binary
       # is installed separately so it can benefit from the cache above.
       - name: Install ejemplo dependencies
-        run: npm ci
+        id: npm-ci-ejemplo
+        run: npm ci 2>&1 | tee /tmp/npm-ci-ejemplo.log; echo "EXIT=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT; exit ${PIPESTATUS[0]}
         working-directory: ejemplo
         env:
           CYPRESS_INSTALL_BINARY: 0
+
+      - name: Upload npm ci log on failure
+        if: failure() && steps.npm-ci-ejemplo.conclusion == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-ci-log
+          path: /tmp/npm-ci-ejemplo.log
 
       - name: Install Cypress binary
         run: npx cypress install
