@@ -45,12 +45,19 @@ jobs:
       - run: npm run build
 
       # Install ejemplo workspace dependencies.
-      # CYPRESS_INSTALL_BINARY=0 suppresses Cypress binary download (installed separately).
+      # --ignore-scripts avoids esbuild/parcel postinstall failures on Linux;
+      # we set up esbuild manually in the next step.
       - name: Install ejemplo dependencies
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: ejemplo
         env:
           CYPRESS_INSTALL_BINARY: 0
+
+      # esbuild's postinstall hard-links the platform binary — run it explicitly
+      # now that @esbuild/linux-x64 is on disk.
+      - name: Set up esbuild binary
+        run: node node_modules/esbuild/install.js
+        working-directory: ejemplo
 
       - name: Install Cypress binary
         run: npx cypress install
