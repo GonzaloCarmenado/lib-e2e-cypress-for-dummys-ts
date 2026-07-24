@@ -78,25 +78,16 @@ jobs:
           node --version && npm --version
         working-directory: ejemplo
 
-      # Build all MFE packages and the shell
+      # Build MFE remotes using package names (more reliable than path -w)
       - name: Build MFE remotes
         run: |
-          npm run build -w packages/mfe-store 2>&1 | tee /tmp/build-store.log; S1=${PIPESTATUS[0]}
-          npm run build -w packages/mfe-forms 2>&1 | tee /tmp/build-forms.log; S2=${PIPESTATUS[0]}
-          npm run build -w packages/mfe-admin 2>&1 | tee /tmp/build-admin.log; S3=${PIPESTATUS[0]}
-          exit $((S1 + S2 + S3))
+          npm run build --workspace=@ejemplo/mfe-store
+          npm run build --workspace=@ejemplo/mfe-forms
+          npm run build --workspace=@ejemplo/mfe-admin
         working-directory: ejemplo
 
-      - name: Upload MFE build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mfe-build-logs
-          path: /tmp/build-*.log
-          if-no-files-found: ignore
-
       - name: Build shell
-        run: npm run build -w packages/shell
+        run: npm run build --workspace=@ejemplo/shell
         working-directory: ejemplo
 
       # Start all 4 preview servers in background
