@@ -45,8 +45,16 @@ jobs:
       - run: npm run build
 
       # Install ejemplo workspace dependencies (includes Cypress)
+      # CYPRESS_INSTALL_BINARY=0 skips binary download during npm ci; the binary
+      # is installed separately so it can benefit from the cache above.
       - name: Install ejemplo dependencies
         run: npm ci
+        working-directory: ejemplo
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+
+      - name: Install Cypress binary
+        run: npx cypress install
         working-directory: ejemplo
 
       # Build all MFE packages and the shell
