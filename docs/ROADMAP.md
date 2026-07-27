@@ -25,6 +25,13 @@ live in `docs/specs/`.
 | 014 | Ticket reference & grouping (Jira/Linear ticket field in settings) |
 | 015 | Login Setup Template (scaffold or link existing login service, auto-inject before/beforeEach) |
 | 016 | Example microfrontend showcase (Module Federation demo app with lab page) |
+| 017 | Security & quality audit fixes (pre-publish review) |
+| 018 | Recorder refactor: extract Swal scaffold and inline HTML/styles |
+| 019 | Record file uploads as `.selectFile()` |
+| 020 | GitHub Actions: CI pipeline + manual npm release |
+| 021 | General audit: security, architecture & 1.0.0 readiness |
+| 022 | Code quality improvements (JSDoc/TypeDoc, CSS theme tokens, BaseElement) |
+| 023 | E2E self-tests: Cypress suite on the ejemplo app + CI quality gate |
 
 Other capabilities: HTTP monitoring (`cy.intercept`/`cy.wait`, optional body
 validations), advanced editor + File System Access (insert into `.cy.ts`),
@@ -35,6 +42,9 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 
 ## Release status
 
+- **1.0.1** — Vercel demo URL added as homepage. Cypress e2e suite (29 tests,
+  spec 023) shipping alongside the GitHub Actions e2e quality gate (unit +
+  e2e + ESLint + coverage job summaries, spec 020 extension).
 - **1.0.0** — first stable release (public API frozen). Backed by the general
   audit (spec 021, `docs/audits/2026-07-14-audit.md`). Version bumped; publish
   pending.

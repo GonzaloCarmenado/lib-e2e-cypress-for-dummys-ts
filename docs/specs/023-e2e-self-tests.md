@@ -1,6 +1,6 @@
 # 023 — E2E Self-Tests: Testing the Extension with Cypress
 
-> **Status:** In Progress
+> **Status:** Done
 > **Date:** 2026-07-23
 > **Author:** Gonzalo
 
