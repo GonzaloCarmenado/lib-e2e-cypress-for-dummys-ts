@@ -97,7 +97,30 @@
       "Bash(grep -c \"/\\\\*\\\\*\" \"D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/dist/index.d.ts\")",
       "Bash(grep *)",
       "Bash(gh workflow *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(awk -F: '{sum+=$NF} END {print \"Total JSDoc blocks: \" sum}')",
+      "mcp__ide__executeCode",
+      "Bash(npx playwright *)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npm root *)",
+      "Bash(ls \"$\\(npm root -g\\)/playwright\")",
+      "Bash(ls \"$\\(npm root\\)/playwright\")",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -5 {}')",
+      "Bash(taskkill *)",
+      "Bash(npx cypress *)",
+      "Bash(D:/Users/gonzalo.carmenado/AppData/Local/npm-cache/_npx/8710cb4bb9bd9866/node_modules/.bin/cypress run *)",
+      "Bash(xargs -I{} taskkill //F //PID {})",
+      "Bash(xargs -r taskkill //F //PID)",
+      "Bash(xargs -I{} taskkill /PID {} /F)",
+      "Bash(gh run *)",
+      "Bash(npm --version)",
+      "Bash(git check-ignore *)",
+      "Bash(rm \"D:/GIT/Otros/lib-e2e-cypress-for-dummys-ts/ejemplo/package-lock.json\")",
+      "Bash(CYPRESS_INSTALL_BINARY=0 npm install)",
+      "Bash(cat eslint.config.js)",
+      "Bash(cat .eslintrc*)",
+      "Bash(ls vitest.config* coverage/)",
+      "Bash(npx eslint *)"
     ]
   }
 }
