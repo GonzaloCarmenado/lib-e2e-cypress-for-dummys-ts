@@ -1,6 +1,6 @@
 # 017 — Security & Quality Audit Fixes
 
-> **Status:** In Progress
+> **Status:** Done ✅
 > **Date:** 2026-07-09
 > **Author:** Gonzalo
 > **Source:** `AUDITORIA.md` (automated audit dated 2026-07-09)
@@ -38,7 +38,7 @@ then 🟠 architecture, 🟡 code quality, 🟢 org/process.
 
 ### 🔴 Security
 
-- [ ] **AC-01 — Code injection in generated Cypress commands.**
+- [x] **AC-01 — Code injection in generated Cypress commands.**
   All selector values, attribute values, and HTTP response-key identifiers that
   get interpolated into generated `.cy.ts` code in
   `src/services/recording.service.ts` and `src/services/http-monitor.ts` are
@@ -46,14 +46,14 @@ then 🟠 architecture, 🟡 code quality, 🟢 org/process.
   A unit test covers a selector containing `'); cy.exec('rm -rf /')` and
   verifies the output string is syntactically safe.
 
-- [ ] **AC-02 — CORS on the local runner.**
+- [x] **AC-02 — CORS on the local runner.**
   `src/runner/runner.ts` does **not** send `Access-Control-Allow-Origin: *`.
   Instead it restricts to `http://localhost` or reads the allowed origin from
   an env-var / CLI flag.
   A unit test asserts that requests from an unexpected origin get a non-2xx
   response (or that the header value is not `*`).
 
-- [ ] **AC-03 — Sensitive-field redaction in HTTP fixtures.**
+- [x] **AC-03 — Sensitive-field redaction in HTTP fixtures.**
   `src/services/http-monitor.ts` (registerFixture / addCommand path) redacts
   values for keys matching `password`, `token`, `secret`, `authorization`,
   `cookie`, `access_token`, `refresh_token` (case-insensitive, nested objects
@@ -62,7 +62,7 @@ then 🟠 architecture, 🟡 code quality, 🟢 org/process.
   Unit tests cover: top-level key, nested key, array of objects, and a key
   that does NOT match (must pass through unchanged).
 
-- [ ] **AC-04 — Custom Element namespacing + safe registration.**
+- [x] **AC-04 — Custom Element namespacing + safe registration.**
   All `customElements.define` calls use the prefix `lib-e2e-` (e.g.
   `lib-e2e-help-panel`, `lib-e2e-save-test`, `lib-e2e-selector-picker`, etc.).
   Every registration is wrapped in a guard:
@@ -75,7 +75,7 @@ then 🟠 architecture, 🟡 code quality, 🟢 org/process.
   to use the new prefixed names.
   Unit tests that reference element tag names are updated accordingly.
 
-- [ ] **AC-05 — Production-use warning in README.**
+- [x] **AC-05 — Production-use warning in README.**
   `README.md` contains a clearly visible warning (e.g. `> ⚠️ **Do not use in
   production**`) near the top explaining that this is a dev/QA tool and that
   mounting it in production exposes the runner endpoint and may log sensitive
@@ -83,54 +83,54 @@ then 🟠 architecture, 🟡 code quality, 🟢 org/process.
 
 ### 🟠 Architecture
 
-- [ ] **AC-06 — HttpMonitor as a true singleton with ref-counting.**
+- [x] **AC-06 — HttpMonitor as a true singleton with ref-counting.**
   `src/services/http-monitor.ts` is refactored into a module-level singleton.
   `install()` increments a counter; `uninstall()` only restores
   `window.fetch`/`window.XMLHttpRequest` when the counter reaches zero.
   Unit tests cover: two installs → one uninstall leaves fetch patched; two
   installs → two uninstalls restores original fetch.
 
-- [ ] **AC-07 — Remove dead singleton export from PersistenceService.**
+- [x] **AC-07 — Remove dead singleton export from PersistenceService.**
   The `persistenceService` singleton export at the bottom of
   `src/services/persistence.service.ts` is removed. No external callers exist
   (verified by grep). Tests and barrel `src/index.ts` are updated if needed.
 
-- [ ] **AC-08 — Remove Subject from public barrel.**
+- [x] **AC-08 — Remove Subject from public barrel.**
   `Subject` is removed from `src/index.ts` exports. It is an internal
   implementation detail. This is a **breaking change** only if consumers import
   it directly — add a note in the changelog.
 
-- [ ] **AC-09 — Archive obsolete migration docs.**
+- [x] **AC-09 — Archive obsolete migration docs.**
   `HANDOFF.md` and `MIGRATION_PLAN.md` are moved to `docs/archive/` with a
   one-line header noting they describe a completed migration and are kept for
   historical reference only.
 
-- [ ] **AC-10 — Update ROADMAP.md.**
+- [x] **AC-10 — Update ROADMAP.md.**
   `docs/ROADMAP.md` is updated to reflect the current state: specs 011/012
   shipped, current version is 0.9.0, spec 013 noted as intentionally skipped
   (reserved/void), specs 015/017 in progress.
 
 ### 🟡 Code quality
 
-- [ ] **AC-11 — Elevate no-explicit-any and no-non-null-assertion to error.**
+- [x] **AC-11 — Elevate no-explicit-any and no-non-null-assertion to error.**
   `eslint.config.js` changes `warn` → `error` for
   `@typescript-eslint/no-explicit-any` and
   `@typescript-eslint/no-non-null-assertion`. `npm run lint` still exits 0
   (no current violations to fix).
 
-- [ ] **AC-12 — Cover DEFAULT_LOGIN_SETUP_CONFIG.**
+- [x] **AC-12 — Cover DEFAULT_LOGIN_SETUP_CONFIG.**
   `specs/models.spec.ts` (or a new model spec) exercises
   `DEFAULT_LOGIN_SETUP_CONFIG` so `src/models/login-setup.model.ts` reaches
   ≥ 80% line coverage.
 
-- [ ] **AC-13 — Fix branch coverage in test-editor.**
+- [x] **AC-13 — Fix branch coverage in test-editor.**
   `src/components/test-editor/test-editor.ts` lines 61-63 and 174-175
   (currently uncovered branches) are exercised by new or updated tests in
   `specs/components/test-editor.spec.ts`. File-level branch coverage ≥ 80%.
 
 ### 🟢 Org / process
 
-- [ ] **AC-14 — GitHub Actions CI.**
+- [x] **AC-14 — GitHub Actions CI.**
   A workflow file `.github/workflows/ci.yml` is added that runs on every push
   and pull request to `main`:
   - `npm run lint`
@@ -139,7 +139,7 @@ then 🟠 architecture, 🟡 code quality, 🟢 org/process.
   - `npm run build`
   Uses `ubuntu-latest`, Node 20.
 
-- [ ] **AC-15 — Git tags for v0.8.0 and v0.9.0.**
+- [x] **AC-15 — Git tags for v0.8.0 and v0.9.0.**
   Annotated tags `v0.8.0` and `v0.9.0` are created pointing at the appropriate
   commits (last commit before the 0.9.0 bump for v0.8.0; the version bump
   commit for v0.9.0).
@@ -264,14 +264,14 @@ jobs:
 
 ## Open questions
 
-- [ ] Q1: For AC-04 (Custom Element renaming), the ejemplo app hard-codes the
+- [x] Q1: For AC-04 (Custom Element renaming), the ejemplo app hard-codes the
   old tag names. Should the rename be applied there too, or only in the library
   source? (The ejemplo is a showcase, not a consumer dependency.)
-  → Pending decision.
+  → **Decision:** Applied to both library and ejemplo app.
 
-- [ ] Q2: For AC-02 (CORS), should the allowed origin be configurable via CLI
+- [x] Q2: For AC-02 (CORS), should the allowed origin be configurable via CLI
   arg (`--allow-origin=http://myapp.test`) or always locked to `localhost`?
-  → Pending decision.
+  → **Decision:** Configurable via `allowOrigin` option in `RunnerOptions`; defaults to localhost/127.0.0.1 reflection.
 
 ---
 
