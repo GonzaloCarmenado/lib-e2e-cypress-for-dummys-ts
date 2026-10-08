@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-10-08
+
+### Added
+- `RecordingService.continueRecording()`: resume a just-stopped recording in
+  place, without clearing commands/interceptors and without re-emitting the
+  `startRecording()` bootstrap. Exposed in the save-test dialog as a
+  "⏺ Continue recording" button (both the ask and confirm-discard steps), so
+  an accidental Stop no longer loses the in-progress recording (spec 024).
+- "↺ Recover" toolbar entry: shown while idle when an archived stopped
+  recording exists; its tooltip shows the command count and how long ago it
+  was captured.
+- Cypress e2e coverage (`ejemplo/cypress/e2e/extension/06-continue-recording.cy.ts`)
+  for both new controls.
+
+### Fixed
+- `recoverLastRecording()` previously only re-appended commands from the
+  archived history and silently dropped interceptors, and never resumed
+  recording mode. It now restores commands **and** interceptors, resumes
+  recording, clears any stale in-memory commands first, and is idempotent.
+
 ## [1.0.0] — 2026-07-14
 
 First stable release. The public API surface (`src/index.ts` exports) is now
