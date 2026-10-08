@@ -28,6 +28,7 @@ export const I18N_ES = {
     CONFIRM_DISCARD: '¿Seguro que quieres descartar el test grabado? Se perderán todos los pasos registrados.',
     CONFIRM_DISCARD_BTN: 'Sí, descartar',
     BACK_BTN: 'Volver',
+    CONTINUE_RECORDING_BTN: '⏺ Continuar grabando',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Sin etiquetas',
@@ -244,6 +245,10 @@ export const I18N_ES = {
     SESSION_CONTINUE_BTN: 'Continuar grabando',
     SESSION_DISCARD_BTN: 'Descartar',
     BTN_HELP: 'Ayuda',
+    RECOVER_BTN: 'Recuperar',
+    RECOVER_TITLE: 'Recuperar la última grabación detenida: {count} comandos ({time})',
+    RECOVER_TIME_NOW: 'justo ahora',
+    RECOVER_TIME_MINUTES: 'hace {m} min',
   },
   HELP: {
     TITLE: '❓ Ayuda — Guía rápida',

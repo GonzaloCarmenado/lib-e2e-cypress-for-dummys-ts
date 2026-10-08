@@ -40,6 +40,11 @@ export class SaveTestElement extends BaseElement {
 
   confirmDiscard(): void { this.dispatch('savetest', { description: null, notes: '', tags: [], ticketId: '' }); }
 
+  /** Resumes recording in place instead of saving/discarding (spec 024). */
+  continueRecording(): void {
+    this.dispatchEvent(new CustomEvent('continuerecording', { bubbles: true, composed: true }));
+  }
+
   backFromDiscard(): void { this._step = this._stepBeforeDiscard; this.render(); }
 
   restartComponent(): void { this._step = 'ask'; this.description = ''; this.notes = ''; this.tags = []; this.ticketId = ''; this.render(); }
@@ -71,12 +76,14 @@ export class SaveTestElement extends BaseElement {
       this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestConfirmDiscard(this.t.bind(this))}`;
       this.shadow.getElementById('btn-confirm-discard')?.addEventListener('click', () => this.confirmDiscard());
       this.shadow.getElementById('btn-back-discard')?.addEventListener('click', () => this.backFromDiscard());
+      this.shadow.getElementById('btn-continue-recording')?.addEventListener('click', () => this.continueRecording());
       return;
     }
     if (this._step === 'ask') {
       this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestAsk(this.t.bind(this))}`;
       this.shadow.getElementById('btn-yes')?.addEventListener('click', () => this.askSave());
       this.shadow.getElementById('btn-no')?.addEventListener('click', () => this.cancel());
+      this.shadow.getElementById('btn-continue-recording')?.addEventListener('click', () => this.continueRecording());
     } else {
       this.shadow.innerHTML = `<style>${SAVE_TEST_STYLES}</style>${renderSaveTestDesc(this.description, this.notes, this.tags, this.ticketId, this.issueTrackerConfig.enabled, this.ticketIdWarning, this.t.bind(this))}`;
 

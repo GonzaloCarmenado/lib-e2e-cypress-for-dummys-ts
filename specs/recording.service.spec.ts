@@ -1110,6 +1110,74 @@ describe('Phase 4 — RecordingService', () => {
     });
   });
 
+  // ── continueRecording (spec 024) ──────────────────────────────────────────
+
+  describe('continueRecording', () => {
+    it('re-enables isRecording after a stop, without touching commands', () => {
+      service.startRecording();
+      service.addCommand('cy.get(".a").click()');
+      const before = service.getCommandsSnapshot();
+      service.stopRecording();
+      service.continueRecording();
+      expect(service.getCommandsSnapshot()).toEqual(before);
+    });
+
+    it('addCommand works again after continueRecording', () => {
+      service.startRecording();
+      service.stopRecording();
+      service.continueRecording();
+      service.addCommand('cy.get(".new").click()');
+      expect(service.getCommandsSnapshot()).toContain('cy.get(".new").click()');
+    });
+
+    it('does not re-emit the startRecording bootstrap', () => {
+      service.startRecording();
+      service.addCommand('cy.get(".a").click()');
+      const countBefore = service.getCommandsSnapshot().length;
+      service.stopRecording();
+      service.continueRecording();
+      expect(service.getCommandsSnapshot()).toHaveLength(countBefore);
+    });
+
+    it('preserves sessionId (same logical session)', () => {
+      service.startRecording();
+      const sid = service.sessionId;
+      service.stopRecording();
+      service.continueRecording();
+      expect(service.sessionId).toBe(sid);
+    });
+
+    it('clears paused state', () => {
+      service.startRecording();
+      service.pauseRecording();
+      service.stopRecording();
+      service.continueRecording();
+      expect(service.getPausedSnapshot()).toBe(false);
+    });
+
+    it('onRecordingChange fires true', () => {
+      service.startRecording();
+      service.stopRecording();
+      const states: boolean[] = [];
+      service.onRecordingChange((s) => states.push(s));
+      service.continueRecording();
+      expect(states).toContain(true);
+    });
+
+    it('is a no-op when already recording', () => {
+      service.startRecording();
+      const before = service.getCommandsSnapshot();
+      service.continueRecording();
+      expect(service.getCommandsSnapshot()).toEqual(before);
+    });
+
+    it('is a no-op when no recording was ever started', () => {
+      service.continueRecording();
+      expect(service.getCommandsSnapshot()).toHaveLength(0);
+      expect(service.sessionId).toBeNull();
+    });
+  });
+
   describe('onSessionChange', () => {
     it('fires a full snapshot when a command is added', () => {
       const snaps: { commands: string[] }[] = [];

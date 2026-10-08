@@ -28,6 +28,7 @@ export const I18N_EN = {
     CONFIRM_DISCARD: 'Are you sure you want to discard this recording? All recorded steps will be lost.',
     CONFIRM_DISCARD_BTN: 'Yes, discard',
     BACK_BTN: 'Go back',
+    CONTINUE_RECORDING_BTN: '⏺ Continue recording',
   },
   TEST_EDITOR: {
     NO_TAGS: 'No tags',
@@ -244,6 +245,10 @@ export const I18N_EN = {
     SESSION_CONTINUE_BTN: 'Keep recording',
     SESSION_DISCARD_BTN: 'Discard',
     BTN_HELP: 'Help',
+    RECOVER_BTN: 'Recover',
+    RECOVER_TITLE: 'Recover the last stopped recording: {count} commands ({time})',
+    RECOVER_TIME_NOW: 'just now',
+    RECOVER_TIME_MINUTES: '{m} min ago',
   },
   HELP: {
     TITLE: '❓ Help — Quick guide',

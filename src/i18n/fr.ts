@@ -28,6 +28,7 @@ export const I18N_FR = {
     CONFIRM_DISCARD: 'Êtes-vous sûr de vouloir abandonner cet enregistrement ? Toutes les étapes enregistrées seront perdues.',
     CONFIRM_DISCARD_BTN: 'Oui, abandonner',
     BACK_BTN: 'Retour',
+    CONTINUE_RECORDING_BTN: '⏺ Continuer l’enregistrement',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Sans étiquettes',
@@ -244,6 +245,10 @@ export const I18N_FR = {
     SESSION_CONTINUE_BTN: 'Continuer l\'enregistrement',
     SESSION_DISCARD_BTN: 'Ignorer',
     BTN_HELP: 'Aide',
+    RECOVER_BTN: 'Récupérer',
+    RECOVER_TITLE: 'Récupérer le dernier enregistrement arrêté : {count} commandes ({time})',
+    RECOVER_TIME_NOW: 'à l’instant',
+    RECOVER_TIME_MINUTES: 'il y a {m} min',
   },
   HELP: {
     TITLE: '❓ Aide — Guide rapide',

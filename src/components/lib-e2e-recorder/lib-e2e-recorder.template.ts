@@ -1,4 +1,13 @@
-export function renderRecorderWidget(rec: boolean, paused: boolean, t: (key: string) => string): string {
+export function renderRecorderWidget(
+  rec: boolean,
+  paused: boolean,
+  t: (key: string) => string,
+  hasRecoverableHistory = false,
+  recoverTitle = '',
+): string {
+  const recoverItem = (!rec && hasRecoverableHistory) ? `
+        <button class="action-item" data-action="recover" title="${recoverTitle}">
+          <span class="ico">↺</span><span class="label">${t('RECORDER.RECOVER_BTN')}</span></button>` : '';
   return `
     <div class="widget">
       <div class="action-menu">
@@ -11,7 +20,7 @@ export function renderRecorderWidget(rec: boolean, paused: boolean, t: (key: str
         <button class="action-item" data-action="tests">
           <span class="ico">📋</span><span class="label">${t('RECORDER.BTN_TESTS')}</span></button>
         <button class="action-item" data-action="help">
-          <span class="ico">❓</span><span class="label">${t('RECORDER.BTN_HELP')}</span></button>
+          <span class="ico">❓</span><span class="label">${t('RECORDER.BTN_HELP')}</span></button>${recoverItem}
       </div>
       <button class="btn-pause" data-action="pause"
               title="${paused ? t('RECORDER.RESUME_TITLE') : t('RECORDER.PAUSE_TITLE')}">

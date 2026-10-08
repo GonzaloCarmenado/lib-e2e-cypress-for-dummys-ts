@@ -28,6 +28,7 @@ export const I18N_IT = {
     CONFIRM_DISCARD: 'Sei sicuro di voler scartare questa registrazione? Tutti i passi registrati andranno persi.',
     CONFIRM_DISCARD_BTN: 'Sì, scarta',
     BACK_BTN: 'Indietro',
+    CONTINUE_RECORDING_BTN: '⏺ Continua a registrare',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Nessuna etichetta',
@@ -244,6 +245,10 @@ export const I18N_IT = {
     SESSION_CONTINUE_BTN: 'Continua a registrare',
     SESSION_DISCARD_BTN: 'Annulla',
     BTN_HELP: 'Aiuto',
+    RECOVER_BTN: 'Recupera',
+    RECOVER_TITLE: 'Recupera l’ultima registrazione interrotta: {count} comandi ({time})',
+    RECOVER_TIME_NOW: 'proprio ora',
+    RECOVER_TIME_MINUTES: '{m} min fa',
   },
   HELP: {
     TITLE: '❓ Aiuto — Guida rapida',

@@ -28,6 +28,7 @@ export const I18N_DE = {
     CONFIRM_DISCARD: 'Sind Sie sicher, dass Sie diese Aufzeichnung verwerfen möchten? Alle aufgezeichneten Schritte gehen verloren.',
     CONFIRM_DISCARD_BTN: 'Ja, verwerfen',
     BACK_BTN: 'Zurück',
+    CONTINUE_RECORDING_BTN: '⏺ Aufnahme fortsetzen',
   },
   TEST_EDITOR: {
     NO_TAGS: 'Keine Tags',
@@ -244,6 +245,10 @@ export const I18N_DE = {
     SESSION_CONTINUE_BTN: 'Weiter aufzeichnen',
     SESSION_DISCARD_BTN: 'Verwerfen',
     BTN_HELP: 'Hilfe',
+    RECOVER_BTN: 'Wiederherstellen',
+    RECOVER_TITLE: 'Letzte gestoppte Aufnahme wiederherstellen: {count} Befehle ({time})',
+    RECOVER_TIME_NOW: 'gerade eben',
+    RECOVER_TIME_MINUTES: 'vor {m} Min.',
   },
   HELP: {
     TITLE: '❓ Hilfe — Kurzanleitung',

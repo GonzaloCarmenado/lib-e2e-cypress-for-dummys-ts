@@ -398,9 +398,12 @@ Notes:
 
 ---
 
-### Recording history
+### Recording history & undoing an accidental Stop
 
-The last **5 recordings** are automatically saved to `localStorage` so you never lose work if you accidentally close the dialog without saving. Use `recorder.recoverLastRecording()` to restore the most recent recording programmatically.
+Pressing **Stop** does not wipe anything by itself — the recorded commands stay in memory until you actually save (or start a brand-new recording). Two controls build on that:
+
+- **Continue recording** — pressing Stop opens the save dialog ("Save this recording?"). Right there, next to *Yes*/*No*, there is a **Continue recording** button: if you hit Stop by mistake, click it and recording resumes exactly where you left it, same session, no commands lost. This is different from **Pause/Resume** (`Ctrl+P`): Pause only freezes capture while the recording stays "in progress" — Continue recording is specifically the way back from a Stop you didn't mean to press.
+- **Recover last recording** — the last **5 stopped recordings** are automatically archived to `localStorage`, so you don't lose work even if the dialog is long gone (reloaded the page, or already discarded). While idle (not recording), if an archived recording exists the widget's action menu shows a **↺ Recover** entry — hover it to see how many commands and how long ago. Clicking it restores commands **and** HTTP interceptors from the most recent entry and puts the widget straight back into recording mode. Programmatically: `recorder.recoverLastRecording()`.
 
 ---
 
@@ -627,7 +630,7 @@ class LibE2eRecorderElement extends HTMLElement {
   showAdvancedEditorDialog(testId?: number): void;
 
   getRecordingHistory(): Array<{ commands: string[]; interceptors: string[]; savedAt: number }>;
-  recoverLastRecording(): void;
+  recoverLastRecording(): void;           // restores commands + interceptors, resumes recording
   clearRecordingHistory(): void;
 
   // Cross-app session (micro-frontends)
@@ -648,6 +651,7 @@ class RecordingService {
 
   startRecording(): void;
   stopRecording(): void;
+  continueRecording(): void;              // resume right after a Stop, in place, same session
   pauseRecording(): void;
   resumeRecording(): void;
   toggleRecording(): void;

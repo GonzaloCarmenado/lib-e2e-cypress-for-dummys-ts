@@ -119,6 +119,23 @@ export class RecordingService {
   }
 
   /**
+   * Resumes a just-stopped recording in place: re-enables `isRecording`
+   * without clearing commands/interceptors and without re-emitting the
+   * `startRecording()` bootstrap. The same `sessionId` is kept — this is the
+   * same logical session, just un-paused from "stopped".
+   *
+   * No-op if already recording, or if no recording session has ever started
+   * (nothing to continue).
+   * See docs/specs/024-continue-recording-after-stop.md.
+   */
+  continueRecording(): void {
+    if (this.isRecording$.getValue()) return;
+    if (this.sessionId === null) return;
+    this.isPaused$.next(false);
+    this.isRecording$.next(true);
+  }
+
+  /**
    * Toggles between recording and stopped states: stops if currently recording,
    * starts a new session otherwise.
    */

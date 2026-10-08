@@ -8,6 +8,9 @@ export function renderSaveTestConfirmDiscard(t: (key: string) => string): string
         <button class="btn-danger" id="btn-confirm-discard">${t('SAVE_TEST.CONFIRM_DISCARD_BTN')}</button>
         <button id="btn-back-discard">${t('SAVE_TEST.BACK_BTN')}</button>
       </div>
+      <div class="btn-row">
+        <button id="btn-continue-recording">${t('SAVE_TEST.CONTINUE_RECORDING_BTN')}</button>
+      </div>
     </div>`;
 }
 
@@ -18,6 +21,9 @@ export function renderSaveTestAsk(t: (key: string) => string): string {
       <div class="btn-row">
         <button class="btn-primary" id="btn-yes">${t('SAVE_TEST.YES_CONTINUE')}</button>
         <button class="btn-danger"  id="btn-no">${t('SAVE_TEST.NO_DISCARD')}</button>
+      </div>
+      <div class="btn-row">
+        <button id="btn-continue-recording">${t('SAVE_TEST.CONTINUE_RECORDING_BTN')}</button>
       </div>
     </div>`;
 }

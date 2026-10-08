@@ -525,14 +525,41 @@ export class LibE2eRecorderElement extends BaseElement {
     } catch { /* ignore storage errors */ }
   }
 
+  /** Builds the "Recover last recording" tooltip: command count + how long ago. */
+  private formatRecoverTitle(entry: { commands: string[]; savedAt: number }): string {
+    const minutes = Math.max(0, Math.round((Date.now() - entry.savedAt) / 60_000));
+    const time = minutes < 1
+      ? this.translation.translate('RECORDER.RECOVER_TIME_NOW')
+      : this.translation.translate('RECORDER.RECOVER_TIME_MINUTES').replace('{m}', String(minutes));
+    return this.translation.translate('RECORDER.RECOVER_TITLE')
+      .replace('{count}', String(entry.commands.length))
+      .replace('{time}', time);
+  }
+
+  /**
+   * Restores the most recently archived recording (commands + interceptors)
+   * and puts the widget back into recording mode, as if it had never
+   * stopped. Any leftover in-memory commands are discarded first. Reuses
+   * {@link RecordingService.restoreSession} (spec 006) so no bootstrap
+   * commands are re-emitted. See docs/specs/024-continue-recording-after-stop.md.
+   */
   recoverLastRecording(): void {
     try {
       const existing = JSON.parse(localStorage.getItem('e2e-recording-history') ?? '[]');
       if (!existing.length) return;
       const { commands, interceptors } = existing[0];
-      commands.forEach((cmd: string) => this.recording.appendCommand(cmd));
-      (interceptors as string[]).forEach((_icp: string) => { /* interceptors are not appendable the same way */ });
-    } catch { /* ignore */ }
+      this.recording.clearCommands();
+      this.recording.restoreSession({
+        sessionId: `sess-recovered-${Date.now()}`,
+        isRecording: true,
+        isPaused: false,
+        commands: [...(commands as string[])],
+        interceptors: [...((interceptors as string[]) ?? [])],
+        selectorStrategy: this.recording.selectorStrategy,
+        startedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    } catch { /* ignore malformed history */ }
   }
 
   clearRecordingHistory(): void {
@@ -672,6 +699,10 @@ export class LibE2eRecorderElement extends BaseElement {
           { name: 'saveandexport', handler: (e) => {
             const { description, notes, tags, ticketId } = e.detail ?? {};
             this.onSaveAndExportTest(description ?? null, tags ?? [], notes ?? '', ticketId ?? '');
+            Swal.close();
+          }},
+          { name: 'continuerecording', handler: () => {
+            this.recording.continueRecording();
             Swal.close();
           }},
         ]);
@@ -949,7 +980,10 @@ export class LibE2eRecorderElement extends BaseElement {
     const rec    = this.isRecording;
     const paused = this.isPaused;
     this.style.display = this.isVisible ? '' : 'none';
-    this.shadow.innerHTML = `<style>${getRecorderStyles(rec, paused)}</style>${renderRecorderWidget(rec, paused, this.translation.translate.bind(this.translation))}`;
+    const history = this.getRecordingHistory();
+    const hasRecoverableHistory = history.length > 0;
+    const recoverTitle = hasRecoverableHistory ? this.formatRecoverTitle(history[0]) : '';
+    this.shadow.innerHTML = `<style>${getRecorderStyles(rec, paused)}</style>${renderRecorderWidget(rec, paused, this.translation.translate.bind(this.translation), hasRecoverableHistory, recoverTitle)}`;
     const toggleBtn = this.shadow.querySelector('[data-action="toggle"]');
     toggleBtn?.addEventListener('click', () => {
       // A drag ends with a click event we must swallow so it doesn't toggle recording.
@@ -969,6 +1003,8 @@ export class LibE2eRecorderElement extends BaseElement {
       ?.addEventListener('click', () => this.showAdvancedEditorDialog());
     this.shadow.querySelector('[data-action="help"]')
       ?.addEventListener('click', () => this.showHelpDialog());
+    this.shadow.querySelector('[data-action="recover"]')
+      ?.addEventListener('click', () => this.recoverLastRecording());
     // Re-apply the dragged position/orientation after every re-render.
     this.applyWidgetPosition();
   }

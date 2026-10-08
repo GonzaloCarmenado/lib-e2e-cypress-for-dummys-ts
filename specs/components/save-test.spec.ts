@@ -152,6 +152,39 @@ describe('Phase 8.2 — SaveTestElement', () => {
     expect(el.notes).toBe('');
   });
 
+  // ── continueRecording (spec 024) ──────────────────────────────────────────
+
+  it('continueRecording() dispatches "continuerecording" event', () => {
+    let fired = false;
+    el.addEventListener('continuerecording', () => { fired = true; });
+    el.continueRecording();
+    expect(fired).toBe(true);
+  });
+
+  it('renders a "continue recording" button in the ask step', () => {
+    expect(el.shadowRoot!.getElementById('btn-continue-recording')).not.toBeNull();
+  });
+
+  it('clicking the continue-recording button in the ask step dispatches the event', () => {
+    let fired = false;
+    el.addEventListener('continuerecording', () => { fired = true; });
+    (el.shadowRoot!.getElementById('btn-continue-recording') as HTMLButtonElement).click();
+    expect(fired).toBe(true);
+  });
+
+  it('renders a "continue recording" button in the confirm-discard step', () => {
+    el.cancel();
+    expect(el.shadowRoot!.getElementById('btn-continue-recording')).not.toBeNull();
+  });
+
+  it('clicking the continue-recording button in confirm-discard dispatches the event', () => {
+    el.cancel();
+    let fired = false;
+    el.addEventListener('continuerecording', () => { fired = true; });
+    (el.shadowRoot!.getElementById('btn-continue-recording') as HTMLButtonElement).click();
+    expect(fired).toBe(true);
+  });
+
   it('renders <textarea id="notes-input"> in the desc step', () => {
     el.askSave();
     const textarea = el.shadowRoot!.getElementById('notes-input');

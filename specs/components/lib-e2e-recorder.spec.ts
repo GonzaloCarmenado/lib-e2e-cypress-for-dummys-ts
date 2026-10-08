@@ -176,9 +176,60 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(el.isAdvancedEditorDialogOpen).toBe(true);
   });
 
-  it('widget renders 5 action items in the menu', () => {
+  it('widget renders 5 action items in the menu when there is no recording history', () => {
+    localStorage.removeItem('e2e-recording-history');
+    (el as any).render();
     const buttons = el.shadowRoot!.querySelectorAll('.action-item');
     expect(buttons.length).toBe(5);
+  });
+
+  // ── "Recover last recording" toolbar entry (spec 024) ───────────────────
+
+  it('renders a 6th action item (recover) when stopped and history exists', () => {
+    localStorage.setItem('e2e-recording-history', JSON.stringify([
+      { commands: ["cy.visit('/')"], interceptors: [], savedAt: Date.now() },
+    ]));
+    (el as any).render();
+    const buttons = el.shadowRoot!.querySelectorAll('.action-item');
+    expect(buttons.length).toBe(6);
+    expect(el.shadowRoot!.querySelector('[data-action="recover"]')).not.toBeNull();
+  });
+
+  it('does not render the recover action item while actively recording', () => {
+    localStorage.setItem('e2e-recording-history', JSON.stringify([
+      { commands: ["cy.visit('/')"], interceptors: [], savedAt: Date.now() },
+    ]));
+    el.isRecording = true;
+    (el as any).render();
+    expect(el.shadowRoot!.querySelector('[data-action="recover"]')).toBeNull();
+  });
+
+  it('recover action item click calls recoverLastRecording()', () => {
+    localStorage.setItem('e2e-recording-history', JSON.stringify([
+      { commands: ["cy.visit('/')"], interceptors: [], savedAt: Date.now() },
+    ]));
+    (el as any).render();
+    const spy = vi.spyOn(el, 'recoverLastRecording');
+    (el.shadowRoot!.querySelector('[data-action="recover"]') as HTMLElement).click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('recover action item title shows the command count and "just now" for a fresh entry', () => {
+    localStorage.setItem('e2e-recording-history', JSON.stringify([
+      { commands: ["cy.visit('/')", "cy.get('#btn').click()"], interceptors: [], savedAt: Date.now() },
+    ]));
+    (el as any).render();
+    const btn = el.shadowRoot!.querySelector('[data-action="recover"]') as HTMLElement;
+    expect(btn.title).toContain('2');
+  });
+
+  it('recover action item title shows elapsed minutes for an older entry', () => {
+    localStorage.setItem('e2e-recording-history', JSON.stringify([
+      { commands: ["cy.visit('/')"], interceptors: [], savedAt: Date.now() - 5 * 60_000 },
+    ]));
+    (el as any).render();
+    const btn = el.shadowRoot!.querySelector('[data-action="recover"]') as HTMLElement;
+    expect(btn.title).toContain('5');
   });
 
   it('showHelpDialog() sets isHelpDialogOpen to true', () => {
@@ -253,21 +304,71 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(localStorage.getItem('e2e-recording-history')).toBeNull();
   });
 
-  it('recoverLastRecording() calls appendCommand for each command in the latest entry', () => {
-    const spy = vi.spyOn(recording, 'appendCommand');
+  // ── recoverLastRecording (spec 024 — fixed: restores interceptors too and
+  //    actually resumes recording, instead of just appending commands) ───────
+
+  it('recoverLastRecording() restores commands from the latest history entry', () => {
     const entry = { commands: ["cy.visit('/')", "cy.get('#btn').click()"], interceptors: [], savedAt: Date.now() };
     localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
     el.recoverLastRecording();
-    expect(spy).toHaveBeenCalledTimes(2);
-    expect(spy).toHaveBeenCalledWith("cy.visit('/')");
-    expect(spy).toHaveBeenCalledWith("cy.get('#btn').click()");
+    expect(recording.getCommandsSnapshot()).toEqual(["cy.visit('/')", "cy.get('#btn').click()"]);
+  });
+
+  it('recoverLastRecording() restores interceptors from the latest history entry', () => {
+    const entry = {
+      commands: ["cy.visit('/')"],
+      interceptors: ["cy.intercept('GET', '**/api').as('a')"],
+      savedAt: Date.now(),
+    };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    el.recoverLastRecording();
+    expect(recording.getInterceptorsSnapshot()).toEqual(["cy.intercept('GET', '**/api').as('a')"]);
+  });
+
+  it('recoverLastRecording() puts the widget back into recording mode', () => {
+    const entry = { commands: ["cy.visit('/')"], interceptors: [], savedAt: Date.now() };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    el.recoverLastRecording();
+    expect(recording.getCommandsSnapshot()).toBeDefined();
+    expect(el.isRecording).toBe(true);
+  });
+
+  it('recoverLastRecording() does not re-run the startRecording bootstrap', () => {
+    const entry = { commands: ["cy.get('#btn').click()"], interceptors: [], savedAt: Date.now() };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    el.recoverLastRecording();
+    expect(recording.getCommandsSnapshot()).toEqual(["cy.get('#btn').click()"]);
+  });
+
+  it('recoverLastRecording() clears any leftover in-memory commands first', () => {
+    recording.startRecording();
+    recording.addCommand('cy.get(".leftover").click()');
+    recording.stopRecording();
+    const entry = { commands: ["cy.visit('/recovered')"], interceptors: [], savedAt: Date.now() };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    el.recoverLastRecording();
+    expect(recording.getCommandsSnapshot()).toEqual(["cy.visit('/recovered')"]);
   });
 
   it('recoverLastRecording() does nothing when history is empty', () => {
-    const spy = vi.spyOn(recording, 'appendCommand');
     localStorage.removeItem('e2e-recording-history');
     el.recoverLastRecording();
-    expect(spy).not.toHaveBeenCalled();
+    expect(el.isRecording).toBe(false);
+    expect(recording.getCommandsSnapshot()).toHaveLength(0);
+  });
+
+  it('recoverLastRecording() is idempotent (recovering twice does not duplicate commands)', () => {
+    const entry = { commands: ["cy.visit('/')", "cy.get('#btn').click()"], interceptors: [], savedAt: Date.now() };
+    localStorage.setItem('e2e-recording-history', JSON.stringify([entry]));
+    el.recoverLastRecording();
+    el.recoverLastRecording();
+    expect(recording.getCommandsSnapshot()).toEqual(["cy.visit('/')", "cy.get('#btn').click()"]);
+  });
+
+  it('recoverLastRecording() does not crash on corrupted history JSON', () => {
+    localStorage.setItem('e2e-recording-history', '{invalid json}');
+    expect(() => el.recoverLastRecording()).not.toThrow();
+    expect(el.isRecording).toBe(false);
   });
 
   // ── showSaveTestDialog ────────────────────────────────────────────────────
@@ -568,6 +669,38 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       child.dispatchEvent(new CustomEvent('saveandexport', { detail: { description: 'export', tags: [] } }));
       expect(Swal.close).toHaveBeenCalled();
     });
+
+    // ── continuerecording (spec 024) ────────────────────────────────────────
+
+    it('continuerecording event calls recording.continueRecording()', () => {
+      recording.startRecording();
+      recording.stopRecording();
+      const spy = vi.spyOn(recording, 'continueRecording');
+      el.showSaveTestDialog();
+      const child = container.querySelector('lib-e2e-save-test')!;
+      child.dispatchEvent(new CustomEvent('continuerecording'));
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it('continuerecording event calls Swal.close', () => {
+      recording.startRecording();
+      recording.stopRecording();
+      el.showSaveTestDialog();
+      const child = container.querySelector('lib-e2e-save-test')!;
+      child.dispatchEvent(new CustomEvent('continuerecording'));
+      expect(Swal.close).toHaveBeenCalled();
+    });
+
+    it('continuerecording event resumes recording with commands intact', () => {
+      recording.startRecording();
+      recording.addCommand('cy.get(".a").click()');
+      const before = recording.getCommandsSnapshot();
+      recording.stopRecording();
+      el.showSaveTestDialog();
+      const child = container.querySelector('lib-e2e-save-test')!;
+      child.dispatchEvent(new CustomEvent('continuerecording'));
+      expect(recording.getCommandsSnapshot()).toEqual(before);
+    });
   });
 
   describe('showSettingsDialog didOpen', () => {
@@ -803,6 +936,14 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
       el.toggle(); // start — writes breadcrumb
       el.toggle(); // stop  — clears it
       expect(localStorage.getItem(ACTIVE_SESSION_BREADCRUMB_KEY)).toBeNull();
+    });
+
+    it('continueRecording() re-arms the active-session breadcrumb (spec 024, AC-04)', () => {
+      el.toggle(); // start — writes breadcrumb
+      el.toggle(); // stop  — clears it
+      expect(localStorage.getItem(ACTIVE_SESSION_BREADCRUMB_KEY)).toBeNull();
+      recording.continueRecording();
+      expect(localStorage.getItem(ACTIVE_SESSION_BREADCRUMB_KEY)).not.toBeNull();
     });
 
     it('discardSession() clears the breadcrumb and the persisted record', () => {
