@@ -49,7 +49,8 @@ export function mountGuide(el: HTMLElement) {
       <tr><td>Opción A vs B (spec 006)</td><td>Shell</td><td><code>?recorder=shell</code> vs <code>?recorder=mfe</code></td><td>Ver tabla inferior</td></tr>
       <tr><td>Import / Export tests</td><td>Config ⚙️</td><td>Ctrl+3 → sección Datos</td><td>Archivo JSON</td></tr>
       <tr><td>Ticket / Issue tracker</td><td>Config ⚙️</td><td>Ctrl+3 → sección Issue tracker</td><td><code>// Ticket: PROJ-123</code></td></tr>
-      <tr><td>Historial grabaciones</td><td>API JS</td><td><code>recorder.recoverLastRecording()</code></td><td>Restaura last-5 del localStorage</td></tr>
+      <tr><td>Continuar grabando</td><td>Widget</td><td>Grabar → Parar (Ctrl+R) → botón "⏺ Continuar grabando" en el diálogo de guardar</td><td>Reanuda la grabación sin perder los comandos ya capturados</td></tr>
+      <tr><td>Recuperar última grabación</td><td>Widget</td><td>Parar → "No, descartar" → entrada "↺ Recuperar" en el menú del widget (solo visible si no se está grabando)</td><td>Restaura comandos + interceptores y reanuda la grabación · también vía <code>recorder.recoverLastRecording()</code></td></tr>
       <tr><td>Idioma</td><td>Config ⚙️</td><td>Ctrl+3 → selector de idioma</td><td>UI en es/en/fr/it/de</td></tr>
       <tr><td>Login Setup</td><td>Config ⚙️</td><td>Ctrl+3 → Login Setup → apuntar fichero de login</td><td><code>before(() => loginFn())</code> / <code>beforeEach(() => loginFn())</code></td></tr>
     </table>

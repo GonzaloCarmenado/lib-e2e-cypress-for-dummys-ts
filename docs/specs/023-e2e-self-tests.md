@@ -53,6 +53,9 @@ These tests are Cypress specs that live alongside the existing `showcase.cy.ts` 
 11. **UC-11 — Lab edge cases: sensitive data redaction**
     _As a maintainer, I want to confirm that HTTP responses containing `password`, `token`, or similar fields are redacted in the generated interceptor body._
 
+12. **UC-12 — Continue recording after Stop (spec 024)**
+    _As a maintainer, I want to confirm that "Continue recording" (from either step of the save dialog) resumes capture with commands intact, and that "↺ Recover" restores a discarded recording and resumes recording mode, so regressions in the undo-a-Stop flow are caught in a real browser._
+
 ---
 
 ## Acceptance criteria
@@ -100,6 +103,12 @@ These tests are Cypress specs that live alongside the existing `showcase.cy.ts` 
 - [ ] AC-27: Typing `it's a valid input` into `[data-cy="apostrophe-input"]` generates a `.type(…)` command with the text correctly escaped.
 - [ ] AC-28: After clicking `[data-cy="btn-sensitive-get"]`, the interceptor body in the command list does not contain the literal token value (it is replaced with a redaction placeholder).
 - [ ] AC-29: After clicking `[data-cy="btn-sensitive-post"]`, the interceptor body does not contain the literal password or access_token value.
+
+### Continue recording after Stop (06-continue-recording.cy.ts, spec 024)
+
+- [x] AC-30: After recording a command and stopping, clicking "Continue recording" (`#btn-continue-recording`) in the save dialog's `ask` step resumes recording (toggle shows `⏹` again) and a subsequent click still appends to the same command list.
+- [x] AC-31: Clicking "No" (`#btn-no`) to reach the discard-confirmation step, then clicking "Continue recording" there, also resumes recording with the original command intact.
+- [x] AC-32: Discarding a stopped recording (confirm-discard), then clicking the toolbar's `[data-action="recover"]` entry, restores the discarded command and puts the widget back into recording mode.
 
 ---
 
@@ -186,7 +195,7 @@ npx cypress open            # or: npx cypress run
 
 ## Open questions
 
-- [ ] Q1: Should the extension e2e suite be added to a CI step in the future, or remain a manual-run suite? (Recommendation: manual for now, CI later once the example app has a stable dev-server start command.)
+- [x] Q1: **Resolved** — added to CI (spec 020 extension): the `e2e` job in `.github/workflows/ci.yml` builds the example app, starts all 4 preview servers, and runs `cypress run --spec "cypress/e2e/extension/**/*.cy.ts"` on every push/PR to `main`.
 - [ ] Q2: Does the previsualizer render commands incrementally (one per event) or only after stopping recording? This affects whether we need `.should('contain.text', …)` with retry or a stop-recording step first.
 
 ---
@@ -197,3 +206,4 @@ npx cypress open            # or: npx cypress run
 |------------|-----------------|
 | 2026-07-23 | Initial draft   |
 | 2026-07-23 | Implementation started — 5 test files + custom commands written |
+| 2026-10-08 | Added `06-continue-recording.cy.ts` (UC-12, AC-30..32) covering spec 024 — "Continue recording" from both save-dialog steps and "↺ Recover" from the idle toolbar, verified against the real browser (32/32 extension e2e tests passing). Resolved Q1 (CI already runs this suite via spec 020's `e2e` job). |
