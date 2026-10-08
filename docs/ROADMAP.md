@@ -32,6 +32,7 @@ live in `docs/specs/`.
 | 021 | General audit: security, architecture & 1.0.0 readiness |
 | 022 | Code quality improvements (JSDoc/TypeDoc, CSS theme tokens, BaseElement) |
 | 023 | E2E self-tests: Cypress suite on the ejemplo app + CI quality gate |
+| 024 | Continue recording after Stop (undo an accidental Stop in place) + fixed, wired `recoverLastRecording()` |
 
 Other capabilities: HTTP monitoring (`cy.intercept`/`cy.wait`, optional body
 validations), advanced editor + File System Access (insert into `.cy.ts`),
@@ -59,6 +60,10 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 3. **More interactions (part 3)** — drag & drop / hover as recorded Cypress commands.
 4. ~~**Auto-login generator**~~ — superseded by Login Setup Template (spec 015).
 5. ~~**Runner hardening**~~ — closed: dual-source is intentional (see comments in code); `alert()` → `showToast` fixed.
+6. ~~**Continue recording after Stop**~~ — done (spec 024). "Continue recording" button
+   in the save dialog (undo an accidental Stop in place) + a fixed, wired
+   `recoverLastRecording()` ("↺ Recover" in the idle toolbar) that restores
+   interceptors too and resumes recording instead of just appending commands.
 
 ### Deferred from the 2026-07-14 audit (spec 021)
 
@@ -73,8 +78,9 @@ mode (`start-hidden`, Ctrl+Shift+E), keyboard shortcuts, assertion builder.
 - **LOW polish:** `runner.ts:137` floating promise → 500; `configuration.ts`
   unguarded element casts → `?.`; `escAttr` `&` escaping; FSAA filename
   sanitisation + per-file try/catch; dedupe write/permission blocks;
-  `file-preview.ts` clipboard `.catch`; remove vestigial interceptor loop in
-  `recoverLastRecording`; `filesystem-setup.ts`/`assertion-builder.ts` split into
-  pure render + wire; `http-monitor.ts` `.service` rename.
+  `file-preview.ts` clipboard `.catch`; `filesystem-setup.ts`/`assertion-builder.ts`
+  split into pure render + wire; `http-monitor.ts` `.service` rename.
+  (The vestigial interceptor loop in `recoverLastRecording` was fixed — not just
+  removed — by spec 024.)
 - **devDependency advisories** (`ws`/cypress chain) — tooling only, never
   shipped; run `npm audit fix` opportunistically.
