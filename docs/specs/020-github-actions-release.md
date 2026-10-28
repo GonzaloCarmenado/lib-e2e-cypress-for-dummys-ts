@@ -33,8 +33,10 @@ source code.
 
 2. **UC-02 — Maintainer triggers a release manually**
    From the GitHub Actions UI (workflow_dispatch), the maintainer runs the
-   `release` workflow. It re-validates the code, then publishes to npm using the
-   `NPM_TOKEN` repository secret. The token never appears in logs.
+   `release` workflow. It re-validates the code, then publishes to npm via
+   Trusted Publishing (OIDC) — no long-lived token is involved.
+   *(Updated 2026-10-28: originally used an `NPM_TOKEN` secret; it expired and
+   every publish failed with `E404 PUT`. Switched to OIDC.)*
 
 3. **UC-03 — Token is not in source**
    The repository is public. The npm token must live exclusively in GitHub
@@ -57,14 +59,13 @@ source code.
 ### Release workflow (`release.yml`)
 
 - [x] AC-05: Trigger is `workflow_dispatch` only (manual, no automatic trigger).
-- [x] AC-06: Steps in order: checkout → setup-node (v20, npm cache, registry
+- [x] AC-06: Steps in order: checkout → setup-node (v24, npm cache, registry
   `https://registry.npmjs.org/`) → `npm ci` → `npm run lint` → `npm run build` →
   `npm test` → `npm run test:coverage` → `npm publish --access public`.
-- [x] AC-07: The `NODE_AUTH_TOKEN` environment variable for the publish step is
-  set to `${{ secrets.NPM_TOKEN }}`. No token value appears in the workflow file.
-- [x] AC-08: `setup-node` uses `registry-url: https://registry.npmjs.org/` so
-  that the generated `.npmrc` binds `NODE_AUTH_TOKEN` to the registry automatically
-  (standard GitHub Actions pattern — no manual `npm config set` needed).
+- [x] AC-07: The workflow declares `permissions: id-token: write` so npm
+  (>= 11.5.1, bundled with Node 24) can authenticate via OIDC. No
+  `NODE_AUTH_TOKEN` / `NPM_TOKEN` is used.
+- [x] AC-08: `setup-node` uses `registry-url: https://registry.npmjs.org/`.
 - [x] AC-09: The workflow file contains no hardcoded credentials, registry tokens,
   or user-specific values.
 
@@ -72,10 +73,10 @@ source code.
 
 - [x] AC-10: Running `git grep -i "npm_\|_authToken\|//registry"` on the committed
   workflow files returns no matches (no token leaked in source).
-- [x] AC-11: The `NPM_TOKEN` secret must be created manually in
-  `GitHub → repo → Settings → Secrets and variables → Actions → New repository secret`.
-  This step is documented in the spec and in a comment in the workflow file —
-  it is intentionally out of scope for the workflow itself.
+- [x] AC-11: The trusted publisher must be configured manually on npmjs.com
+  (package → Settings → Trusted Publisher → GitHub Actions, repo
+  `GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts`, workflow `release.yml`).
+  Out of scope for the workflow itself.
 
 ### Quality gates
 
@@ -97,17 +98,16 @@ source code.
 
 ---
 
-## Secret setup (manual, out of scope for code)
+## Trusted publisher setup (manual, out of scope for code)
 
-Before the release workflow can run, a maintainer must:
+Before the release workflow can run, a maintainer must, on npmjs.com:
 
-1. Go to `https://github.com/GonzaloCarmenado/lib-e2e-cypress-for-dummys-ts/settings/secrets/actions`.
-2. Click **New repository secret**.
-3. Name: `NPM_TOKEN` — Value: a valid npm automation token (`npm token create --type=automation`).
-4. Save.
+1. Open the package → **Settings** → **Trusted Publisher**.
+2. Choose **GitHub Actions**; owner `GonzaloCarmenado`, repository
+   `lib-e2e-cypress-for-dummys-ts`, workflow filename `release.yml`.
+3. Save.
 
-The workflow references it as `${{ secrets.NPM_TOKEN }}`. GitHub masks the value
-in all log output automatically.
+The legacy `NPM_TOKEN` repository secret is no longer used and can be deleted.
 
 ---
 
