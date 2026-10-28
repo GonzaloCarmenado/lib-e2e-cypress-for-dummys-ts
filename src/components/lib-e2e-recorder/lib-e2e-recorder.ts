@@ -227,11 +227,14 @@ export class LibE2eRecorderElement extends BaseElement {
     this.recordingUnsub = this.recording.onRecordingChange((val) => {
       this.isRecording = val;
       if (!val && !this.controlFirstTimeData) {
+        // Open the save dialog first: it must never depend on storage side
+        // effects succeeding (some WebViews, e.g. Ionic/Capacitor, can throw
+        // on localStorage/IndexedDB access and silently break this chain).
+        this.showSaveTestDialog();
         this.saveRecordingHistory();
         // Stopping the recording ends the cross-app session: only an actively
         // recording session is ever persisted/resumed (spec 006, Q2).
         this.clearSessionPersistence();
-        this.showSaveTestDialog();
       }
       this.controlFirstTimeData = false;
       this.render();
@@ -369,7 +372,11 @@ export class LibE2eRecorderElement extends BaseElement {
     if (this.sessionSaveTimer) clearTimeout(this.sessionSaveTimer);
     this.sessionSaveTimer = setTimeout(() => {
       const snap = this.recording.getSessionSnapshot();
-      if (snap.isRecording) this.persistence.saveActiveSession(snap).catch(() => { /* storage errors are non-fatal */ });
+      if (snap.isRecording) {
+        this.persistence.saveActiveSession(snap).catch((err) => {
+          console.warn('[lib-e2e-cypress-for-dummys] saveActiveSession failed (non-fatal):', err);
+        });
+      }
     }, 300);
   }
 
@@ -380,7 +387,9 @@ export class LibE2eRecorderElement extends BaseElement {
         isRecording: state.isRecording,
         updatedAt: state.updatedAt,
       }));
-    } catch { /* ignore storage errors */ }
+    } catch (err) {
+      console.warn('[lib-e2e-cypress-for-dummys] writeSessionBreadcrumb failed (non-fatal):', err);
+    }
   }
 
   private flushActiveSessionOnDisconnect(): void {
@@ -388,13 +397,21 @@ export class LibE2eRecorderElement extends BaseElement {
     if (!snap.isRecording) return;
     if (this.sessionSaveTimer) clearTimeout(this.sessionSaveTimer);
     this.writeSessionBreadcrumb(snap);
-    this.persistence.saveActiveSession(snap).catch(() => { /* non-fatal */ });
+    this.persistence.saveActiveSession(snap).catch((err) => {
+      console.warn('[lib-e2e-cypress-for-dummys] saveActiveSession on disconnect failed (non-fatal):', err);
+    });
   }
 
   private clearSessionPersistence(): void {
     if (this.sessionSaveTimer) { clearTimeout(this.sessionSaveTimer); this.sessionSaveTimer = undefined; }
-    try { localStorage.removeItem(ACTIVE_SESSION_BREADCRUMB_KEY); } catch { /* ignore */ }
-    this.persistence.clearActiveSession().catch(() => { /* non-fatal */ });
+    try {
+      localStorage.removeItem(ACTIVE_SESSION_BREADCRUMB_KEY);
+    } catch (err) {
+      console.warn('[lib-e2e-cypress-for-dummys] clearSessionPersistence (localStorage) failed (non-fatal):', err);
+    }
+    this.persistence.clearActiveSession().catch((err) => {
+      console.warn('[lib-e2e-cypress-for-dummys] clearActiveSession failed (non-fatal):', err);
+    });
   }
 
   /** True when a synchronous breadcrumb marks an active recording session. */
@@ -522,7 +539,9 @@ export class LibE2eRecorderElement extends BaseElement {
       existing.unshift({ commands: this.cypressCommands, interceptors: this.interceptors, savedAt: Date.now() });
       if (existing.length > 5) existing.splice(5);
       localStorage.setItem('e2e-recording-history', JSON.stringify(existing));
-    } catch { /* ignore storage errors */ }
+    } catch (err) {
+      console.warn('[lib-e2e-cypress-for-dummys] saveRecordingHistory failed (non-fatal):', err);
+    }
   }
 
   /** Builds the "Recover last recording" tooltip: command count + how long ago. */

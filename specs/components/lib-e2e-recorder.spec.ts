@@ -429,6 +429,35 @@ describe('Phase 8.7 — LibE2eRecorderElement', () => {
     expect(history[0].commands.length).toBeGreaterThan(0);
   });
 
+  it('stop recording opens the save dialog before running storage side effects', () => {
+    const callOrder: string[] = [];
+    vi.spyOn(el, 'showSaveTestDialog').mockImplementation(() => { callOrder.push('showSaveTestDialog'); });
+    vi.spyOn(el as any, 'saveRecordingHistory').mockImplementation(() => { callOrder.push('saveRecordingHistory'); });
+    const clearSessionPersistenceSpy = vi.spyOn(el as any, 'clearSessionPersistence');
+
+    el.toggle(); // start
+    el.toggle(); // stop
+
+    // showSaveTestDialog() must run before the storage side effects triggered by
+    // the same stop-recording event, regardless of how many times
+    // clearSessionPersistence() is independently invoked by other subscribers
+    // (e.g. the session-change listener).
+    expect(callOrder).toEqual(['showSaveTestDialog', 'saveRecordingHistory']);
+    expect(clearSessionPersistenceSpy).toHaveBeenCalled();
+  });
+
+  it('stop recording still opens the save dialog even if a storage side effect throws unexpectedly', () => {
+    // Simulates an exception escaping the storage helpers' own try/catch (e.g. an
+    // environment-specific failure in a restricted WebView). The dialog must not
+    // depend on these side effects succeeding.
+    vi.spyOn(el as any, 'saveRecordingHistory').mockImplementation(() => { throw new Error('unexpected storage failure'); });
+
+    el.toggle(); // start
+    expect(() => el.toggle()).toThrow('unexpected storage failure'); // stop
+
+    expect(el.isSaveTestDialogOpen).toBe(true);
+  });
+
   it('getRecordingHistory() returns [] when localStorage contains invalid JSON', () => {
     localStorage.setItem('e2e-recording-history', '{invalid json}');
     expect(el.getRecordingHistory()).toEqual([]);
