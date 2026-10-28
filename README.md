@@ -745,7 +745,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the full history.
 ## Technical notes
 
 - **Storage:** IndexedDB via [`idb`](https://github.com/jakearchibald/idb). Data survives page reloads and browser restarts.
-- **Modals:** [`SweetAlert2`](https://sweetalert2.github.io/) with a custom dark theme injected as a `<style>` tag.
+- **Modals:** [`SweetAlert2`](https://sweetalert2.github.io/) with a custom dark theme injected as a `<style>` tag. Every dialog is opened with `heightAuto: false` so it never overwrites `document.body.style.height` — required for Ionic/Capacitor apps, which rely on an unbroken `html`/`body`/`ion-app` `height: 100%` chain to fill the screen; without this, opening any dialog (and especially the save-recording dialog) could collapse the host app's layout to zero height.
 - **Shadow DOM:** All components use `mode: 'open'` shadow roots, so widget styles never bleed into the host application.
 - **Bundle:** ESM + CJS, compiled to ES2022. No framework runtime included.
 - **Browser support:** Chromium 105+ for full feature set (File System Access API). Recording and saving work in all modern browsers.

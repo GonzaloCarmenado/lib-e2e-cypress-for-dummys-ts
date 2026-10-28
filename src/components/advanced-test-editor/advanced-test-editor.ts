@@ -176,6 +176,7 @@ export class AdvancedTestEditorElement extends BaseElement {
           cancelButtonText: this.t('CONFIG.LOGIN_SETUP_CANCEL_BTN'),
           confirmButtonColor: '#1f6feb',
           width: 460,
+          heightAuto: false,
         });
         if (result.isConfirmed) {
           content = injectLoginBlocksIntoExisting(content, importLine, beforeBlock, beforeEachBlock);

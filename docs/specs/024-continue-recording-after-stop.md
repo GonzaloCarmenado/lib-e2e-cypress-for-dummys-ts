@@ -24,17 +24,25 @@ differently:
 The problem is what happens in the UI right after Stop
 (`onRecordingChange(false)` in `lib-e2e-recorder.ts:227-238`):
 
-1. `saveRecordingHistory()` archives the session into the `e2e-recording-history`
-   localStorage key (last 5).
-2. `clearSessionPersistence()` wipes the spec-006 cross-app `activeSession`
-   record — correct per that spec's Q2 ("a stopped buffer is intentionally
-   forgotten across navigation").
-3. `showSaveTestDialog()` opens a **non-dismissable** SweetAlert
+1. `showSaveTestDialog()` opens a **non-dismissable** SweetAlert
    (`allowOutsideClick:false`, `allowEscapeKey:false`, no close button) that
    only offers **Yes, save** / **No** (`save-test.ts`). Choosing "No" leads to
    a discard confirmation; confirming dispatches `savetest` with
    `description: null`, which makes `onSaveTest` return early
    (`lib-e2e-recorder.ts:827`) — **without clearing the buffer**.
+2. `saveRecordingHistory()` archives the session into the `e2e-recording-history`
+   localStorage key (last 5).
+3. `clearSessionPersistence()` wipes the spec-006 cross-app `activeSession`
+   record — correct per that spec's Q2 ("a stopped buffer is intentionally
+   forgotten across navigation").
+
+> **2026-10-28 update:** the dialog now opens **first**, before the two
+> storage side effects (previously it was last). A host app reported that in
+> restricted WebViews (Ionic/Capacitor) a storage failure between Stop and
+> `showSaveTestDialog()` could silently prevent the dialog from ever opening.
+> The dialog must never depend on `saveRecordingHistory()`/
+> `clearSessionPersistence()` succeeding. See the Ionic/SweetAlert2
+> `heightAuto` fix below for the other half of that same investigation.
 
 Net effect: many users report hitting Stop by mistake, and the library gives
 them no way back. The commands are technically still in memory, but the only
@@ -209,6 +217,17 @@ New i18n keys (illustrative): `RECORDER.CONTINUE_RECORDING_BTN`,
   toolbar state in `lib-e2e-recorder.template.ts`, guarded by `!isRecording &&
   getRecordingHistory().length > 0` — mirrors how other conditional toolbar
   affordances already work in that template.
+- **Ionic/Capacitor compatibility (2026-10-28).** SweetAlert2 defaults to
+  `heightAuto: true`, which sets `document.body.style.height = 'auto'` while
+  a dialog is open. Ionic apps rely on an unbroken `html`/`body`/`ion-app`
+  `height: 100%` chain to fill the screen; forcing `body` to `auto` collapses
+  `ion-app` to zero height and also breaks SweetAlert2's own popup sizing in
+  that WebView. Every `Swal.fire(...)` call in this library (not just the
+  save dialog — `openSwalDialog`, the session-resume prompt, filesystem
+  setup, the advanced/file editors, and the login-setup injection prompt in
+  `advanced-test-editor.ts`) now sets `heightAuto: false`. **Any new
+  `Swal.fire(...)` call added anywhere in this codebase must do the same**,
+  or the Ionic-breaking regression comes back for that one dialog.
 
 ---
 
@@ -232,3 +251,4 @@ New i18n keys (illustrative): `RECORDER.CONTINUE_RECORDING_BTN`,
 | 2026-10-08 | Initial draft. |
 | 2026-10-08 | Review: Q1 resolved (dialog-only, no toast); Q2 resolved (use widget's current selectorStrategy, no `e2e-recording-history` schema change). All open questions resolved. |
 | 2026-10-08 | Implemented: `RecordingService.continueRecording()`; `continuerecording` event on `<lib-e2e-save-test>` wired in both the ask and confirm-discard steps; `recoverLastRecording()` fixed (restores interceptors, resumes recording, clears stale commands first, idempotent) and wired to a new "↺ Recover" action-menu item (count + elapsed time in its tooltip) shown only while idle with history available; i18n ×5; README updated. Gates green (lint 0, 1119+ tests, coverage 94.8%, build 0). Status → Implemented. |
+| 2026-10-28 | Bug fix (reported against an Ionic/Capacitor host app): `showSaveTestDialog()` now runs **before** `saveRecordingHistory()`/`clearSessionPersistence()` in the stop-recording handler, and every `Swal.fire(...)` call in the library now sets `heightAuto: false` to prevent SweetAlert2 from collapsing the host app's `ion-app` to zero height. Previously-silent storage `catch` blocks now `console.warn` instead of swallowing errors. README "Technical notes" updated. Gates green (lint 0, 1124 tests, build 0). |

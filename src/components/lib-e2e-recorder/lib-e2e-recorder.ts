@@ -353,6 +353,7 @@ export class LibE2eRecorderElement extends BaseElement {
       confirmButtonText: t('RECORDER.SESSION_CONTINUE_BTN'),
       cancelButtonText: t('RECORDER.SESSION_DISCARD_BTN'),
       color: '#e6edf3',
+      heightAuto: false,
     });
     if (result && (result as { isConfirmed?: boolean }).isConfirmed) {
       this.resumeSessionState(session);
@@ -608,6 +609,7 @@ export class LibE2eRecorderElement extends BaseElement {
       html: '<div id="fs-setup-content"></div>',
       showCloseButton: true,
       showConfirmButton: false,
+      heightAuto: false,
       didOpen: () => {
         makeSwalDraggable();
         setSwal2DataCyAttribute();
@@ -783,6 +785,7 @@ export class LibE2eRecorderElement extends BaseElement {
         allowOutsideClick: false,
         width: 780,
         color: '#e6edf3',
+        heightAuto: false,
         didOpen: () => {
           makeSwalDraggable();
           setSwal2DataCyAttribute();
@@ -832,6 +835,7 @@ export class LibE2eRecorderElement extends BaseElement {
       allowOutsideClick: false,
       width: 1100,
       color: '#e6edf3',
+      heightAuto: false,
       didOpen: () => {
         makeSwalDraggable();
         setSwal2DataCyAttribute();
@@ -977,6 +981,10 @@ export class LibE2eRecorderElement extends BaseElement {
       Swal.fire({
         showConfirmButton: false,
         color: '#e6edf3',
+        // Ionic/Capacitor apps rely on an unbroken html/body/ion-app height:100%
+        // chain; SweetAlert2's default heightAuto resets body height to 'auto'
+        // and collapses that chain (the whole app renders at 0 height).
+        heightAuto: false,
         ...swalOptions,
         didOpen: () => {
           makeSwalDraggable();
